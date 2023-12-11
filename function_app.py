@@ -8,6 +8,8 @@ from azure.identity import DefaultAzureCredential
 import urllib.request
 import pandas as pd
 import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as dET
+
 
 MAX_REAL_FLOORS = 10
 
@@ -53,7 +55,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         root : ET.Element
         with urllib.request.urlopen(req._HttpRequest__params['xml']) as f:
             s = f.read().decode('utf-8')
-            root = ET.fromstring(s)
+            root = dET.fromstring(s)
 
             lookup = {
                 'LED/CFL'           : 'co-3a9c9ff6-2bad-4d62-9526-1df98538cbad',
