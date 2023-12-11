@@ -8,9 +8,6 @@ from azure.identity import DefaultAzureCredential
 import urllib.request
 import pandas as pd
 import xml.etree.ElementTree as ET
-import defusedxml.ElementTree as dET
-
-# test edit GT 
 
 MAX_REAL_FLOORS = 10
 
@@ -50,73 +47,37 @@ app = func.FunctionApp()
 @app.route(route="magicplan", auth_level=func.AuthLevel.ANONYMOUS)
 def test_function(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        # email = 'RPASupport@ie.gt.com'
-        email = req._HttpRequest__params['email']
 
-        # with open(xmlfilepath) as f:
-            # xml_data_as_string = f.read()
-        # root = dET.fromstring(xml_data_as_string)
-        # for child in root:
-            # print(child.tag, child.attrib)
-            # for sub in child:
-                # print("    ", sub.tag, sub.text)
+        email = req._HttpRequest__params['email']
         
         root : ET.Element
         with urllib.request.urlopen(req._HttpRequest__params['xml']) as f:
             s = f.read().decode('utf-8')
-            root = dET.fromstring(s)
-        
-        
-        
-        
-        plan_name = root.get('name')
-        floors = root.findall('interiorRoomPoints/floor')
+            root = ET.fromstring(s)
 
-
-        '''
-        # Can't see where these values are used
+            lookup = {
+                'LED/CFL'           : 'co-3a9c9ff6-2bad-4d62-9526-1df98538cbad',
+                'Halogen Lamp'      : 'co-94486aec-b47a-4d75-aaf3-0645576bae56',
+                'Halogen LV'        : 'co-b21a94da-ad62-40e5-bfe0-c1aa0b8461d5',
+                'Linear Fluorescent': 'co-497bde35-eb4a-41ec-ba91-b24e35099799',
+                'Incandescent'      : 'co-44a1cdea-ff05-40a8-afb5-fe5b9c7f086a',
+                'EMV'               : 'co-0c7d0ada-8a17-41f9-8746-e7007a1c40b1',
+                'NMV'               : 'co-accd48a4-43b8-4381-b569-c8404f52dec5',
+                'NPV'               : 'co-483ab20e-2762-4733-9db5-19d21e1d090d',
+                'NBV'               : 'co-88da8a48-da48-4c3d-a459-ee8eef96bcdd',
+                'EPV'               : 'co-4d2e52df-c793-4c02-953a-f4ed0b7eaae0',
+                'DCH'               : 'co-03b80e12-32b7-45be-8b44-9b4b03a09b4c',
+                'EMVB'              : 'co-33fd6b69-25ae-4e55-bf7b-f91af6112ac4',
+                'ECHB'              : 'co-d0f4acd2-8598-49ec-ac3c-8b39edc724e9',
+                'Chimney'           : 'co-5651e005-f73c-4d26-8b75-6d07291d7839',
+                'Flue'              : 'co-9276562f-535a-4c1f-a708-d869f581194d',
+                'Flueless'          : 'co-86083af5-5a40-4831-9990-4f60aa537d99'
+            }
 
         internal_width = float(root.get('interiorWallWidth'))
         extern_width_offset = internal_width * 4
-        extern_perim -= extern_width_offset
-        floors_perims.append(extern_perim)
-        '''
 
-
-
-
-
-
-
-
-        lookup = {
-            'LED/CFL'           : 'co-3a9c9ff6-2bad-4d62-9526-1df98538cbad',
-            'Halogen Lamp'      : 'co-94486aec-b47a-4d75-aaf3-0645576bae56',
-            'Halogen LV'        : 'co-b21a94da-ad62-40e5-bfe0-c1aa0b8461d5',
-            'Linear Fluorescent': 'co-497bde35-eb4a-41ec-ba91-b24e35099799',
-            'Incandescent'      : 'co-44a1cdea-ff05-40a8-afb5-fe5b9c7f086a',
-            'EMV'               : 'co-0c7d0ada-8a17-41f9-8746-e7007a1c40b1',
-            'NMV'               : 'co-accd48a4-43b8-4381-b569-c8404f52dec5',
-            'NPV'               : 'co-483ab20e-2762-4733-9db5-19d21e1d090d',
-            'NBV'               : 'co-88da8a48-da48-4c3d-a459-ee8eef96bcdd',
-            'EPV'               : 'co-4d2e52df-c793-4c02-953a-f4ed0b7eaae0',
-            'DCH'               : 'co-03b80e12-32b7-45be-8b44-9b4b03a09b4c',
-            'EMVB'              : 'co-33fd6b69-25ae-4e55-bf7b-f91af6112ac4',
-            'ECHB'              : 'co-d0f4acd2-8598-49ec-ac3c-8b39edc724e9',
-            'Chimney'           : 'co-5651e005-f73c-4d26-8b75-6d07291d7839',
-            'Flue'              : 'co-9276562f-535a-4c1f-a708-d869f581194d',
-            'Flueless'          : 'co-86083af5-5a40-4831-9990-4f60aa537d99'
-        }
-
-
-
-
-
-
-
-
-
-
+        plan_name = root.get('name')
         walls_area_net = []
         walls_area_gross = []
         floors_heights = []
@@ -168,7 +129,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         roof_table : dict[str, list[float]] = {}
         window_door_table : dict[str, list[float]] = {}
 
-
+        floors = root.findall('interiorRoomPoints/floor')
         empty_array = [0] * len([floor for floor in floors if not re.search('[0-9][012346789]', floor.find('name').text)])
         imaginary_array = [0] * len([floor for floor in floors if re.search('[0-9][012346789]', floor.find('name').text)])
         full_floor_array = [0] * len(floors)
@@ -436,7 +397,8 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                         wall_area_gross += wall_height * length
                         extern_perim += length
 
-
+                extern_perim -= extern_width_offset
+                floors_perims.append(extern_perim)
                 wall_height = wall_height/nwalls if nwalls != 0 else wall_height
                 floors_heights.append(wall_height)
 
@@ -681,23 +643,20 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         container_client = blob_service_client.get_container_client(container_name)
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
-
+        
         json_data = json.dumps({
             'email' : email,
             'name'  : plan_name, 
             'table' : output
         })
 
-
-        # return output
-
         local_file_name = str(uuid.uuid4()) + '.json'
+
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+
         blob_client.upload_blob(json_data)
-        return func.HttpResponse(status_code=200)
-    
-    
+
     except Exception as ex:
         logging.error(ex)
         print(f"Exception: {ex}")
-
+    return func.HttpResponse(status_code=200)
