@@ -51,6 +51,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
     try:
 
         email = req._HttpRequest__params['email']
+        xml = req._HttpRequest__params['xml']
         
         root : ET.Element
         with urllib.request.urlopen(req._HttpRequest__params['xml']) as f:
@@ -645,6 +646,8 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         container_client = blob_service_client.get_container_client(container_name)
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
+
+        output = xml
         
         json_data = json.dumps({
             'email' : email,
