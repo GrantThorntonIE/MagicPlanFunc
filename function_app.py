@@ -82,7 +82,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             json_data = json.dumps({
                 'email' : email,
                 'name'  : plan_name, 
-                'table' : output
+                'table' : str(output)
             })
     
             local_file_name = str(uuid.uuid4()) + '.json'
