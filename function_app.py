@@ -57,8 +57,8 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
         plan_name = 'test'
         email = 'RPASupport@ie.gt.com'
-        xml = req._HttpRequest__body_str
-        
+        # xml = req._HttpRequest__body_str
+        xml = req.get_json()
         
 
 
