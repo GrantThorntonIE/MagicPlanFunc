@@ -62,7 +62,15 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         
         output = req.text
         
-        
+
+    except Exception as ex:
+        # logging.error(ex)
+        # print(f"Exception: {ex}")
+        output = ex
+        # sc = 500
+        # return func.HttpResponse(status_code=sc)
+
+    finally:        
         account_url = os.environ['AZ_STR_URL']
         default_credential = DefaultAzureCredential()
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
@@ -84,19 +92,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         blob_client.upload_blob(json_data)
         # return func.HttpResponse(status_code=sc)
         sc = 200
-
-    except Exception as ex:
-        logging.error(ex)
-        print(f"Exception: {ex}")
-        output = ex
-        sc = 500
-        # return func.HttpResponse(status_code=sc)
-
     
-
-
-
-    finally:
         return func.HttpResponse(status_code=sc)
 
     
