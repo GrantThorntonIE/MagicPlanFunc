@@ -46,17 +46,19 @@ def create_table(dict : dict[str, list[float]], headers : list,
 
 app = func.FunctionApp()
 @app.function_name(name="MagicplanTrigger")
-@app.route(route="magicplan", auth_level=func.AuthLevel.ANONYMOUS, methods=("GET", "POST"))
+@app.route(route="magicplan", auth_level=func.AuthLevel.ANONYMOUS)
 
 
 def test_function(req: func.HttpRequest) -> func.HttpResponse:
     try:
 
-        email = req._HttpRequest__params['email']
-        xml = req._HttpRequest__params['xml']
+        # email = req._HttpRequest__params['email']
+        # xml = req._HttpRequest__params['xml']
+        email = req.params.get('email')
+        xml = req.params.get('xml')
         
         root : ET.Element
-        with urllib.request.urlopen(req._HttpRequest__params['xml']) as f:
+        with urllib.request.urlopen(req.params.get('xml')) as f:
             s = f.read().decode('utf-8')
             root = dET.fromstring(s)
 
