@@ -60,8 +60,18 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         # xml = req._HttpRequest__body_str
         xml = req.get_json()
         
+        output = xml
+        status_code = 200
 
 
+
+    except Exception as ex:
+        logging.error(ex)
+        print(f"Exception: {ex}")
+        output = ex
+        status_code = 500
+    
+    finally:
         account_url = os.environ['AZ_STR_URL']
         default_credential = DefaultAzureCredential()
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
@@ -70,8 +80,6 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
 
-        output = xml
-        
         json_data = json.dumps({
             'email' : email,
             'name'  : plan_name, 
@@ -83,9 +91,5 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
 
         blob_client.upload_blob(json_data)
-        return func.HttpResponse(status_code=200)
-
-    except Exception as ex:
-        logging.error(ex)
-        print(f"Exception: {ex}")
-    return func.HttpResponse(status_code=200)
+        return func.HttpResponse(status_code=status_code)
+    
