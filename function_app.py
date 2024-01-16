@@ -63,18 +63,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         
         output = req._HttpRequest__body_str
         sc = 200
-
-
-
-    except Exception as ex:
-        logging.error(ex)
-        print(f"Exception: {ex}")
-        output = ex
-        sc = 500
-    
-    finally:
-
-        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+                blob_service_client = BlobServiceClient(account_url, credential=default_credential)
         container_name = os.environ['AZ_CNTR_ST']
         container_client = blob_service_client.get_container_client(container_name)
         if not container_client.exists():
@@ -92,4 +81,16 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
         blob_client.upload_blob(json_data)
         return func.HttpResponse(status_code=sc)
+
+
+    except Exception as ex:
+        logging.error(ex)
+        print(f"Exception: {ex}")
+        output = ex
+        sc = 500
+        return func.HttpResponse(status_code=sc)
+    
+#    finally:
+
+
     
