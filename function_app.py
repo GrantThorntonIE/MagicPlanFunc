@@ -47,8 +47,7 @@ def create_table(dict : dict[str, list[float]], headers : list,
 app = func.FunctionApp()
 @app.function_name(name="MagicplanTrigger")
 @app.route(route="magicplan", auth_level=func.AuthLevel.ANONYMOUS)
-account_url = os.environ['AZ_STR_URL']
-default_credential = DefaultAzureCredential()
+
 
 def test_function(req: func.HttpRequest) -> func.HttpResponse:
     try:
@@ -63,7 +62,10 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         
         output = req._HttpRequest__body_str
         sc = 200
-                blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        
+        account_url = os.environ['AZ_STR_URL']
+        default_credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
         container_name = os.environ['AZ_CNTR_ST']
         container_client = blob_service_client.get_container_client(container_name)
         if not container_client.exists():
@@ -80,7 +82,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
 
         blob_client.upload_blob(json_data)
-        return func.HttpResponse(status_code=sc)
+        # return func.HttpResponse(status_code=sc)
 
 
     except Exception as ex:
@@ -88,9 +90,13 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         print(f"Exception: {ex}")
         output = ex
         sc = 500
-        return func.HttpResponse(status_code=sc)
-    
-#    finally:
+        # return func.HttpResponse(status_code=sc)
 
+    
+
+
+
+    finally:
+        return func.HttpResponse(status_code=sc)
 
     
