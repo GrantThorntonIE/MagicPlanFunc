@@ -60,7 +60,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         # xml = req._HttpRequest__body_str
         # xml = req.get_json()
         
-        output = req.data
+        output = str(req)
         sc = 200    # OK
 
     except Exception as ex:
