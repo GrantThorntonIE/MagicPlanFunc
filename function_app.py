@@ -60,8 +60,8 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         # xml = req._HttpRequest__body_str
         # xml = req.get_json()
         
-        output = req._HttpRequest__body_str
-        sc = 200
+        output = req.text
+        
         
         account_url = os.environ['AZ_STR_URL']
         default_credential = DefaultAzureCredential()
@@ -83,7 +83,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
         blob_client.upload_blob(json_data)
         # return func.HttpResponse(status_code=sc)
-
+        sc = 200
 
     except Exception as ex:
         logging.error(ex)
