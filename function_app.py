@@ -64,8 +64,8 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         sc = 200    # OK
 
     except Exception as ex:
-        output = ex.message
-        sc = 500    # Internal Server Error
+        output = str(ex)
+        sc = 503    # Internal Server Error
         
 
     finally:        
