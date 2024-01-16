@@ -46,7 +46,7 @@ def create_table(dict : dict[str, list[float]], headers : list,
 
 app = func.FunctionApp()
 @app.function_name(name="MagicplanTrigger")
-@app.route(route="magicplan", auth_level=func.AuthLevel.ANONYMOUS, methods=("POST"))
+@app.route(route="magicplan", auth_level=func.AuthLevel.ANONYMOUS, methods=("GET", "POST"))
 
 
 def test_function(req: func.HttpRequest) -> func.HttpResponse:
