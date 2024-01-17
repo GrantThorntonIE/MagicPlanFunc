@@ -61,13 +61,9 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         # xml = req.get_json()
         
         # output = dir(req)
-        # output = req.get_body()
+        output = req.get_body()
         
-        multi_dict = req.args
-        for key in multi_dict:
-            keys = keys + multi_dict.get(key) + ", "
-            values = values + "[" + multi_dict.getlist(key) + "], "
-        output = keys + values
+
         sc = 200    # OK
 
     except Exception as ex:
