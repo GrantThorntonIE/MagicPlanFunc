@@ -62,7 +62,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         
         # output = dir(req)
         # output = req.get_body()
-        output = req._HttpRequest__params()
+        output = req._HttpRequest__params['xml']
         sc = 200    # OK
 
     except Exception as ex:
