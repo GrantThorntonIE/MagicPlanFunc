@@ -63,7 +63,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         # output = dir(req)
         # output = req.get_body()
         
-        multi_dict = request.args
+        multi_dict = req.args
         for key in multi_dict:
             keys = keys + multi_dict.get(key) + ", "
             values = values + "[" + multi_dict.getlist(key) + "], "
