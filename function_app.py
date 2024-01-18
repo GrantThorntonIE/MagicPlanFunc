@@ -61,7 +61,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         
         
         # output = dir(req)
-        output = req.get_body.decode('utf-8')
+        output = req.get_body().decode('utf-8')
         
         
 
