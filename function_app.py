@@ -60,7 +60,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         
 
         output = {}
-        output['_HttpRequest__body_bytes'] = req._HttpRequest__body_bytes()
+        
         output['_HttpRequest__body_type'] = req._HttpRequest__body_type()
         output['_HttpRequest__headers'] = req._HttpRequest__headers()
         output['_HttpRequest__method'] = req._HttpRequest__method()
