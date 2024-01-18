@@ -61,7 +61,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         
         
         # output = dir(req)
-        output = req.get_body['xml']
+        output = req._HttpRequest__body_str
         
 
         sc = 200    # OK
