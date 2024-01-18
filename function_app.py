@@ -57,42 +57,12 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
         plan_name = 'test'
         email = 'RPASupport@ie.gt.com'
-        
-
-        output = {}
-                        
-        output['_HttpRequest__body_bytes'] = req._HttpRequest__body_bytes
-        output['_HttpRequest__body_type'] = req._HttpRequest__body_type
-        output['_HttpRequest__headers'] = req._HttpRequest__headers
-        output['_HttpRequest__method'] = req._HttpRequest__method
-        output['_HttpRequest__params'] = req._HttpRequest__params
-        output['_HttpRequest__route_params'] = req._HttpRequest__route_params
-        output['_HttpRequest__url'] = req._HttpRequest__url
-        output['__annotations__'] = req.__annotations__
-        output['__dict__'] = req.__dict__
-        output['__doc__'] = req.__doc__
-        output['__module__'] = req.__module__
-        output['__slots__'] = req.__slots__
-        output['files'] = req.files
-        output['form'] = req.form
-        output['headers'] = req.headers
-        output['method'] = req.method
-        output['params'] = req.params
-        output['route_params'] = req.route_params
-        output['url'] = req.url
-
-
-
-
-
-
+        xml = req._HttpRequest__form['xml']
 
         
+        # output['body'] = req.get_body().decode('utf-8')
         
-        
-        output['body'] = req.get_body().decode('utf-8')
-        
-        
+        output = xml
 
         sc = 200    # OK
 
