@@ -58,10 +58,18 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         plan_name = 'test'
         email = 'RPASupport@ie.gt.com'
         
+
+        output = {}
+        req_dir = dir(req)
+        for m in req_dir:
+            x = hasattr(m, '__getitem__')
+            output[m] = x
+
+
         
         
-        # output = dir(req)
-        output = req.get_body().decode('utf-8')
+        
+        # output = req.get_body().decode('utf-8')
         
         
 
