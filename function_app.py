@@ -54,16 +54,17 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
         form = dict(req.form)
 
-        
+        plan_name = form['title']
+        email = form['email']
         xml = form['xml']
         
 
-        plan_name = 'test'
-        email = 'RPASupport@ie.gt.com'
+        
+        
         
 
         
-        # output['body'] = req.get_body().decode('utf-8')
+        
         
         output = xml
 
