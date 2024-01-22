@@ -52,10 +52,10 @@ app = func.FunctionApp()
 def test_function(req: func.HttpRequest) -> func.HttpResponse:
     try:
 
+        form = dict(req.form)
 
-
-        _HttpRequest__form_dict = dict(req._HttpRequest__form)
-        xml = _HttpRequest__form_dict['xml']
+        
+        xml = form['xml']
         
 
         plan_name = 'test'
