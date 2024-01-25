@@ -459,10 +459,10 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                         # LOGGER.info('net_area: ' + str(net_area))
                         # wall_types[net_area_key][floor_index_adj] = net_area
                     except Exception as ex:
-                        exc_type, exc_obj, exc_tb = sys.exc_info()
-                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                        print(exc_type, fname, exc_tb.tb_lineno)
-                        # print('Could not find wall type in wall_type dict')
+                        # exc_type, exc_obj, exc_tb = sys.exc_info()
+                        # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        # print(exc_type, fname, exc_tb.tb_lineno)
+                        print('Could not find wall type in wall_type dict')
 
 
                 imaginary_floor_enum.append(floor_name)
