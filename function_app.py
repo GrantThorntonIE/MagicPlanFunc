@@ -145,9 +145,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         empty_array = [0] * len([floor for floor in floors if not re.search('[0-9][012346789]', floor.find('name').text)])
         imaginary_array = [0] * len([floor for floor in floors if re.search('[0-9][012346789]', floor.find('name').text)])
         full_floor_array = [0] * len(floors)
-        LOGGER.info('empty_array: ' + str(len(empty_array)))
-        LOGGER.info('imaginary_array: ' + str(len(imaginary_array)))
-        LOGGER.info('full_floor_array: ' + str(len(full_floor_array)))
+
 
         wd = pd.DataFrame(None, columns=['Window Type', 'Number of Openings', 'Number of Openings Draught Stripped', 'In Roof', 'Shading', 'Orientation', 'Area'])
 
@@ -171,9 +169,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                 floor_index_adj = None
                 floor_num = None
             
-            LOGGER.info('floor_name: ' + str(floor_name))
-            LOGGER.info('floor_num: ' + str(floor_num))
-            LOGGER.info('floor_index_adj: ' + str(floor_index_adj))
+
             
             extern_perim = 0
             wall_height = 0
@@ -441,7 +437,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                 # LOGGER.info('wall_types len: ' + str(len(wall_types)))
                 
                 for type in window_door_table:
-                    LOGGER.info('window_door_table type: ' + type)
+
                     window_door_area = window_door_table[type][floor_index_adj]
                     
                     gross_area_key = f'Wall Type {type} Area Gross'
@@ -453,9 +449,9 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                             print(wall_types[gross_area_key])
                             wall_types[net_area_key] = wall_types[gross_area_key].copy()
                         
-                        LOGGER.info('wall_types[net_area_key] len: ' + str(len(wall_types[net_area_key])))
+
                         area = wall_types[net_area_key][floor_index_adj]
-                        LOGGER.info('area: ' + str(area))
+
                         # net_area = area - window_door_area
                         # LOGGER.info('net_area: ' + str(net_area))
                         # wall_types[net_area_key][floor_index_adj] = net_area
@@ -464,7 +460,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                         print(exc_type, fname, exc_tb.tb_lineno)
                         # print('Could not find wall type in wall_type dict')
-                        LOGGER.info('Exception : ' + str(ex))
+
 
                 imaginary_floor_enum.append(floor_name)
                 wall_area_net = wall_area_gross - sum([window_door_table[key][floor_index] for key in window_door_table])
