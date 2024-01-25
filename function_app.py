@@ -61,15 +61,11 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
         
         root : ET.Element
-        with open(xmlfilepath) as f:
-            xml_data_as_string = f.read()
-            # print(xml_data_as_string)
 
-        root = dET.fromstring(xml_data_as_string)
         
-        # with urllib.request.urlopen(req.params.get('xml')) as f:
-            # s = f.read().decode('utf-8')
-            # root = dET.fromstring(s)
+        with urllib.request.urlopen(req.params.get('xml')) as f:
+            s = f.read().decode('utf-8')
+            root = dET.fromstring(s)
 
         lookup = {
             'LED/CFL'           : 'co-3a9c9ff6-2bad-4d62-9526-1df98538cbad',
