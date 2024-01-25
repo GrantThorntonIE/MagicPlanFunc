@@ -220,6 +220,9 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                         window_elem = floor.find(f'exploded/furniture[@symbolInstance="{id}"]')
                     if window_elem == None:
                         window_elem = floor.find(f'floorRoom/window[@symbolInstance="{id}"]') # another place you might find it
+                    if window_elem == None:
+                        window_elem = floor.find(f'floorRoom/door[@symbolInstance="{id}"]') # another place you might find it
+
                     
                     area = float(window_elem.get('height')) * float(window_elem.get('width'))
                     if wall_type not in window_door_table and wall_type != '':
