@@ -63,7 +63,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
         root : ET.Element
 
         
-        with urllib.request.urlopen(req.params.get('xml')) as f:
+        with urllib.request.urlopen(xml) as f:
             s = f.read().decode('utf-8')
             root = dET.fromstring(s)
 
