@@ -678,6 +678,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             {create_table(floor_table, imaginary_floor_enum, styling=styling)} \
             <h1>Roof Table</h1> \
             {create_table(roof_table, ['Name', 'Sum'], styling=styling, do_not_sum=['All'])} \
+            <h2>xml</h2>
             </div>"""
 
         # account_url = os.environ['AZ_STR_URL']
