@@ -9,7 +9,7 @@ import urllib.request
 import pandas as pd
 import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as dET
-#tes
+
 
 MAX_REAL_FLOORS = 10
 
@@ -45,7 +45,15 @@ def create_table(dict : dict[str, list[float]], headers : list,
     return output
 
 
-def function_old(root):
+def function_old(form):
+    plan_name = form['title']
+    email = form['email']
+    xml = form['xml']
+    root : ET.Element
+    with urllib.request.urlopen(xml) as f:
+        s = f.read().decode('utf-8')
+    root = dET.fromstring(s)
+
     lookup = {
         'LED/CFL'           : 'co-3a9c9ff6-2bad-4d62-9526-1df98538cbad',
         'Halogen Lamp'      : 'co-94486aec-b47a-4d75-aaf3-0645576bae56',
@@ -659,7 +667,16 @@ def function_old(root):
         {create_table(roof_table, ['Name', 'Sum'], styling=styling, do_not_sum=['All'])} \
         <h2>""" + xml + """</h2>
         </div>"""
-    return plan_name, output
+
+    json_data = json.dumps({
+        'email' : email,
+        'name'  : plan_name, 
+        'table' : output
+    })
+
+
+
+    return json_data
 
 
 
@@ -674,39 +691,8 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
         form = dict(req.form)
 
-        plan_name = form['title']
-        email = form['email']
-        xml = form['xml']
-        
 
-        
-        root : ET.Element
-
-        
-        with urllib.request.urlopen(xml) as f:
-            s = f.read().decode('utf-8')
-            root = dET.fromstring(s)
-
-
-        plan_name, ouput = function_old(root)
-
-        account_url = os.environ['AZ_STR_URL']
-        default_credential = DefaultAzureCredential()
-        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-        container_name = os.environ['AZ_CNTR_ST']
-        container_client = blob_service_client.get_container_client(container_name)
-        if not container_client.exists():
-            container_client = blob_service_client.create_container(container_name)
-
-        # output = xml
-
-        
-        json_data = json.dumps({
-            'email' : email,
-            'name'  : plan_name, 
-            'table' : output
-        })
-        
+        json_data = function_old(form)
 
         sc = 200    # OK
 
@@ -724,22 +710,11 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             container_client = blob_service_client.get_container_client(container_name)
             if not container_client.exists():
                 container_client = blob_service_client.create_container(container_name)
-    
-            json_data = json.dumps({
-                'email' : email,
-                'name'  : plan_name, 
-                'table' : str(output)
-            })
-    
             local_file_name = str(uuid.uuid4()) + '.json'
-    
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-    
             blob_client.upload_blob(json_data)
         except:
             sc = 500     # Internal Server Error
-        
-    
         return func.HttpResponse(status_code=sc)
 
     
