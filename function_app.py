@@ -815,7 +815,8 @@ def distributor_function(form):
     # elif "QA" in plan_name:
         # output = qa(root)
     
-    output = survey(root)
+    # output = survey(root)
+    output = ber_old(root)
 
 
     json_data = json.dumps({
