@@ -44,6 +44,22 @@ def create_table(dict : dict[str, list[float]], headers : list,
     output += '</table>'
     return output
 
+def create_table_text(dict, headers : list,
+                  do_not_sum : list[str] = [], 
+                  styling: str = "", colour_table : bool = False) -> str:
+    
+    output = f'<table {styling}><tr>'
+    
+    for header in headers:
+        output += f'<th>{header}</th>'
+    output += '</tr>'
+    
+    for i, key in enumerate(dict):
+        output += f'<tr><td>{key}</td>'
+        output += f'<td>{dict[key]}</td>'
+
+    output += '</table>'
+    return output
 
 def ber_old(root):
     
