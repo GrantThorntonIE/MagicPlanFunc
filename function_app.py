@@ -13,6 +13,21 @@ import defusedxml.ElementTree as dET
 
 MAX_REAL_FLOORS = 10
 
+@LOGGER.catch
+def build_lookup_table():
+    tablefilepath = r"Table_Survey.txt"
+    lookup_table = {}
+    with open(tablefilepath) as f:
+        tablelines = f.read().splitlines()
+    for tl in tablelines:
+        tl = tl.split("\t")
+        key = tl[0]
+        value = tl[1]
+        lookup_table[key] = value
+        # print(key, lookup_table[key])
+    return lookup_table
+
+
 def cart_distance(p1 : tuple[float, float], p2 : tuple[float, float]) -> float:
     (x1, y1) = p1
     (x2, y2) = p2
@@ -44,6 +59,7 @@ def create_table(dict : dict[str, list[float]], headers : list,
     output += '</table>'
     return output
 
+
 def create_table_text(dict, headers : list,
                   do_not_sum : list[str] = [], 
                   styling: str = "", colour_table : bool = False) -> str:
@@ -60,6 +76,9 @@ def create_table_text(dict, headers : list,
 
     output += '</table>'
     return output
+
+
+
 
 def ber_old(root):
     
