@@ -45,14 +45,8 @@ def create_table(dict : dict[str, list[float]], headers : list,
     return output
 
 
-def function_old(form):
-    plan_name = form['title']
-    email = form['email']
-    xml = form['xml']
-    root : ET.Element
-    with urllib.request.urlopen(xml) as f:
-        s = f.read().decode('utf-8')
-    root = dET.fromstring(s)
+def ber_old(root):
+    
 
     lookup = {
         'LED/CFL'           : 'co-3a9c9ff6-2bad-4d62-9526-1df98538cbad',
@@ -667,6 +661,121 @@ def function_old(form):
         {create_table(roof_table, ['Name', 'Sum'], styling=styling, do_not_sum=['All'])} \
         <h2>""" + xml + """</h2>
         </div>"""
+    
+    return output
+
+
+def preBER(root):
+    return
+def inspection(root):
+    return
+def qa(root):
+    return
+
+
+
+
+
+
+def survey(root):
+    try:
+        plan_name = root.get('name')
+        output = {'plan_name': plan_name}
+        # output['plan_name'] = plan_name
+        # print(output)
+        # for elem in root:
+            # print('root elem.tag', elem.tag)
+        
+        floors = root.findall('floor')
+        LOGGER.info('no of floors:' + str(len(floors)))
+        
+        # Calculated Field. Equals SUM of "Ground surface without walls: m²" for floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
+        floor_area = 0
+        floor_area_without_walls = 0
+        floor_area_with_walls = 0
+        # for floor in root.findall('floor[@floorType="10"]'):
+        for floor in floors:
+            if int(floor.get('floorType')) > 9:
+                continue
+            print('floorType: ' + floor.get('floorType'))
+            floor_area_without_walls += float(floor.get('areaWithoutWalls')) if floor.get('areaWithoutWalls') != None else 0
+            floor_area_with_walls += float(floor.get('areaWithInteriorWallsOnly')) if floor.get('areaWithInteriorWallsOnly') != None else 0
+        output['floor_area_without_walls'] = floor_area_without_walls
+        output['floor_area_with_walls'] = floor_area_with_walls
+        
+        # Count of floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
+        output['no_of_floors'] = len(floors)
+        
+        
+        
+        
+        
+        
+        lookup_table = build_lookup_table()
+        
+        ReqFields = SurveyFields
+        variable_name = [name for name, value in locals().items() if value is SurveyFields][0]
+        
+        print('')
+        print(variable_name)
+        for Field in ReqFields:
+            uid = lookup_table[Field] if Field in lookup_table.keys() else ''
+            # print(Field, uid)
+            value = root.find('values/value[@key="' + uid + '"]').text if root.find('values/value[@key="' + uid + '"]') != None else ''
+            # print(value)
+            output[Field] = value
+            # print(output[Field])
+        # print(output)
+        
+        
+        
+        styling = "border=\"1\""
+        output = create_table_text(output, headers = ['name', 'value'], styling=styling, do_not_sum=['All'])
+        
+        # print(output)
+
+
+        
+    except Exception as ex:
+        
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
+        # print('Could not find wall type in wall_type dict')
+        LOGGER.info('Exception : ' + str(ex))
+    finally:
+        return output
+    return output
+
+
+
+
+def distributor_function(form):
+    # At this point we can hopefully use info from the form to identify what type it is
+    # The extracted XML "root" is then sent to the appropriate function which returns a HTML formatted table as output
+    # which is then included in the JSON 
+    
+    plan_name = form['title']
+    email = form['email']
+    xml = form['xml']
+    root : ET.Element
+    with urllib.request.urlopen(xml) as f:
+        s = f.read().decode('utf-8')
+    root = dET.fromstring(s)
+
+    # if "Survey" in plan_name:
+        # output = survey(root)
+    # elif "BER" in plan_name:
+        # output = ber_old(root)
+    # elif "Pre BER" in plan_name:
+        # output = preBER(root)
+    # elif "Inspection" in plan_name:
+        # output = inspection(root)
+    # elif "QA" in plan_name:
+        # output = qa(root)
+    
+    output = survey(root)
+
 
     json_data = json.dumps({
         'email' : email,
@@ -690,9 +799,10 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
     try:
 
         form = dict(req.form)
+        json_data = distributor_function(form)
 
 
-        json_data = function_old(form)
+
 
         sc = 200    # OK
 
