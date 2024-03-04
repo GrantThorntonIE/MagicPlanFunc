@@ -13,6 +13,35 @@ import defusedxml.ElementTree as dET
 
 MAX_REAL_FLOORS = 10
 
+SurveyFields = ['Dwelling Type'
+, 'Dwelling Age *'
+, 'Age extension 1'
+, 'Age extension 2'
+, 'Asbestos Suspected *'
+, 'Property Height (m) *'
+, 'Internet Available *'
+, 'Wall Type *'
+, 'Wall Thickness (mm) *'
+, 'Insulation'
+, 'Insulation Present *'
+, 'Insulation Type *'
+, 'Can Insulation Thickness be Measured? *'
+, 'If ‘Yes’ enter insulation thickness (mm) *'
+, 'Is the property suitable for wall insulation? *'
+, 'No wall insulation details'
+, 'EWI/IWI > 25% *'
+, 'Suitable for Draught Proofing *'
+, 'Not suitable details Draughtproofing'
+, 'Notes (Walls)'
+, 'Notes (Windows and Doors)'
+, 'Adequate Access'
+, 'Cherry Picker Required'
+, 'Cherry Picker Required Details'
+, 'Mould/mildew identified by Surveyor or reported by the applicant at survey'
+, 'Mould/Mildew'
+, 'As confirmed by homeowner; property is a protected structure']
+
+
 @LOGGER.catch
 def build_lookup_table():
     lookup_table = {}
@@ -815,8 +844,8 @@ def distributor_function(form):
     # elif "QA" in plan_name:
         # output = qa(root)
     
-    # output = survey(root)
-    output = ber_old(root)
+    output = survey(root)
+    # output = ber_old(root)
 
 
     json_data = json.dumps({
