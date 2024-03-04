@@ -42,7 +42,7 @@ SurveyFields = ['Dwelling Type'
 , 'As confirmed by homeowner; property is a protected structure']
 
 
-@LOGGER.catch
+
 def build_lookup_table():
     lookup_table = {}
     
@@ -757,7 +757,7 @@ def survey(root):
             # print('root elem.tag', elem.tag)
         
         floors = root.findall('floor')
-        LOGGER.info('no of floors:' + str(len(floors)))
+        # LOGGER.info('no of floors:' + str(len(floors)))
         
         # Calculated Field. Equals SUM of "Ground surface without walls: m²" for floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
         floor_area = 0
@@ -812,7 +812,7 @@ def survey(root):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
         # print('Could not find wall type in wall_type dict')
-        LOGGER.info('Exception : ' + str(ex))
+        # LOGGER.info('Exception : ' + str(ex))
     finally:
         return output
     return output
