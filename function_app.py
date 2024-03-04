@@ -847,6 +847,7 @@ def distributor_function(form):
     output = survey(root)
     # output = ber_old(root)
 
+    output = '<h1>Value Table</h1>' + output + '<h2>' + xml + '</h2></div>'
 
     json_data = json.dumps({
         'email' : email,
