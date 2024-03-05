@@ -163,11 +163,11 @@ Supplementary
 Adequate Access	qf.052d3d15q1
 Cherry Picker Required	qf.052d3d15q2
 Cherry Picker Required Details	qf.052d3d15q10
-Roof 1 Type*	qf.9b8be3d3q136
-Roof 2 Type*	qf.9b8be3d3q137
-Roof 3 Type*	qf.9b8be3d3q138
-Sloped Ceiling Roof 1*	qf.9b8be3d3q140
-Roof Type 1 Insulation Exists*	qf.9b8be3d3q143
+Roof 1 Type *	qf.9b8be3d3q136
+Roof 2 Type *	qf.9b8be3d3q137
+Roof 3 Type *	qf.9b8be3d3q138
+Sloped Ceiling Roof 1 *	qf.9b8be3d3q140
+Roof Type 1 Insulation Exists *	qf.9b8be3d3q143
 
 Mould/mildew identified by Surveyor or reported by the applicant at survey	qf.052d3d15q11
 Mould/Mildew	qf.052d3d15q13
