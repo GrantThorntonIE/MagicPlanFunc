@@ -40,11 +40,7 @@ SurveyFields = ['Dwelling Type'
 , 'Mould/mildew identified by Surveyor or reported by the applicant at survey'
 , 'Mould/Mildew'
 , 'As confirmed by homeowner; property is a protected structure'
-, 'Roof 1 Type *'
-, 'Roof 2 Type *'
-, 'Roof 3 Type *'
-, 'Sloped Ceiling Roof 1 *'
-, 'Roof Type 1 Insulation Exists *']
+, 'Roof 1 Type *']
 
 
 
@@ -797,8 +793,6 @@ def survey(root):
             uid = lookup_table[Field] if Field in lookup_table.keys() else ''
             # print(Field, uid)
             value = root.find('values/value[@key="' + uid + '"]').text if root.find('values/value[@key="' + uid + '"]') != None else ''
-            if value == '':
-                value = root.find('floor/floorRoom/values/value[@key="' + uid + '"]').text if root.find('floor/floorRoom/values/value[@key="' + uid + '"]') != None else ''
             # print(value)
             output[Field] = value
             # print(output[Field])
