@@ -39,7 +39,12 @@ SurveyFields = ['Dwelling Type'
 , 'Cherry Picker Required Details'
 , 'Mould/mildew identified by Surveyor or reported by the applicant at survey'
 , 'Mould/Mildew'
-, 'As confirmed by homeowner; property is a protected structure']
+, 'As confirmed by homeowner; property is a protected structure'
+, 'Roof 1 Type*'
+, 'Roof 2 Type*'
+, 'Roof 3 Type*'
+, 'Sloped Ceiling Roof 1*'
+, 'Roof Type 1 Insulation Exists*']
 
 
 
