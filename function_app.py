@@ -753,7 +753,7 @@ def qa(root):
 
 
 
-def survey(root, json_data = ''):
+def survey(root):
     try:
         plan_name = root.get('name')
         output = {'plan_name': plan_name}
