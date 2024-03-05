@@ -44,7 +44,8 @@ SurveyFields = ['Dwelling Type'
 , 'Roof 2 Type *'
 , 'Roof 3 Type *'
 , 'Sloped Ceiling Roof 1 *'
-, 'Roof Type 1 Insulation Exists *']
+, 'Roof Type 1 Insulation Exists *'
+]
 
 
 
@@ -752,20 +753,14 @@ def qa(root):
 
 
 
-def survey(root):
+def survey(root, json_data = ''):
     try:
         plan_name = root.get('name')
         output = {'plan_name': plan_name}
-        # output['plan_name'] = plan_name
-        # print(output)
-        # for elem in root:
-            # print('root elem.tag', elem.tag)
-        
         floors = root.findall('floor')
-        # LOGGER.info('no of floors:' + str(len(floors)))
-        
-        # Calculated Field. Equals SUM of "Ground surface without walls: m²" for floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
-        floor_area = 0
+
+
+        floor_area = 0 # Calculated Field. Equals SUM of "Ground surface without walls: m²" for floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
         floor_area_without_walls = 0
         floor_area_with_walls = 0
         # for floor in root.findall('floor[@floorType="10"]'):
@@ -778,8 +773,25 @@ def survey(root):
         output['floor_area_without_walls'] = floor_area_without_walls
         output['floor_area_with_walls'] = floor_area_with_walls
         
+        
+        
         # Count of floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
         output['no_of_floors'] = len(floors)
+        
+        
+        
+        values = root.findall('value')
+        for value in values:
+            print(value.attrib["key"])
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
@@ -795,12 +807,15 @@ def survey(root):
         print(variable_name)
         for Field in ReqFields:
             uid = lookup_table[Field] if Field in lookup_table.keys() else ''
-            # print(Field, uid)
+            print(Field, uid)
             value = root.find('values/value[@key="' + uid + '"]').text if root.find('values/value[@key="' + uid + '"]') != None else ''
-            # print(value)
+            if value == '':
+                value = root.find('floor/floorRoom/values/value[@key="' + uid + '"]').text if root.find('floor/floorRoom/values/value[@key="' + uid + '"]') != None else ''
+
+            print(value)
             output[Field] = value
-            # print(output[Field])
-        # print(output)
+            print(output[Field])
+        print(output)
         
         
         
