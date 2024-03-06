@@ -13,56 +13,6 @@ import defusedxml.ElementTree as dET
 
 MAX_REAL_FLOORS = 10
 
-SurveyFields = ['Dwelling Type'
-, 'Dwelling Age *'
-, 'Age extension 1'
-, 'Age extension 2'
-, 'Asbestos Suspected *'
-, 'Property Height (m) *'
-, 'Internet Available *'
-, 'Wall Type *'
-, 'Wall Thickness (mm) *'
-, 'Insulation'
-, 'Insulation Present *'
-, 'Insulation Type *'
-, 'Can Insulation Thickness be Measured? *'
-, 'If ‘Yes’ enter insulation thickness (mm) *'
-, 'Is the property suitable for wall insulation? *'
-, 'No wall insulation details'
-, 'EWI/IWI > 25% *'
-, 'Suitable for Draught Proofing *'
-, 'Not suitable details Draughtproofing'
-, 'Notes (Walls)'
-, 'Notes (Windows and Doors)'
-, 'Adequate Access'
-, 'Cherry Picker Required'
-, 'Cherry Picker Required Details'
-, 'Mould/mildew identified by Surveyor or reported by the applicant at survey'
-, 'Mould/Mildew'
-, 'As confirmed by homeowner; property is a protected structure'
-, 'Roof 1 Type *']
-
-
-
-def build_lookup_table():
-    lookup_table = {}
-    
-    tablefilepath = r"Table_Survey.txt"
-    with open(tablefilepath) as f:
-        tablelines = f.read().splitlines()
-    
-    
-    # tablelines = ['Dwelling Type	qf.395b3ff9q1', 'Dwelling Age *	qf.395b3ff9q3', 'Age extension 1	qf.395b3ff9q7', 'Age extension 2	qf.395b3ff9q17', 'Asbestos Suspected *	qf.395b3ff9q25', 'Lot *	', 'Survey Date *	', 'Gross floor area (m2) *	', 'Number of Storeys *	', 'No. Single Glazed Windows *	', 'No. Double Glazed Windows *	', 'Property Height (m) *	qf.395b3ff9q23', 'Eircode	', 'Internet Available *	qf.395b3ff9q24', 'Roof Type *	', 'Sloped Ceiling *	', 'Roof 1 greater than 2/3 floor area *	', 'Roof Pitch (degrees) *	', 'Insulation	', 'Insulation Exists *	', 'Can Insulation Thickness be Measured? *	', 'Thickness (mm) *	', 'Roof Insulation	', 'Ventilation	', 'Required per standards (mm2) *	', 'Existing (mm2) *	', 'General	', 'Area of attic with fixed flooring (m2) *	', 'Folding attic / stair ladder *	', 'Fixed light in attic *	', 'Downlighters in Attic *	', 'High power cable in the attic (6 sq / 10sq or higher) *	', 'Suitable for Insulation *	', 'Not suitable details*	', 'Notes (Roof)	', 'Work Order Recommendation	', 'Attic Insulation	', 'Internal Wall Insulation: Sloped or flat (horizontal) surface	', 'Attic (Loft) Insulation 100 mm top-up	', 'Attic (Loft) Insulation 150 mm top-up	', 'Attic (Loft) Insulation 200 mm top-up	', 'Attic (Loft) Insulation 250 mm top up	', 'Attic (Loft) Insulation 300 mm	', 'Warm deck flat roof insulation	', 'Other Attic Measures	', 'Attic Storage (5m2)	', 'Installation of new attic hatch	', 'Roof Ventilation	', 'Additional Roof Ventilation (High Level)	 ', 'Additional Roof Ventilation (Low Level)	', 'Wall Type	', 'Construction	', 'Wall Type *	qf.4a8b4689q0', 'Wall Thickness (mm) *	qf.4a8b4689q1', 'Insulation	', 'Insulation Present *	qf.4a8b4689q-2', 'Insulation Type *	qf.4a8b4689q380', 'Can Insulation Thickness be Measured? *	', 'If ‘Yes’ enter insulation thickness (mm) *	qf.4a8b4689q399', 'Is the property suitable for wall insulation? *	qf.4a8b4689q-475', 'No wall insulation details	qf.4a8b4689q476', 'EWI/IWI > 25% *	', 'Suitable for Draught Proofing *	', 'Not suitable details Draughtproofing	qf.4a8b4689q377[0]-[3]', 'Notes (Walls)	qf.4a8b4689q472', 'Work Order Recommendation	', 'Doors	', 'Draught Proofing	', 'Draught Proofing (<= 20m installed)	', 'Draught Proofing (> 20m installed)	', 'Mechanical Extract Ventilation	', 'MEV 15l/s Bathroom	', 'MEV 30l/s Utility	', 'MEV 60l/s Kitchen	', 'Non Mechanical Wall Vent	', 'Permanent ventilation wall vent (Certified Proprietary Integrated System)	', 'Background ventilation wall vent (Certified Proprietary Integrated System)	', 'Ducting existing cooker hood to exterior	', 'Wall Insulation	', 'Cavity Wall Insulation Bonded Bead	', 'Loose Fibre Extraction	', 'External Wall Insulation: Less than 60m2	', 'External Wall Insulation: 60m2 to 85m2	', 'External Wall Insulation: Greater than 85m2	', 'ESB alteration	', 'GNI meter alteration	', 'GNI new connection	', 'RGI Meter_No Heating	', 'Internal Wall Insulation: Vertical Surface	', 'External wall insulation and CWI: less than 60m2	', 'External wall insulation and CWI: 60m2 to 85m2	', 'External wall insulation and CWI: greater than 85m2	', 'Window (same m2 rate will apply to windows with certified trickle vents)	', 'Notes (Windows and Doors)	qf.4a8b4689q-493', 'Heating System *	', 'Qualifying Boiler	', 'System Age *	', 'Fully Working *	', 'Requires Service *	', 'Other Primary Heating Details	', 'Not Working Details Primary Heating *	', 'Requires Service Details Primary Heating *	', 'Hot Water System	', 'System Exists *	', 'From Primary heating system	', 'From Secondary heating system	', 'Electric Immersion	', 'Electric Instantaneous	', 'Instantaneous Combi Boiler	', 'Other	', 'Other HW Details *	', 'Hot Water Cylinder, Insulation and Control 	', 'Hot Water Cylinder*	', 'Insulation *	', 'Condition of Lagging Jacket *	', 'Controls *	', 'Heating Systems Controls	', 'Controls *	', '	', 'Programmer / Timeclock *	', 'Room Thermostat Number *	', 'Rads Number *	', 'TRVs Number *	', 'Suitable for Heating Measures *	', 'Not suitable details*	', 'Notes (Heating)	', 'Work Order Recommendation	', 'Basic Gas Heating System	', 'Basic gas heating system	', 'Basic Oil Heating System	', 'Basic oil heating system	', 'Full Gas Heating System Installation	', 'Full gas heating system installation	', 'Full Heating Controls Pack	', 'Full Oil Heating System Installation	', 'Full oil heating system installation	', 'Gas Boiler and Controls (Basic & Controls Pack)	', 'Gas boiler and controls (Basic & controls pack)	', 'Heat Pump	', 'Heating Measure Adjustments, Extras & Other Measures	', 'Hot Water Cylinder Jacket	', 'Oil Boiler and Controls (Basic & Controls Pack)	', 'Oil boiler and controls (Basic & controls pack)	', 'Oil Tank Pack Price	', 'Radiators and TRVs	', 'Secondary Heating System	', 'System Age *	', 'Fully Working *	', 'Requires Service *	', 'Not Working Details Secondary Heating *	', 'Requires Service Details Secondary Heating *	', 'Mechanical Ventilation Systems and Air Tightness Testing & Energy	', 'Work Order Recommendation	', 'Air Tightness Testing	', 'Air Tightness Testing	', 'Energy	', 'LED Bulbs: supply only (4 no.)	', 'Mechanical Ventilation System	', 'Number of habitable rooms in the property *	', 'Number of wet rooms in the property *	', 'No. of habitable/wet rooms w/ open flued appliance *	', 'Supplementary	', 'Adequate Access	qf.052d3d15q1', 'Cherry Picker Required	qf.052d3d15q2', 'Cherry Picker Required Details	qf.052d3d15q10', 'Mould/mildew identified by Surveyor or reported by the applicant at survey	qf.052d3d15q11', 'Mould/Mildew	qf.052d3d15q13', 'As confirmed by homeowner; property is a protected structure	qf.052d3d15q4']
-    
-    for tl in tablelines:
-        tl = tl.split("\t")
-        key = tl[0]
-        value = tl[1]
-        lookup_table[key] = value
-        # print(key, lookup_table[key])
-    return lookup_table
-
-
 
 def cart_distance(p1 : tuple[float, float], p2 : tuple[float, float]) -> float:
     (x1, y1) = p1
@@ -745,17 +695,64 @@ def qa(root):
 
 
 
-
-
-
 def survey(root):
     try:
         plan_name = root.get('name')
-        output = {'plan_name': plan_name}
-        # output['plan_name'] = plan_name
-        # print(output)
-        # for elem in root:
-            # print('root elem.tag', elem.tag)
+        output_dict = {'plan_name': plan_name}
+        
+        id = root.get('id')
+        print(id)
+        
+        json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(id)
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36","key": "45170e50321733db78952dfa5901b0dfeeb8", "customer": "63b5a4ae69c91", "accept": "application/json"}
+        request = urllib.request.Request(json_url, headers=headers)
+        JSON = urllib.request.urlopen(request).read()
+        JSON = json.loads(JSON)
+        
+        df = pd.DataFrame(JSON["data"])
+        
+        # print(df)
+        json_ref_dict = {}
+        for form in df.forms:
+            df2 = pd.DataFrame(form)
+            # print(df2)
+            for section in df2.sections:
+                df3 = pd.DataFrame(section)
+                # print(df3)
+                for field in df3.fields:
+                    df4 = pd.DataFrame(field)
+                    # print(df4)
+                    for index, row in df4.iterrows():
+                        # print(row["id"], row["label"])
+                        json_ref_dict[row["id"]] = row["label"]
+                    # for v in df4.value:
+                        # df5 = pd.DataFrame(v)
+                        # print(df5)
+        
+        # file = plan_name + '.json'
+        # with open(file, 'w') as outfile:
+            # json.dump(json_ref, outfile, indent=4)
+        
+
+        # Now we want to go through the XML, referring to the JSON data whenever we need to
+        
+        values = root.findall('values/value')
+        for value in values:
+            k = value.attrib["key"]
+            if value.attrib["key"] in json_ref_dict.keys():
+                k = json_ref_dict[value.attrib["key"]]
+            if 'statistics.' in k:
+                continue
+            output_dict[k] = value.text
+        
+        
+        values = root.findall('floor/floorRoom/values/value')
+        for value in values:
+            k = value.attrib["key"]
+            if value.attrib["key"] in json_ref_dict.keys():
+                k = json_ref_dict[value.attrib["key"]]
+            output_dict[k] = value.text
+        
         
         floors = root.findall('floor')
         # LOGGER.info('no of floors:' + str(len(floors)))
@@ -771,49 +768,26 @@ def survey(root):
             print('floorType: ' + floor.get('floorType'))
             floor_area_without_walls += float(floor.get('areaWithoutWalls')) if floor.get('areaWithoutWalls') != None else 0
             floor_area_with_walls += float(floor.get('areaWithInteriorWallsOnly')) if floor.get('areaWithInteriorWallsOnly') != None else 0
-        output['floor_area_without_walls'] = floor_area_without_walls
-        output['floor_area_with_walls'] = floor_area_with_walls
+        output_dict['floor_area_without_walls'] = floor_area_without_walls
+        output_dict['floor_area_with_walls'] = floor_area_with_walls
         
         # Count of floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
-        output['no_of_floors'] = len(floors)
-        
-        
-        
-        
-        
-        
-        lookup_table = build_lookup_table()
-        
-        ReqFields = SurveyFields
-        variable_name = [name for name, value in locals().items() if value is SurveyFields][0]
-        
-        print('')
-        print(variable_name)
-        for Field in ReqFields:
-            uid = lookup_table[Field] if Field in lookup_table.keys() else ''
-            # print(Field, uid)
-            value = root.find('values/value[@key="' + uid + '"]').text if root.find('values/value[@key="' + uid + '"]') != None else ''
-            # print(value)
-            output[Field] = value
-            # print(output[Field])
-        # print(output)
-        
-        
-        
+        output_dict['no_of_floors'] = len(floors)
+
+
         styling = "border=\"1\""
-        output = create_table_text(output, headers = ['name', 'value'], styling=styling, do_not_sum=['All'])
+        output = create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'])
         
-        # print(output)
-
-
         
     except Exception as ex:
+        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
+        # output = traceback.format_exc()
+        # exc_type, exc_obj, exc_tb = sys.exc_info()
+        # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
+        output = str(ex)
         
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
-        # print('Could not find wall type in wall_type dict')
-        # LOGGER.info('Exception : ' + str(ex))
+        # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        # print(exc_type, fname, exc_tb.tb_lineno)
     finally:
         return output
     return output
