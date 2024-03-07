@@ -796,13 +796,15 @@ def survey(root):
                 print(json_val_dict[f"Roof Type {n} Suitable for Insulation*"])
                 if json_val_dict[f"Roof Type {n} Suitable for Insulation*"] == True:
                     json_val_dict["Suitable for Insulation *"] = True
-            
+        
+        for n in range(1, 4):
             if json_val_dict["Suitable for Insulation *"] == False:
                 if f"Roof Type {n} Not Suitable Details" in json_val_dict.keys():
                     json_val_dict["Not suitable details*"] += f"Roof Type {n} Not Suitable Details: "
                     json_val_dict["Not suitable details*"] += json_val_dict[f"Roof Type {n} Not Suitable Details"]
                     json_val_dict["Not suitable details*"] += "<BR>"
-            
+        
+        for n in range(1, 4):
             if f"Notes (Roof Type {n})*" in json_val_dict.keys():
                 json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n})*: "
                 json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})*"]
