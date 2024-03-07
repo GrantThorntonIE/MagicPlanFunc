@@ -727,31 +727,33 @@ def qa(root):
 
 def survey(root):
     try:
-        field_list_ordered = ['Roof 1 Type*', 'Sloped Ceiling Roof 1*', 'Roof 1 greater than 2/3 floor area*', 'Roof 1 Pitch (degrees)*', 'Roof Type 1 Insulation Exists*', 'Can Insulation Thickness be Measured?*', 'Roof 1 Thickness (mm)*', 'Area of Roof Type 1 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 1*', 'Fixed light in Roof Type 1*', 'Downlighters in Roof Type 1*', 'High power cable in Roof Type 1 (6sq/10sq or higher)*', 'Roof 2 Type', 'Sloped Ceiling Roof 2*', 'Roof 2 greater than 2/3 floor area*', 'Roof 2 Pitch (degrees)*', 'Roof 2 Insulation Exists*', 'Roof 2 Thickness (mm)*', 'Area of Roof Type 2 with fixed flooring (m2)', 'Folding/stair ladder in Roof Type 2', 'Fixed light in Roof Type 2', 'Downlighters in Roof Type 2', 'High power cable in Roof Type 2 (6sq/10sq or higher)', 'Roof 3 Type', 'Sloped Ceiling Roof 3*', 'Roof 3 greater than 2/3 floor area*', 'Roof 3 Pitch (degrees)*', 'Roof Type 3 Insulation Exists*', 'Roof 3 Thickness (mm)*', 'Roof 3 Insulation Type*', 'Area of Roof Type 3 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 3*', 'Fixed light in Roof Type 3*', 'Downlighters in Roof Type 3*', 'High power cable in Roof Type 3 (6sq/10sq or higher)*', 'Roof 4 Type', 'Roof 4 Pitch (degrees)*', 'Roof 4 Insulation Exists*', 'Roof 4 Thickness (mm)*', 'Area of Roof Type 4 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 4*', 'Fixed light in Roof Type 4*', 'Downlighters in Roof Type 4*', 'High power cable in Roof Type 4 (6sq/10sq or higher)*', 'Suitable for Insulation']
         plan_name = root.get('name')
-        output_dict = {'plan_name': plan_name}
+        json_val_dict = {'plan_name': plan_name}
+        field_list_ordered = ['Roof 1 Type*', 'Sloped Ceiling Roof 1*', 'Roof 1 greater than 2/3 floor area*', 'Roof 1 Pitch (degrees)*', 'Roof Type 1 Insulation Exists*', 'Can Roof Type 1 Insulation Thickness be Measured?*', 'Roof 1 Thickness (mm)*', 'Roof 1 Insulation Type*', 'sum_low', 'sum_existing', 'Area of Roof Type 1 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 1*', 'Fixed light in Roof Type 1*', 'Downlighters in Roof Type 1*', 'High power cable in Roof Type 1 (6sq/10sq or higher)*', 'Roof 2 Type', 'Sloped Ceiling Roof 2*', 'Roof 2 greater than 2/3 floor area*', 'Roof 2 Pitch (degrees)*', 'Roof 2 Insulation Exists*', 'Can Insulation Thickness be Measured?*', 'Roof 2 Thickness (mm)*', 'Roof 2 Insulation Type*', 'Area of Roof Type 2 with fixed flooring (m2)', 'Folding/stair ladder in Roof Type 2', 'Fixed light in Roof Type 2', 'Downlighters in Roof Type 2', 'High power cable in Roof Type 2 (6sq/10sq or higher)', 'Roof 3 Type', 'Sloped Ceiling Roof 3*', 'Roof 3 greater than 2/3 floor area*', 'Roof 3 Pitch (degrees)*', 'Roof Type 3 Insulation Exists*', 'Can Roof Type 3 Insulation Thickness be Measured?*', 'Roof 3 Thickness (mm)*', 'Roof 3 Insulation Type*', 'Area of Roof Type 3 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 3*', 'Fixed light in Roof Type 3*', 'Downlighters in Roof Type 3*', 'High power cable in Roof Type 3 (6sq/10sq or higher)*', 'Roof 4 Type', 'Sloped Ceiling Roof 4*', 'Roof 4 greater than 2/3 floor area*', 'Roof 4 Pitch (degrees)*', 'Roof 4 Insulation Exists*', 'Can Roof Type 4 Insulation Thickness be Measured?*', 'Roof 4 Thickness (mm)*', 'Roof 4 Insulation Type*', 'Area of Roof Type 4 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 4*', 'Fixed light in Roof Type 4*', 'Downlighters in Roof Type 4*', 'High power cable in Roof Type 4 (6sq/10sq or higher)*', 'Suitable for Insulation *', 'Not suitable details*', 'Notes (Roof)']
         
         id = root.get('id')
         print(id)
         
-        
-        # json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
-        
-        
-        
-        json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(id)
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
             ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
             , "customer": "63b5a4ae69c91"
             , "accept": "application/json"
             }
+        
+        
+        json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(id)
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
-        
         df = pd.DataFrame(JSON["data"])
         
+        
+        # file = plan_name + '_forms.json'
+        # with open(file, 'w') as outfile:
+            # json.dump(JSON, outfile, indent=4)
+            
+            
         # print(df)
         json_ref_dict = {}
         for form in df.forms:
@@ -762,37 +764,136 @@ def survey(root):
                 # print(df3)
                 for field in df3.fields:
                     df4 = pd.DataFrame(field)
+                    # print('df4')
                     # print(df4)
                     for index, row in df4.iterrows():
                         # print(row["id"], row["label"])
                         json_ref_dict[row["id"]] = row["label"]
-                    # for v in df4.value:
-                        # df5 = pd.DataFrame(v)
-                        # print(df5)
+                        # v = [val["value"] for val in row["value"]["values"]] if row["value"]["value"] == None else row["value"]["value"]
+                        v = ''
+                        # if row["type_as_string"] == 'list':
+                        if row["value"]["value"] == None:
+                            vals = [val["value"] for val in row["value"]["values"]]
+                            for val in vals:
+                                v += val
+                                v += '<BR>'
+                            v = v[:-2]
+                        else:
+                            v = row["value"]["value"]
+                        json_val_dict[row["label"]] = v
+                        
+        # for x in json_val_dict:
+            # print(x, json_val_dict[x])
+        json_val_dict["Suitable for Insulation *"] = False
+        json_val_dict["Not suitable details*"] = ''
+        json_val_dict["Notes (Roof)"] = ''
+        for n in range(1, 4):
+            if f"Roof Type {n} Suitable for Insulation" in json_val_dict.keys():
+                print(json_val_dict[f"Roof Type {n} Suitable for Insulation"])
+                if json_val_dict[f"Roof Type {n} Suitable for Insulation"] == True:
+                    json_val_dict["Suitable for Insulation *"] = True
+            if f"Roof Type {n} Suitable for Insulation*" in json_val_dict.keys():
+                print(json_val_dict[f"Roof Type {n} Suitable for Insulation*"])
+                if json_val_dict[f"Roof Type {n} Suitable for Insulation*"] == True:
+                    json_val_dict["Suitable for Insulation *"] = True
+            
+            if json_val_dict["Suitable for Insulation *"] == False:
+                if f"Roof Type {n} Not Suitable Details" in json_val_dict.keys():
+                    json_val_dict["Not suitable details*"] += f"Roof Type {n} Not Suitable Details: "
+                    json_val_dict["Not suitable details*"] += json_val_dict[f"Roof Type {n} Not Suitable Details"]
+                    json_val_dict["Not suitable details*"] += "<BR>"
+            
+            if f"Notes (Roof Type {n})*" in json_val_dict.keys():
+                json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n})*: "
+                json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})*"]
+                json_val_dict["Notes (Roof)"] += "<BR>"
+            
         
+        # print(json_val_dict["Notes (Roof)"])
+        
+        json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
+        request = urllib.request.Request(json_url, headers=headers)
+        JSON = urllib.request.urlopen(request).read()
+        JSON = json.loads(JSON)        
+        df = pd.DataFrame(JSON["data"])
+        
+        # print(df)
         # file = plan_name + '.json'
         # with open(file, 'w') as outfile:
-            # json.dump(json_ref, outfile, indent=4)
+            # json.dump(JSON, outfile, indent=4)
+
+        sum_low = 0
+        sum_existing = 0
+        for floor in df.project_statistics.floors:
+            # df2 = pd.DataFrame(floor)
+            # print(df2)
+            # print(floor["name"])
+            if floor["name"] == "Roof":
+                for room in floor["rooms"]:
+                    for furniture in room["furnitures"]:
+                        if furniture["name"] == "New Low Level Roof Ventilation":
+                            sum_low += float(furniture["width"])
+                        if furniture["name"] == "Existing Roof Ventilation":
+                            sum_existing += float(furniture["width"])
+                            
+            
+        json_val_dict['Required per standards (mm2) *'] = sum_low * 10000
+        json_val_dict['Existing (mm2) *'] = sum_existing * 10000
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
 
-        # Now we want to go through the XML, referring to the JSON data whenever we need to
+        # print(json_val_dict)
         
-        values = root.findall('values/value')
-        for value in values:
-            k = value.attrib["key"]
-            if value.attrib["key"] in json_ref_dict.keys():
-                k = json_ref_dict[value.attrib["key"]]
-            if 'statistics.' in k:
-                continue
-            output_dict[k] = value.text
+
+
+
+
+
+
+
+        # Go through the XML, referring to the JSON data whenever we need to - this is now disused but might need it again if there are any required values not included in the JSON (e.g. counts of objects)
+        
+        # values = root.findall('values/value')
+        # for value in values:
+            # k = value.attrib["key"]
+            # if value.attrib["key"] in json_ref_dict.keys():
+                # k = json_ref_dict[value.attrib["key"]]
+            # if 'statistics.' in k:
+                # continue
+            # output_dict[k] = value.text
         
         
-        values = root.findall('floor/floorRoom/values/value')
-        for value in values:
-            k = value.attrib["key"]
-            if value.attrib["key"] in json_ref_dict.keys():
-                k = json_ref_dict[value.attrib["key"]]
-            output_dict[k] = value.text
+        # values = root.findall('floor/floorRoom/values/value')
+        # for value in values:
+            # k = value.attrib["key"]
+            # if value.attrib["key"] in json_ref_dict.keys():
+                # k = json_ref_dict[value.attrib["key"]]
+            # output_dict[k] = value.text
+        
+        
+        
+        
+        
+        output_dict = json_val_dict
+        
+        
         
         
         floors = root.findall('floor')
@@ -825,6 +926,7 @@ def survey(root):
         # output = traceback.format_exc()
         # exc_type, exc_obj, exc_tb = sys.exc_info()
         # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
+        
         output = str(ex)
         
         # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
