@@ -10,8 +10,12 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as dET
 
+# from loguru import logger as LOGGER
+# import traceback
 
 MAX_REAL_FLOORS = 10
+
+
 
 
 def cart_distance(p1 : tuple[float, float], p2 : tuple[float, float]) -> float:
@@ -48,19 +52,42 @@ def create_table(dict : dict[str, list[float]], headers : list,
 
 def create_table_text(dict, headers : list,
                   do_not_sum : list[str] = [], 
-                  styling: str = "", colour_table : bool = False) -> str:
-    
-    output = f'<table {styling}><tr>'
-    
-    for header in headers:
-        output += f'<th>{header}</th>'
-    output += '</tr>'
-    
-    for i, key in enumerate(dict):
-        output += f'<tr><td>{key}</td>'
-        output += f'<td>{dict[key]}</td>'
+                  styling: str = "", order_list = []) -> str:
+    try:
+        
+        # print(dict)
+        
+        output = f'<table {styling}><tr>'
+        
+        for header in headers:
+            output += f'<th>{header}</th>'
+        output += '</tr>'
+        
+        if len(order_list) != 0:
+            for item in order_list:
+                output += f'<tr><td>{item}</td>'
+                value = dict[item] if item in dict.keys() else ''
+                output += f'<td>{value}</td>'
+        else:
+            for i, key in enumerate(dict):
+                output += f'<tr><td>{key}</td>'
+                output += f'<td>{dict[key]}</td>'
 
-    output += '</table>'
+        output += '</table>'
+        
+        
+    except Exception as ex:
+        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
+        # output = traceback.format_exc()
+        # exc_type, exc_obj, exc_tb = sys.exc_info()
+        # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
+        output = str(ex)
+        print(output)
+        
+        # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        # print(exc_type, fname, exc_tb.tb_lineno)
+    finally:
+        return output
     return output
 
 
@@ -695,16 +722,30 @@ def qa(root):
 
 
 
+
+
+
 def survey(root):
     try:
+        field_list_ordered = ['Roof 1 Type*', 'Sloped Ceiling Roof 1*', 'Roof 1 greater than 2/3 floor area*', 'Roof 1 Pitch (degrees)*', 'Roof Type 1 Insulation Exists*', 'Can Insulation Thickness be Measured?*', 'Roof 1 Thickness (mm)*', 'Area of Roof Type 1 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 1*', 'Fixed light in Roof Type 1*', 'Downlighters in Roof Type 1*', 'High power cable in Roof Type 1 (6sq/10sq or higher)*', 'Roof 2 Type', 'Sloped Ceiling Roof 2*', 'Roof 2 greater than 2/3 floor area*', 'Roof 2 Pitch (degrees)*', 'Roof 2 Insulation Exists*', 'Roof 2 Thickness (mm)*', 'Area of Roof Type 2 with fixed flooring (m2)', 'Folding/stair ladder in Roof Type 2', 'Fixed light in Roof Type 2', 'Downlighters in Roof Type 2', 'High power cable in Roof Type 2 (6sq/10sq or higher)', 'Roof 3 Type', 'Sloped Ceiling Roof 3*', 'Roof 3 greater than 2/3 floor area*', 'Roof 3 Pitch (degrees)*', 'Roof Type 3 Insulation Exists*', 'Roof 3 Thickness (mm)*', 'Roof 3 Insulation Type*', 'Area of Roof Type 3 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 3*', 'Fixed light in Roof Type 3*', 'Downlighters in Roof Type 3*', 'High power cable in Roof Type 3 (6sq/10sq or higher)*', 'Roof 4 Type', 'Roof 4 Pitch (degrees)*', 'Roof 4 Insulation Exists*', 'Roof 4 Thickness (mm)*', 'Area of Roof Type 4 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 4*', 'Fixed light in Roof Type 4*', 'Downlighters in Roof Type 4*', 'High power cable in Roof Type 4 (6sq/10sq or higher)*', 'Suitable for Insulation']
         plan_name = root.get('name')
         output_dict = {'plan_name': plan_name}
         
         id = root.get('id')
         print(id)
         
+        
+        # json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
+        
+        
+        
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(id)
-        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36","key": "45170e50321733db78952dfa5901b0dfeeb8", "customer": "63b5a4ae69c91", "accept": "application/json"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
+            , "customer": "63b5a4ae69c91"
+            , "accept": "application/json"
+            }
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
@@ -776,7 +817,7 @@ def survey(root):
 
 
         styling = "border=\"1\""
-        output = create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'])
+        output = create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = field_list_ordered)
         
         
     except Exception as ex:
@@ -855,12 +896,6 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
     except Exception as ex:
         output = str(ex)
-        json_data = json.dumps({
-            'email' : 'RPASupport@ie.gt.com',
-            'name'  : 'error', 
-            'table' : output
-        })
-
         sc = 503    # Service Unavailable
         
 
@@ -877,25 +912,8 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
             blob_client.upload_blob(json_data)
         except Exception as ex:
-            sc = 500     # Internal Server Error
             output = str(ex)
-            json_data = json.dumps({
-                'email' : 'RPASupport@ie.gt.com',
-                'name'  : 'error', 
-                'table' : output
-            })
-            account_url = os.environ['AZ_STR_URL']
-            default_credential = DefaultAzureCredential()
-            blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-            container_name = os.environ['AZ_CNTR_ST']
-            container_client = blob_service_client.get_container_client(container_name)
-            if not container_client.exists():
-                container_client = blob_service_client.create_container(container_name)
-            local_file_name = str(uuid.uuid4()) + '.json'
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-            blob_client.upload_blob(json_data)
-
-        
+            sc = 500     # Internal Server Error
         return func.HttpResponse(status_code=sc)
 
     
