@@ -777,7 +777,7 @@ def survey(root):
                             for val in vals:
                                 v += val
                                 v += '<BR>'
-                            v = v[:-2]
+                            # v = v[:-2]
                         else:
                             v = row["value"]["value"]
                         json_val_dict[row["label"]] = v
