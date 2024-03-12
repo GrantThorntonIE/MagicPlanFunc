@@ -86,11 +86,12 @@ def create_table_text(dict, headers : list,
         
         
     except Exception as ex:
-        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
-        # output = traceback.format_exc()
         # exc_type, exc_obj, exc_tb = sys.exc_info()
         # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
+        
         output = str(ex)
+        # output = traceback.format_exc()
+        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
         print(output)
         
         # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -99,7 +100,56 @@ def create_table_text(dict, headers : list,
         return output
     return output
 
+def roof_general(json_val_dict):
+    json_val_dict["Room in Roof"] = False
+    json_val_dict["Suitable for Insulation *"] = False
+    json_val_dict["Not suitable details*"] = ''
+    json_val_dict["Notes (Roof)"] = ''
+    for n in range(1, 5):
+        if f"Roof Type {n} Suitable for Insulation" in json_val_dict.keys():
+            print(f"Roof Type {n} Suitable for Insulation", json_val_dict[f"Roof Type {n} Suitable for Insulation"])
+            if json_val_dict[f"Roof Type {n} Suitable for Insulation"] == True:
+                json_val_dict["Suitable for Insulation *"] = True
 
+        if f"Roof type {n} Suitable for Insulation*" in json_val_dict.keys():
+            print(f"Roof type {n} Suitable for Insulation*", json_val_dict[f"Roof type {n} Suitable for Insulation*"])
+            if json_val_dict[f"Roof type {n} Suitable for Insulation*"] == True:
+                json_val_dict["Suitable for Insulation *"] = True
+
+        if f"Roof Type {n} Suitable for Insulation*" in json_val_dict.keys():
+            print(f"Roof Type {n} Suitable for Insulation*", json_val_dict[f"Roof Type {n} Suitable for Insulation*"])
+            if json_val_dict[f"Roof Type {n} Suitable for Insulation*"] == True:
+                json_val_dict["Suitable for Insulation *"] = True
+
+
+    for n in range(1, 5):
+        if json_val_dict["Suitable for Insulation *"] == False:
+            if f"Roof Type {n} Not Suitable Details" in json_val_dict.keys():
+                json_val_dict["Not suitable details*"] += f"Roof Type {n} Not Suitable Details: "
+                json_val_dict["Not suitable details*"] += json_val_dict[f"Roof Type {n} Not Suitable Details"]
+                json_val_dict["Not suitable details*"] += "<BR>"
+        else:
+            json_val_dict["Not suitable details*"] = 'N/A'
+    
+    for n in range(1, 5):
+        if f"Notes (Roof Type {n})" in json_val_dict.keys():
+            json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n}): "
+            json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})"]
+            json_val_dict["Notes (Roof)"] += "<BR>"
+        if f"Notes (Roof Type {n})*" in json_val_dict.keys():
+            json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n})*: "
+            json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})*"]
+            json_val_dict["Notes (Roof)"] += "<BR>"
+        
+    for n in range(1, 5):
+        if f"Roof {n} Type*" in json_val_dict.keys():
+            print(f"Roof {n} Type*", json_val_dict[f"Roof {n} Type*"])
+            if json_val_dict[f"Roof {n} Type*"] == "Dormer / room in roof":
+                json_val_dict["Room in Roof"] = True
+        if f"Roof {n} Type" in json_val_dict.keys():
+            print(f"Roof {n} Type", json_val_dict[f"Roof {n} Type"])
+            if json_val_dict[f"Roof {n} Type"] == "Dormer / room in roof":
+                json_val_dict["Room in Roof"] = True
 
 
 def ber_old(root):
@@ -738,19 +788,31 @@ def survey(root):
     try:
         plan_name = root.get('name')
         json_val_dict = {'plan_name': plan_name}
-        ofl_general = ['Dwelling Type'
+        
+        # Values from root also need to be accessed outside this function, but it is here that they can be inserted into the HTML Output - in future consider separating out the two activities by returning the output_dict?
+        
+        # date = root.find('values/value[@key="date"]').text
+        # assessor = root.find('values/value[@key="qf.34d66ce4q1"]').text
+        # rating_type = root.find('values/value[@key="qf.34d66ce4q3"]').text
+        # rating_purpose = root.find('values/value[@key="qf.34d66ce4q4"]').text
+        
+        date = root.find('values/value[@key="date"]').text
+        json_val_dict = {'Survey Date *': date}
+        
+        ofl_general = ['Dwelling Type*'
                         , 'Dwelling Age*'
-                        , 'Age extension 1'
-                        , 'Age extension 2'
-                        , 'Asbestos Suspected *'
-                        , 'Lot *'
-                        , 'Survey Date *'
-                        , 'Gross floor area (m2) *'
-                        , 'Number of Storeys *'
+                        , 'Age Extension 1'
+                        , 'Age Extension 2'
+                        , 'Asbestos Suspected'
+                        , 'Asbestos Details' # only if suspected after 2000 
+                        , 'Lot *' # blank for now
+                        , 'Survey Date *' # project creation date in MP
+                        , 'Gross floor area (m2) *' # with internal walls
+                        , 'Number of Storeys *' # 0-9
+                        , 'Room in Roof' # yes if any "dormer / room in roof" else no
                         , 'No. Single Glazed Windows *'
                         , 'No. Double Glazed Windows *'
                         , 'Property Height (m)*'
-                        , 'Eircode'
                         , 'Internet Available'
                         ]
         ofl_roof = ['Roof 1 Type*'
@@ -836,6 +898,7 @@ def survey(root):
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
+        print('len(JSON["data"]): ', len(JSON["data"]))
         df = pd.DataFrame(JSON["data"])
         
         
@@ -845,36 +908,27 @@ def survey(root):
             
             
         json_val_dict["Existing (mm2)*"] = int(0)
+        # json_ref_dict = {}
         
         # print(df)
-        json_ref_dict = {}
+        print('len(df.forms): ', len(df.forms))
         for form in df.forms:
             df2 = pd.DataFrame(form)
-            # print(df2)
             for section in df2.sections:
                 df3 = pd.DataFrame(section)
-                # print(df3)
                 for field in df3.fields:
                     df4 = pd.DataFrame(field)
-                    # print('df4')
-                    # print(df4)
                     for index, row in df4.iterrows():
-                        # print(row["id"], row["label"])
                         if row["label"] == "Existing Roof Ventilation (mm2)*":
-                            # print(json_val_dict[row["label"]], type(json_val_dict[row["label"]]))
                             if not row["value"]["value"].isdigit():
                                 continue
                             json_val_dict["Existing (mm2)*"] += int(row["value"]["value"])
-                        # json_ref_dict[row["id"]] = row["label"]
-                        # v = [val["value"] for val in row["value"]["values"]] if row["value"]["value"] == None else row["value"]["value"]
                         v = ''
-                        # if row["type_as_string"] == 'list':
                         if row["value"]["value"] == None:
                             vals = [val["value"] for val in row["value"]["values"]]
                             for val in vals:
                                 v += val
                                 v += '<BR>'
-                            # v = v[:-2]
                         else:
                             v = row["value"]["value"]
                         json_val_dict[row["label"]] = v
@@ -885,48 +939,8 @@ def survey(root):
 
 
 
-        json_val_dict["Suitable for Insulation *"] = False
-        json_val_dict["Not suitable details*"] = ''
-        json_val_dict["Notes (Roof)"] = ''
-        for n in range(1, 5):
-            if f"Roof Type {n} Suitable for Insulation" in json_val_dict.keys():
-                print(f"Roof Type {n} Suitable for Insulation", json_val_dict[f"Roof Type {n} Suitable for Insulation"])
-                if json_val_dict[f"Roof Type {n} Suitable for Insulation"] == True:
-                    json_val_dict["Suitable for Insulation *"] = True
 
-            if f"Roof type {n} Suitable for Insulation*" in json_val_dict.keys():
-                print(f"Roof type {n} Suitable for Insulation*", json_val_dict[f"Roof type {n} Suitable for Insulation*"])
-                if json_val_dict[f"Roof type {n} Suitable for Insulation*"] == True:
-                    json_val_dict["Suitable for Insulation *"] = True
-
-            if f"Roof Type {n} Suitable for Insulation*" in json_val_dict.keys():
-                print(f"Roof Type {n} Suitable for Insulation*", json_val_dict[f"Roof Type {n} Suitable for Insulation*"])
-                if json_val_dict[f"Roof Type {n} Suitable for Insulation*"] == True:
-                    json_val_dict["Suitable for Insulation *"] = True
-
-
-        for n in range(1, 5):
-            if json_val_dict["Suitable for Insulation *"] == False:
-                if f"Roof Type {n} Not Suitable Details" in json_val_dict.keys():
-                    json_val_dict["Not suitable details*"] += f"Roof Type {n} Not Suitable Details: "
-                    json_val_dict["Not suitable details*"] += json_val_dict[f"Roof Type {n} Not Suitable Details"]
-                    json_val_dict["Not suitable details*"] += "<BR>"
-            else:
-                json_val_dict["Not suitable details*"] = 'N/A'
-        
-        for n in range(1, 5):
-            if f"Notes (Roof Type {n})" in json_val_dict.keys():
-                json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n}): "
-                json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})"]
-                json_val_dict["Notes (Roof)"] += "<BR>"
-            if f"Notes (Roof Type {n})*" in json_val_dict.keys():
-                json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n})*: "
-                json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})*"]
-                json_val_dict["Notes (Roof)"] += "<BR>"
-            
-        
-        # print(json_val_dict["Notes (Roof)"])
-        
+        roof_general(json_val_dict)
         
         
         json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
@@ -940,29 +954,30 @@ def survey(root):
         # with open(file, 'w') as outfile:
             # json.dump(JSON, outfile, indent=4)
 
+        json_val_dict['Number of Storeys *'] = df.project_statistics.floor_count
+        json_val_dict['Gross floor area (m2) *'] = df.project_statistics.area_with_interior_walls_only
+        
+        json_val_dict['No. Single Glazed Windows *'] = 0
+        
         sum_low = 0
-        # sum_existing = 0
         for floor in df.project_statistics.floors:
-            # df2 = pd.DataFrame(floor)
-            # print(df2)
-            # print(floor["name"])
-            if floor["name"] == "Roof":
-                for room in floor["rooms"]:
-                    for furniture in room["furnitures"]:
-                        if furniture["name"] == "New Low Level Roof Ventilation":
-                            sum_low += float(furniture["width"])
-                        # if furniture["name"] == "Existing Roof Ventilation":
-                            # print('furniture["width"]', furniture["width"])
-                            # sum_existing += float(furniture["width"])
+            # if floor["name"] == "Roof":
+            for room in floor["rooms"]:
+                for furniture in room["furnitures"]:
+                    if furniture["name"] == "New Low Level Roof Ventilation":
+                        sum_low += float(furniture["width"])
+                for wall_item in room["wall_items"]:
+                    if wall_item["name"] == "Single Glazed Window":
+                        json_val_dict['No. Single Glazed Windows *'] += 1
                             
-            
+                            
+        json_val_dict['No. Double Glazed Windows *'] = df.project_statistics.window_count - json_val_dict['No. Single Glazed Windows *']
+        
         json_val_dict['Required per standards (mm2) *'] = round(sum_low * 10000)
-        # json_val_dict['Existing (mm2) *'] = round(sum_existing * 10000)
         
         
         
-        
-        # Fixed Values:
+        # Fixed Values: (these should really only be added to output_dict as they are not JSON values)
         json_val_dict['Roof 2 Required per standards (mm2) *'] = 0
         json_val_dict['Roof 2 Existing (mm2) *'] = 0
         json_val_dict['Roof 3 Required per standards (mm2) *'] = 0
@@ -971,100 +986,75 @@ def survey(root):
         json_val_dict['Roof 4 Existing (mm2) *'] = 0
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
         # print(json_val_dict)
-        
-
-
-
-
-
-
-
-        # Go through the XML, referring to the JSON data whenever we need to - this is now disused but might need it again if there are any required values not included in the JSON (e.g. counts of objects)
-        
-        # values = root.findall('values/value')
-        # for value in values:
-            # k = value.attrib["key"]
-            # if value.attrib["key"] in json_ref_dict.keys():
-                # k = json_ref_dict[value.attrib["key"]]
-            # if 'statistics.' in k:
-                # continue
-            # output_dict[k] = value.text
-        
-        
-        # values = root.findall('floor/floorRoom/values/value')
-        # for value in values:
-            # k = value.attrib["key"]
-            # if value.attrib["key"] in json_ref_dict.keys():
-                # k = json_ref_dict[value.attrib["key"]]
-            # output_dict[k] = value.text
-        
-        
-        
-        
-        
         output_dict = json_val_dict
-        
-        
-        
-        
-        floors = root.findall('floor')
-        # LOGGER.info('no of floors:' + str(len(floors)))
-        
-        # Calculated Field. Equals SUM of "Ground surface without walls: m²" for floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
-        floor_area = 0
-        floor_area_without_walls = 0
-        floor_area_with_walls = 0
-        # for floor in root.findall('floor[@floorType="10"]'):
-        for floor in floors:
-            if int(floor.get('floorType')) > 9:
-                continue
-            print('floorType: ' + floor.get('floorType'))
-            floor_area_without_walls += float(floor.get('areaWithoutWalls')) if floor.get('areaWithoutWalls') != None else 0
-            floor_area_with_walls += float(floor.get('areaWithInteriorWallsOnly')) if floor.get('areaWithInteriorWallsOnly') != None else 0
-        output_dict['floor_area_without_walls'] = floor_area_without_walls
-        output_dict['floor_area_with_walls'] = floor_area_with_walls
-        
-        # Count of floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
-        output_dict['no_of_floors'] = len(floors)
-
-
-
-
-
-
 
 
         styling = "border=\"1\""
-        output = create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)
-        # output = create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)
-        
-        
+        output = f"""\
+            <h1>General</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
+            <h1>Roof</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)} \
+            </div>"""
+
     except Exception as ex:
-        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
-        # output = traceback.format_exc()
         # exc_type, exc_obj, exc_tb = sys.exc_info()
         # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
         
         output = str(ex)
+        # output = traceback.format_exc()
+        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
         
         # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         # print(exc_type, fname, exc_tb.tb_lineno)
     finally:
         return output
     return output
+
+
+def XML_old():
+    # Go through the XML, referring to the JSON data whenever we need to - this is now disused but might need it again if there are any required values not included in the JSON (e.g. counts of objects)
+    
+    # values = root.findall('values/value')
+    # for value in values:
+        # k = value.attrib["key"]
+        # if value.attrib["key"] in json_ref_dict.keys():
+            # k = json_ref_dict[value.attrib["key"]]
+        # if 'statistics.' in k:
+            # continue
+        # output_dict[k] = value.text
+    
+    
+    # values = root.findall('floor/floorRoom/values/value')
+    # for value in values:
+        # k = value.attrib["key"]
+        # if value.attrib["key"] in json_ref_dict.keys():
+            # k = json_ref_dict[value.attrib["key"]]
+        # output_dict[k] = value.text
+    
+    
+            
+    floors = root.findall('floor')
+    # LOGGER.info('no of floors:' + str(len(floors)))
+    
+    # Calculated Field. Equals SUM of "Ground surface without walls: m²" for floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
+    floor_area = 0
+    floor_area_without_walls = 0
+    floor_area_with_walls = 0
+    # for floor in root.findall('floor[@floorType="10"]'):
+    for floor in floors:
+        if int(floor.get('floorType')) > 9:
+            continue
+        print('floorType: ' + floor.get('floorType'))
+        floor_area_without_walls += float(floor.get('areaWithoutWalls')) if floor.get('areaWithoutWalls') != None else 0
+        floor_area_with_walls += float(floor.get('areaWithInteriorWallsOnly')) if floor.get('areaWithInteriorWallsOnly') != None else 0
+    output_dict['floor_area_without_walls'] = floor_area_without_walls
+    output_dict['floor_area_with_walls'] = floor_area_with_walls
+    
+    # Count of floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
+    output_dict['no_of_floors'] = len(floors)
 
 
 
@@ -1096,7 +1086,7 @@ def distributor_function(form):
     output = survey(root)
     # output = ber_old(root)
 
-    output = '<h1>Value Table</h1>' + output + '<h2>' + xml + '</h2></div>'
+    output = output + '<h2>' + xml + '</h2></div>'
 
     json_data = json.dumps({
         'email' : email,
