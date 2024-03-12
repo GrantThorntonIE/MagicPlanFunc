@@ -763,7 +763,7 @@ def survey(root):
                                 , 'Roof 1 Thickness (mm)*'
                                 , 'Roof 1 Insulation Type*'
                                 , 'Required per standards (mm2) *'
-                                , 'Existing Roof Ventilation (mm2)*'
+                                , 'Existing (mm2)*'
                                 , 'Area of Roof Type 1 with fixed flooring (m2)*'
                                 , 'Folding/stair ladder in Roof Type 1*'
                                 , 'Fixed light in Roof Type 1*'
@@ -844,7 +844,7 @@ def survey(root):
             # json.dump(JSON, outfile, indent=4)
             
             
-        json_val_dict["Existing Roof Ventilation (mm2)*"] = int(0)
+        json_val_dict["Existing (mm2)*"] = int(0)
         
         # print(df)
         json_ref_dict = {}
@@ -861,9 +861,10 @@ def survey(root):
                     for index, row in df4.iterrows():
                         # print(row["id"], row["label"])
                         if row["label"] == "Existing Roof Ventilation (mm2)*":
-                            print(json_val_dict[row["label"]], type(json_val_dict[row["label"]]))
-                            if row["value"]["value"].isdigit():
-                                json_val_dict[row["label"]] = int(json_val_dict[row["label"]]) + int(row["value"]["value"])
+                            # print(json_val_dict[row["label"]], type(json_val_dict[row["label"]]))
+                            if not row["value"]["value"].isdigit():
+                                continue
+                            json_val_dict["Existing (mm2)*"] += int(row["value"]["value"])
                         # json_ref_dict[row["id"]] = row["label"]
                         # v = [val["value"] for val in row["value"]["values"]] if row["value"]["value"] == None else row["value"]["value"]
                         v = ''
@@ -910,6 +911,8 @@ def survey(root):
                     json_val_dict["Not suitable details*"] += f"Roof Type {n} Not Suitable Details: "
                     json_val_dict["Not suitable details*"] += json_val_dict[f"Roof Type {n} Not Suitable Details"]
                     json_val_dict["Not suitable details*"] += "<BR>"
+            else:
+                json_val_dict["Not suitable details*"] = 'N/A'
         
         for n in range(1, 5):
             if f"Notes (Roof Type {n})" in json_val_dict.keys():
