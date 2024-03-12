@@ -57,6 +57,9 @@ def create_table_text(dict, headers : list,
         
         # print(dict)
         
+        
+        
+        
         output = f'<table {styling}><tr>'
         
         for header in headers:
@@ -66,10 +69,16 @@ def create_table_text(dict, headers : list,
         if len(order_list) != 0:
             for item in order_list:
                 output += f'<tr><td>{item}</td>'
-                value = dict[item] if item in dict.keys() else ''
+                value = dict[item] if item in dict.keys() else 'N/A'
+                if value == True:
+                    value = "Yes"
+                if value == False:
+                    value = "No"
                 output += f'<td>{value}</td>'
+                # print(item, value)
         else:
             for i, key in enumerate(dict):
+                # print(key, dict[key])
                 output += f'<tr><td>{key}</td>'
                 output += f'<td>{dict[key]}</td>'
 
@@ -729,7 +738,88 @@ def survey(root):
     try:
         plan_name = root.get('name')
         json_val_dict = {'plan_name': plan_name}
-        field_list_ordered = ['Roof 1 Type*', 'Sloped Ceiling Roof 1*', 'Roof 1 greater than 2/3 floor area*', 'Roof 1 Pitch (degrees)*', 'Roof Type 1 Insulation Exists*', 'Can Roof Type 1 Insulation Thickness be Measured?*', 'Roof 1 Thickness (mm)*', 'Roof 1 Insulation Type*', 'Required per standards (mm2) *', 'Existing (mm2) *', 'Area of Roof Type 1 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 1*', 'Fixed light in Roof Type 1*', 'Downlighters in Roof Type 1*', 'High power cable in Roof Type 1 (6sq/10sq or higher)*', 'Roof 2 Type', 'Sloped Ceiling Roof 2*', 'Roof 2 greater than 2/3 floor area*', 'Roof 2 Pitch (degrees)*', 'Roof 2 Insulation Exists*', 'Can Insulation Thickness be Measured?*', 'Roof 2 Thickness (mm)*', 'Roof 2 Insulation Type*', 'Area of Roof Type 2 with fixed flooring (m2)', 'Folding/stair ladder in Roof Type 2', 'Fixed light in Roof Type 2', 'Downlighters in Roof Type 2', 'High power cable in Roof Type 2 (6sq/10sq or higher)', 'Roof 3 Type', 'Sloped Ceiling Roof 3*', 'Roof 3 greater than 2/3 floor area*', 'Roof 3 Pitch (degrees)*', 'Roof Type 3 Insulation Exists*', 'Can Roof Type 3 Insulation Thickness be Measured?*', 'Roof 3 Thickness (mm)*', 'Roof 3 Insulation Type*', 'Area of Roof Type 3 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 3*', 'Fixed light in Roof Type 3*', 'Downlighters in Roof Type 3*', 'High power cable in Roof Type 3 (6sq/10sq or higher)*', 'Roof 4 Type', 'Sloped Ceiling Roof 4*', 'Roof 4 greater than 2/3 floor area*', 'Roof 4 Pitch (degrees)*', 'Roof 4 Insulation Exists*', 'Can Roof Type 4 Insulation Thickness be Measured?*', 'Roof 4 Thickness (mm)*', 'Roof 4 Insulation Type*', 'Area of Roof Type 4 with fixed flooring (m2)*', 'Folding/stair ladder in Roof Type 4*', 'Fixed light in Roof Type 4*', 'Downlighters in Roof Type 4*', 'High power cable in Roof Type 4 (6sq/10sq or higher)*', 'Suitable for Insulation *', 'Not suitable details*', 'Notes (Roof)']
+        ofl_general = ['Dwelling Type'
+                        , 'Dwelling Age*'
+                        , 'Age extension 1'
+                        , 'Age extension 2'
+                        , 'Asbestos Suspected *'
+                        , 'Lot *'
+                        , 'Survey Date *'
+                        , 'Gross floor area (m2) *'
+                        , 'Number of Storeys *'
+                        , 'No. Single Glazed Windows *'
+                        , 'No. Double Glazed Windows *'
+                        , 'Property Height (m)*'
+                        , 'Eircode'
+                        , 'Internet Available'
+                        ]
+        ofl_roof = ['Roof 1 Type*'
+                                , 'Other Details Roof 1*'
+                                , 'Sloped Ceiling Roof 1*'
+                                , 'Roof 1 greater than 2/3 floor area*'
+                                , 'Roof 1 Pitch (degrees)*'
+                                , 'Roof Type 1 Insulation Exists*'
+                                , 'Can Roof Type 1 Insulation Thickness be Measured?*'
+                                , 'Roof 1 Thickness (mm)*'
+                                , 'Roof 1 Insulation Type*'
+                                , 'Required per standards (mm2) *'
+                                , 'Existing Roof Ventilation (mm2)*'
+                                , 'Area of Roof Type 1 with fixed flooring (m2)*'
+                                , 'Folding/stair ladder in Roof Type 1*'
+                                , 'Fixed light in Roof Type 1*'
+                                , 'Downlighters in Roof Type 1*'
+                                , 'High power cable in Roof Type 1 (6sq/10sq or higher)*'
+                                , 'Roof 2 Type'
+                                , 'Other Details Roof 2*'
+                                , 'Sloped Ceiling Roof 2*'
+                                , 'Roof 2 greater than 2/3 floor area*'
+                                , 'Roof 2 Pitch (degrees)*'
+                                , 'Roof 2 Insulation Exists*'
+                                , 'Can Roof Type 2 Insulation Thickness be Measured?*'
+                                , 'Roof 2 Thickness (mm)*'
+                                , 'Roof 2 Insulation Type*'
+                                , 'Roof 2 Required per standards (mm2) *'
+                                , 'Roof 2 Existing (mm2) *'
+                                , 'Area of Roof Type 2 with fixed flooring (m2)*'
+                                , 'Folding/stair ladder in Roof Type 2*'
+                                , 'Fixed light in Roof Type 2*'
+                                , 'Downlighters in Roof Type 2*'
+                                , 'High power cable in Roof Type 2 (6sq/10sq or higher)*'
+                                , 'Roof 3 Type'
+                                , 'Other Details Roof 3*'
+                                , 'Sloped Ceiling Roof 3*'
+                                , 'Roof 3 greater than 2/3 floor area*'
+                                , 'Roof 3 Pitch (degrees)*'
+                                , 'Roof 3 Insulation Exists*'
+                                , 'Can Roof Type 3 Insulation Thickness be Measured?'
+                                , 'Roof 3 Thickness (mm)'
+                                , 'Roof 3 Insulation Type'
+                                , 'Roof 3 Required per standards (mm2) *'
+                                , 'Roof 3 Existing (mm2) *'
+                                , 'Area of Roof Type 3 with fixed flooring (m2)'
+                                , 'Folding/stair ladder in Roof Type 3'
+                                , 'Fixed light in Roof Type 3'
+                                , 'Downlighters in Roof Type 3'
+                                , 'High power cable in Roof Type 3 (6sq/10sq or higher)'
+                                , 'Roof 4 Type'
+                                , 'Other Details Roof 4*'
+                                , 'Sloped Ceiling Roof 4*'
+                                , 'Roof 4 greater than 2/3 floor area*'
+                                , 'Roof 4 Pitch (degrees)*'
+                                , 'Roof 4 Insulation Exists*'
+                                , 'Can Roof Type 4 Insulation Thickness be Measured?*'
+                                , 'Roof 4 Thickness (mm)*'
+                                , 'Roof 4 Insulation Type*'
+                                , 'Roof 4 Required per standards (mm2) *'
+                                , 'Roof 4 Existing (mm2) *'
+                                , 'Area of Roof Type 4 with fixed flooring (m2)*'
+                                , 'Folding/stair ladder in Roof Type 4*'
+                                , 'Fixed light in Roof Type 4*'
+                                , 'Downlighters in Roof Type 4*'
+                                , 'High power cable in Roof Type 4 (6sq/10sq or higher)*'
+                                , 'Suitable for Insulation *'
+                                , 'Not suitable details*'
+                                , 'Notes (Roof)']
         
         id = root.get('id')
         print(id)
@@ -754,6 +844,8 @@ def survey(root):
             # json.dump(JSON, outfile, indent=4)
             
             
+        json_val_dict["Existing Roof Ventilation (mm2)*"] = int(0)
+        
         # print(df)
         json_ref_dict = {}
         for form in df.forms:
@@ -768,7 +860,11 @@ def survey(root):
                     # print(df4)
                     for index, row in df4.iterrows():
                         # print(row["id"], row["label"])
-                        json_ref_dict[row["id"]] = row["label"]
+                        if row["label"] == "Existing Roof Ventilation (mm2)*":
+                            print(json_val_dict[row["label"]], type(json_val_dict[row["label"]]))
+                            if row["value"]["value"].isdigit():
+                                json_val_dict[row["label"]] = int(json_val_dict[row["label"]]) + int(row["value"]["value"])
+                        # json_ref_dict[row["id"]] = row["label"]
                         # v = [val["value"] for val in row["value"]["values"]] if row["value"]["value"] == None else row["value"]["value"]
                         v = ''
                         # if row["type_as_string"] == 'list':
@@ -781,30 +877,45 @@ def survey(root):
                         else:
                             v = row["value"]["value"]
                         json_val_dict[row["label"]] = v
-                        
+
+
         # for x in json_val_dict:
             # print(x, json_val_dict[x])
+
+
+
         json_val_dict["Suitable for Insulation *"] = False
         json_val_dict["Not suitable details*"] = ''
         json_val_dict["Notes (Roof)"] = ''
-        for n in range(1, 4):
+        for n in range(1, 5):
             if f"Roof Type {n} Suitable for Insulation" in json_val_dict.keys():
-                print(json_val_dict[f"Roof Type {n} Suitable for Insulation"])
+                print(f"Roof Type {n} Suitable for Insulation", json_val_dict[f"Roof Type {n} Suitable for Insulation"])
                 if json_val_dict[f"Roof Type {n} Suitable for Insulation"] == True:
                     json_val_dict["Suitable for Insulation *"] = True
+
+            if f"Roof type {n} Suitable for Insulation*" in json_val_dict.keys():
+                print(f"Roof type {n} Suitable for Insulation*", json_val_dict[f"Roof type {n} Suitable for Insulation*"])
+                if json_val_dict[f"Roof type {n} Suitable for Insulation*"] == True:
+                    json_val_dict["Suitable for Insulation *"] = True
+
             if f"Roof Type {n} Suitable for Insulation*" in json_val_dict.keys():
-                print(json_val_dict[f"Roof Type {n} Suitable for Insulation*"])
+                print(f"Roof Type {n} Suitable for Insulation*", json_val_dict[f"Roof Type {n} Suitable for Insulation*"])
                 if json_val_dict[f"Roof Type {n} Suitable for Insulation*"] == True:
                     json_val_dict["Suitable for Insulation *"] = True
-        
-        for n in range(1, 4):
+
+
+        for n in range(1, 5):
             if json_val_dict["Suitable for Insulation *"] == False:
                 if f"Roof Type {n} Not Suitable Details" in json_val_dict.keys():
                     json_val_dict["Not suitable details*"] += f"Roof Type {n} Not Suitable Details: "
                     json_val_dict["Not suitable details*"] += json_val_dict[f"Roof Type {n} Not Suitable Details"]
                     json_val_dict["Not suitable details*"] += "<BR>"
         
-        for n in range(1, 4):
+        for n in range(1, 5):
+            if f"Notes (Roof Type {n})" in json_val_dict.keys():
+                json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n}): "
+                json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})"]
+                json_val_dict["Notes (Roof)"] += "<BR>"
             if f"Notes (Roof Type {n})*" in json_val_dict.keys():
                 json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n})*: "
                 json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})*"]
@@ -813,6 +924,8 @@ def survey(root):
         
         # print(json_val_dict["Notes (Roof)"])
         
+        
+        
         json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
@@ -820,12 +933,12 @@ def survey(root):
         df = pd.DataFrame(JSON["data"])
         
         # print(df)
-        # file = plan_name + '.json'
+        # file = plan_name + '_statistics.json'
         # with open(file, 'w') as outfile:
             # json.dump(JSON, outfile, indent=4)
 
         sum_low = 0
-        sum_existing = 0
+        # sum_existing = 0
         for floor in df.project_statistics.floors:
             # df2 = pd.DataFrame(floor)
             # print(df2)
@@ -835,18 +948,24 @@ def survey(root):
                     for furniture in room["furnitures"]:
                         if furniture["name"] == "New Low Level Roof Ventilation":
                             sum_low += float(furniture["width"])
-                        if furniture["name"] == "Existing Roof Ventilation":
-                            sum_existing += float(furniture["width"])
+                        # if furniture["name"] == "Existing Roof Ventilation":
+                            # print('furniture["width"]', furniture["width"])
+                            # sum_existing += float(furniture["width"])
                             
             
-        json_val_dict['Required per standards (mm2) *'] = sum_low * 10000
-        json_val_dict['Existing (mm2) *'] = sum_existing * 10000
+        json_val_dict['Required per standards (mm2) *'] = round(sum_low * 10000)
+        # json_val_dict['Existing (mm2) *'] = round(sum_existing * 10000)
         
         
         
         
-        
-        
+        # Fixed Values:
+        json_val_dict['Roof 2 Required per standards (mm2) *'] = 0
+        json_val_dict['Roof 2 Existing (mm2) *'] = 0
+        json_val_dict['Roof 3 Required per standards (mm2) *'] = 0
+        json_val_dict['Roof 3 Existing (mm2) *'] = 0
+        json_val_dict['Roof 4 Required per standards (mm2) *'] = 0
+        json_val_dict['Roof 4 Existing (mm2) *'] = 0
         
         
         
@@ -919,8 +1038,15 @@ def survey(root):
         output_dict['no_of_floors'] = len(floors)
 
 
+
+
+
+
+
+
         styling = "border=\"1\""
-        output = create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = field_list_ordered)
+        output = create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)
+        # output = create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)
         
         
     except Exception as ex:
