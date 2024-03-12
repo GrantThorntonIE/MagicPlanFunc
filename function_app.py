@@ -70,9 +70,9 @@ def create_table_text(dict, headers : list,
             for item in order_list:
                 output += f'<tr><td>{item}</td>'
                 value = dict[item] if item in dict.keys() else 'N/A'
-                if value == True:
+                if (type(value) == bool and value == True):
                     value = "Yes"
-                if value == False:
+                if (type(value) == bool and value == False):
                     value = "No"
                 output += f'<td>{value}</td>'
                 # print(item, value)
