@@ -1,5 +1,5 @@
 import json
-from math import sqrt
+from math import sqrt, cos
 import re
 import azure.functions as func
 import os, logging, uuid
@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as dET
 
 # from loguru import logger as LOGGER
-# import traceback
+import traceback
 
 MAX_REAL_FLOORS = 10
 
@@ -90,7 +90,7 @@ def create_table_text(dict, headers : list,
         # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
         
         output = str(ex)
-        # output = traceback.format_exc()
+        output = traceback.format_exc()
         # LOGGER.info('Exception : ' + str(traceback.format_exc()))
         print(output)
         
@@ -105,21 +105,83 @@ def roof_general(json_val_dict):
     json_val_dict["Suitable for Insulation *"] = False
     json_val_dict["Not suitable details*"] = ''
     json_val_dict["Notes (Roof)"] = ''
+    
+    if "sfi" not in json_val_dict.keys():
+        json_val_dict["sfi"] = []
+    if "sfi_dict" not in json_val_dict.keys():
+        json_val_dict["sfi_dict"] = {}
+    
+    
+
+    
+    
+    
+    
+    
     for n in range(1, 5):
         if f"Roof Type {n} Suitable for Insulation" in json_val_dict.keys():
             print(f"Roof Type {n} Suitable for Insulation", json_val_dict[f"Roof Type {n} Suitable for Insulation"])
             if json_val_dict[f"Roof Type {n} Suitable for Insulation"] == True:
                 json_val_dict["Suitable for Insulation *"] = True
+                json_val_dict["sfi"].append(n)
+                # json_val_dict["sfi_dict"][n] = 300
 
         if f"Roof type {n} Suitable for Insulation*" in json_val_dict.keys():
             print(f"Roof type {n} Suitable for Insulation*", json_val_dict[f"Roof type {n} Suitable for Insulation*"])
             if json_val_dict[f"Roof type {n} Suitable for Insulation*"] == True:
                 json_val_dict["Suitable for Insulation *"] = True
+                json_val_dict["sfi"].append(n)
+                # json_val_dict["sfi_dict"][n] = 300
 
         if f"Roof Type {n} Suitable for Insulation*" in json_val_dict.keys():
             print(f"Roof Type {n} Suitable for Insulation*", json_val_dict[f"Roof Type {n} Suitable for Insulation*"])
             if json_val_dict[f"Roof Type {n} Suitable for Insulation*"] == True:
                 json_val_dict["Suitable for Insulation *"] = True
+                json_val_dict["sfi"].append(n)
+                # json_val_dict["sfi_dict"][n] = 300
+
+        if f"Roof Type {n} Sloping Ceiling Suitable for Insulation*" in json_val_dict.keys():
+            print(f"Roof Type {n} Sloping Ceiling Suitable for Insulation*", json_val_dict[f"Roof Type {n} Sloping Ceiling Suitable for Insulation*"])
+            if json_val_dict[f"Roof Type {n} Sloping Ceiling Suitable for Insulation*"] == True:
+                json_val_dict["Suitable for Insulation *"] = True
+                json_val_dict["sfi"].append(str(n) + 's')
+                # json_val_dict["sfi_dict"][str(n) + 's'] = 300
+
+    print('sfi: ', json_val_dict["sfi"])
+    # print('sfi: ', json_val_dict["sfi_dict"])
+
+    for n in range(1, 5):
+        # Suitable?
+        if n not in json_val_dict["sfi"]:
+            continue
+        
+        # Existing? (Thickness)
+        e = 0
+        if f"Roof {n} Thickness (mm)*" in json_val_dict.keys():
+            e = json_val_dict[f"Roof {n} Thickness (mm)*"]
+        elif f"Roof {n} Thickness (mm)" in json_val_dict.keys():
+            e = json_val_dict[f"Roof {n} Thickness (mm)"]
+        print(f"Roof {n} Thickness (mm)", ": ",  e)
+        
+        # value: Area - add to appropriate dict entry
+        print(f"roof_{n}_area", ": ", json_val_dict[f"roof_{n}_area"])
+        for t in [100, 150, 200, 250, 300]:
+            if e + t >= 300:
+                print(f"need to add roof_{n}_area to dict entry {t}")
+                key = str(t)
+                if key not in json_val_dict["sfi_dict"].keys():
+                    json_val_dict["sfi_dict"][key] = json_val_dict[f"roof_{n}_area"]
+                else:
+                    json_val_dict["sfi_dict"][key] += json_val_dict[f"roof_{n}_area"]
+                break
+
+
+
+
+    print('json_val_dict["sfi_dict"]: ', json_val_dict["sfi_dict"])
+
+
+
 
 
     for n in range(1, 5):
@@ -130,6 +192,7 @@ def roof_general(json_val_dict):
                 json_val_dict["Not suitable details*"] += "<BR>"
         else:
             json_val_dict["Not suitable details*"] = 'N/A'
+    print('json_val_dict["Not suitable details*"]: ', json_val_dict["Not suitable details*"])
     
     for n in range(1, 5):
         if f"Notes (Roof Type {n})" in json_val_dict.keys():
@@ -140,7 +203,8 @@ def roof_general(json_val_dict):
             json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n})*: "
             json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})*"]
             json_val_dict["Notes (Roof)"] += "<BR>"
-        
+    print('json_val_dict["Notes (Roof)"]: ', json_val_dict["Notes (Roof)"])
+    
     for n in range(1, 5):
         if f"Roof {n} Type*" in json_val_dict.keys():
             print(f"Roof {n} Type*", json_val_dict[f"Roof {n} Type*"])
@@ -786,8 +850,10 @@ def qa(root):
 
 def survey(root):
     try:
+        sfi = [] # a list to hold the numbers of roof (also wall?) types that are suitable for insulation
+        
         plan_name = root.get('name')
-        json_val_dict = {'plan_name': plan_name}
+        json_val_dict = {'plan_name': plan_name} # specifically NOT JSON
         
         # Values from root also need to be accessed outside this function, but it is here that they can be inserted into the HTML Output - in future consider separating out the two activities by returning the output_dict?
         
@@ -799,6 +865,17 @@ def survey(root):
         date = root.find('values/value[@key="date"]').text
         json_val_dict = {'Survey Date *': date}
         
+        
+        # uid="65e9e3fa.a426cbff" 
+        # floorType="1000"
+        # roof_area = root.findall('floor[@floorType="1000"]').areaWithInteriorWallsOnly
+        
+        
+
+        
+        
+        
+        
         ofl_general = ['Dwelling Type*'
                         , 'Dwelling Age*'
                         , 'Age Extension 1'
@@ -807,7 +884,7 @@ def survey(root):
                         , 'Asbestos Details' # only if suspected after 2000 
                         , 'Lot *' # blank for now
                         , 'Survey Date *' # project creation date in MP
-                        , 'Gross floor area (m2) *' # with internal walls
+                        , 'Gross floor area (m2) *'
                         , 'Number of Storeys *' # 0-9
                         , 'Room in Roof' # yes if any "dormer / room in roof" else no
                         , 'No. Single Glazed Windows *'
@@ -815,73 +892,87 @@ def survey(root):
                         , 'Property Height (m)*'
                         , 'Internet Available'
                         ]
-        ofl_roof = ['Roof 1 Type*'
-                                , 'Other Details Roof 1*'
-                                , 'Sloped Ceiling Roof 1*'
-                                , 'Roof 1 greater than 2/3 floor area*'
-                                , 'Roof 1 Pitch (degrees)*'
-                                , 'Roof Type 1 Insulation Exists*'
-                                , 'Can Roof Type 1 Insulation Thickness be Measured?*'
-                                , 'Roof 1 Thickness (mm)*'
-                                , 'Roof 1 Insulation Type*'
-                                , 'Required per standards (mm2) *'
-                                , 'Existing (mm2)*'
-                                , 'Area of Roof Type 1 with fixed flooring (m2)*'
-                                , 'Folding/stair ladder in Roof Type 1*'
-                                , 'Fixed light in Roof Type 1*'
-                                , 'Downlighters in Roof Type 1*'
-                                , 'High power cable in Roof Type 1 (6sq/10sq or higher)*'
-                                , 'Roof 2 Type'
-                                , 'Other Details Roof 2*'
-                                , 'Sloped Ceiling Roof 2*'
-                                , 'Roof 2 greater than 2/3 floor area*'
-                                , 'Roof 2 Pitch (degrees)*'
-                                , 'Roof 2 Insulation Exists*'
-                                , 'Can Roof Type 2 Insulation Thickness be Measured?*'
-                                , 'Roof 2 Thickness (mm)*'
-                                , 'Roof 2 Insulation Type*'
-                                , 'Roof 2 Required per standards (mm2) *'
-                                , 'Roof 2 Existing (mm2) *'
-                                , 'Area of Roof Type 2 with fixed flooring (m2)*'
-                                , 'Folding/stair ladder in Roof Type 2*'
-                                , 'Fixed light in Roof Type 2*'
-                                , 'Downlighters in Roof Type 2*'
-                                , 'High power cable in Roof Type 2 (6sq/10sq or higher)*'
-                                , 'Roof 3 Type'
-                                , 'Other Details Roof 3*'
-                                , 'Sloped Ceiling Roof 3*'
-                                , 'Roof 3 greater than 2/3 floor area*'
-                                , 'Roof 3 Pitch (degrees)*'
-                                , 'Roof 3 Insulation Exists*'
-                                , 'Can Roof Type 3 Insulation Thickness be Measured?'
-                                , 'Roof 3 Thickness (mm)'
-                                , 'Roof 3 Insulation Type'
-                                , 'Roof 3 Required per standards (mm2) *'
-                                , 'Roof 3 Existing (mm2) *'
-                                , 'Area of Roof Type 3 with fixed flooring (m2)'
-                                , 'Folding/stair ladder in Roof Type 3'
-                                , 'Fixed light in Roof Type 3'
-                                , 'Downlighters in Roof Type 3'
-                                , 'High power cable in Roof Type 3 (6sq/10sq or higher)'
-                                , 'Roof 4 Type'
-                                , 'Other Details Roof 4*'
-                                , 'Sloped Ceiling Roof 4*'
-                                , 'Roof 4 greater than 2/3 floor area*'
-                                , 'Roof 4 Pitch (degrees)*'
-                                , 'Roof 4 Insulation Exists*'
-                                , 'Can Roof Type 4 Insulation Thickness be Measured?*'
-                                , 'Roof 4 Thickness (mm)*'
-                                , 'Roof 4 Insulation Type*'
-                                , 'Roof 4 Required per standards (mm2) *'
-                                , 'Roof 4 Existing (mm2) *'
-                                , 'Area of Roof Type 4 with fixed flooring (m2)*'
-                                , 'Folding/stair ladder in Roof Type 4*'
-                                , 'Fixed light in Roof Type 4*'
-                                , 'Downlighters in Roof Type 4*'
-                                , 'High power cable in Roof Type 4 (6sq/10sq or higher)*'
-                                , 'Suitable for Insulation *'
-                                , 'Not suitable details*'
-                                , 'Notes (Roof)']
+        ofl_roof = ['sloped_surface_area'
+                , 'ins_100_area'
+                , 'ins_150_area'
+                , 'ins_200_area'
+                , 'ins_250_area'
+                , 'ins_300_area'
+                , 'storage'
+                , 'new_hatch_count'
+                , 'high_roof_vent_area'
+                , 'low_roof_vent_area'
+                , 'Roof 1 Type*'
+                , 'Other Details Roof 1*'
+                , 'Sloped Ceiling Roof 1*'
+                , 'Roof 1 greater than 2/3 floor area*'
+                , 'Roof 1 Pitch (degrees)*'
+                , 'Roof Type 1 Insulation Exists*'
+                , 'Can Roof Type 1 Insulation Thickness be Measured?*'
+                , 'Roof 1 Thickness (mm)*'
+                , 'Roof 1 Insulation Type*'
+                , 'Required per standards (mm2) *'
+                , 'Existing (mm2)*'
+                , 'Area of Roof Type 1 with fixed flooring (m2)*'
+                , 'Folding/stair ladder in Roof Type 1*'
+                , 'Fixed light in Roof Type 1*'
+                , 'Downlighters in Roof Type 1*'
+                , 'High power cable in Roof Type 1 (6sq/10sq or higher)*'
+                , 'Roof 2 Type'
+                , 'Other Details Roof 2*'
+                , 'Sloped Ceiling Roof 2*'
+                , 'Roof 2 greater than 2/3 floor area*'
+                , 'Roof 2 Pitch (degrees)*'
+                , 'Roof 2 Insulation Exists*'
+                , 'Can Roof Type 2 Insulation Thickness be Measured?*'
+                , 'Roof 2 Thickness (mm)*'
+                , 'Roof 2 Insulation Type*'
+                , 'Roof 2 Required per standards (mm2) *'
+                , 'Roof 2 Existing (mm2) *'
+                , 'Area of Roof Type 2 with fixed flooring (m2)*'
+                , 'Folding/stair ladder in Roof Type 2*'
+                , 'Fixed light in Roof Type 2*'
+                , 'Downlighters in Roof Type 2*'
+                , 'High power cable in Roof Type 2 (6sq/10sq or higher)*'
+                , 'Roof 3 Type'
+                , 'Other Details Roof 3*'
+                , 'Sloped Ceiling Roof 3*'
+                , 'Roof 3 greater than 2/3 floor area*'
+                , 'Roof 3 Pitch (degrees)*'
+                , 'Roof 3 Insulation Exists*'
+                , 'Can Roof Type 3 Insulation Thickness be Measured?'
+                , 'Roof 3 Thickness (mm)'
+                , 'Roof 3 Insulation Type'
+                , 'Roof 3 Required per standards (mm2) *'
+                , 'Roof 3 Existing (mm2) *'
+                , 'Area of Roof Type 3 with fixed flooring (m2)'
+                , 'Folding/stair ladder in Roof Type 3'
+                , 'Fixed light in Roof Type 3'
+                , 'Downlighters in Roof Type 3'
+                , 'High power cable in Roof Type 3 (6sq/10sq or higher)'
+                , 'Roof 4 Type'
+                , 'Other Details Roof 4*'
+                , 'Sloped Ceiling Roof 4*'
+                , 'Roof 4 greater than 2/3 floor area*'
+                , 'Roof 4 Pitch (degrees)*'
+                , 'Roof 4 Insulation Exists*'
+                , 'Can Roof Type 4 Insulation Thickness be Measured?*'
+                , 'Roof 4 Thickness (mm)*'
+                , 'Roof 4 Insulation Type*'
+                , 'Roof 4 Required per standards (mm2) *'
+                , 'Roof 4 Existing (mm2) *'
+                , 'Area of Roof Type 4 with fixed flooring (m2)*'
+                , 'Folding/stair ladder in Roof Type 4*'
+                , 'Fixed light in Roof Type 4*'
+                , 'Downlighters in Roof Type 4*'
+                , 'High power cable in Roof Type 4 (6sq/10sq or higher)*'
+                , 'Suitable for Insulation *'
+                , 'Not suitable details*'
+                , 'Notes (Roof)']
+        
+        
+
+        
         
         id = root.get('id')
         print(id)
@@ -906,7 +997,7 @@ def survey(root):
         # with open(file, 'w') as outfile:
             # json.dump(JSON, outfile, indent=4)
             
-            
+        json_val_dict['new_hatch_count'] = 0
         json_val_dict["Existing (mm2)*"] = int(0)
         # json_ref_dict = {}
         
@@ -937,47 +1028,121 @@ def survey(root):
         # for x in json_val_dict:
             # print(x, json_val_dict[x])
 
-
-
-
-        roof_general(json_val_dict)
+        # roof_general(json_val_dict) # adds a number of fields contingent on the above
         
         
         json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
-        JSON = json.loads(JSON)        
+        JSON = json.loads(JSON)
+        
         df = pd.DataFrame(JSON["data"])
         
+        json_val_dict['Number of Storeys *'] = df.project_statistics.floor_count # need to omit Roof (XML floorType 10?)
+        # print(json_val_dict['Number of Storeys *'])
+        json_val_dict['Gross floor area (m2) *'] = df.project_statistics.area_with_interior_walls_only # omit Roof area
+        # print(json_val_dict['Gross floor area (m2) *'])
+        json_val_dict['No. Double Glazed Windows *'] = df.project_statistics.window_count
+        # print(json_val_dict['No. Double Glazed Windows *'])
+
+        df = pd.DataFrame(JSON["data"]["project_statistics"])
+
         # print(df)
         # file = plan_name + '_statistics.json'
         # with open(file, 'w') as outfile:
             # json.dump(JSON, outfile, indent=4)
-
-        json_val_dict['Number of Storeys *'] = df.project_statistics.floor_count
-        json_val_dict['Gross floor area (m2) *'] = df.project_statistics.area_with_interior_walls_only
+        
+        
+        
+        # Compare total Roof area to sum of individual ones?
         
         json_val_dict['No. Single Glazed Windows *'] = 0
         
+        
+        print()
+        
         sum_low = 0
-        for floor in df.project_statistics.floors:
-            # if floor["name"] == "Roof":
+        sum_high = 0
+        roof_area_sum = 0
+        slope_roof_area_sum = 0
+        for floor in df.floors:
+
             for room in floor["rooms"]:
                 for furniture in room["furnitures"]:
-                    if furniture["name"] == "New Low Level Roof Ventilation":
+                    if furniture["name"] == "New Low Level Roof Ventilation": # only found in floor["name"] = "Roof"?
                         sum_low += float(furniture["width"])
+                    if furniture["name"] == "New High Level Roof Ventilation": # only found in floor["name"] = "Roof"?
+                        sum_high += float(furniture["width"])
                 for wall_item in room["wall_items"]:
                     if wall_item["name"] == "Single Glazed Window":
                         json_val_dict['No. Single Glazed Windows *'] += 1
-                            
-                            
-        json_val_dict['No. Double Glazed Windows *'] = df.project_statistics.window_count - json_val_dict['No. Single Glazed Windows *']
+                        # print("json_val_dict['No. Single Glazed Windows *']: ", json_val_dict['No. Single Glazed Windows *'])
         
+
+        for floor in df.floors:
+            if floor["name"] == "Roof":
+                roof_area = floor["area_with_interior_walls_only"]
+                print('roof_area: ', roof_area)
+                for n in range(1, 5):
+                    json_val_dict[f"roof_{n}_area"] = 0
+                    # json_val_dict["roof_4_area"] = 0
+                
+                # print(json_val_dict["sfi"]) # list (from JSON_forms) of which roof types are Suitable For Insulation
+                
+                for room in floor["rooms"]:
+                    # print(room["name"])
+                    # print(room["area_with_interior_walls_only"])
+                    roof_area_sum += room["area_with_interior_walls_only"]
+                    # print(room["uid"])
+                    for n in range(1, 5):
+                        # print('n: ', n)
+                        if f"Roof Type {n} Slope" in room["name"]:
+                            this_slope_area = room["area_with_interior_walls_only"] / cos(45/57.2958)
+                            # print('this_slope_area', ': ', this_slope_area)
+                            slope_roof_area_sum += this_slope_area
+                            # print('slope_roof_area_sum', ': ', slope_roof_area_sum)
+                            # json_val_dict[f"roof_{n}_area"] += room["area_with_interior_walls_only"]
+                        else:
+                            if f"Roof Type {n}" in room["name"]:
+                                json_val_dict[f"roof_{n}_area"] += room["area_with_interior_walls_only"]
+                                # print('json_val_dict[' + f"roof_{n}_area" + ']', ': ', json_val_dict[f"roof_{n}_area"])
+                                # print('json_val_dict["roof_4_area"]', ': ', json_val_dict["roof_4_area"])
+                            # else:
+                                # print(f"Roof Type {n} not found in room name: " + room["name"])
+ 
+                            
+                print('roof_area_sum: ', roof_area_sum)
+                    
+
+        # print('json_val_dict["roof_4_area"]', ': ', json_val_dict["roof_4_area"])
+        roof_general(json_val_dict) # adds a number of fields contingent on the above
+
+        json_val_dict['No. Double Glazed Windows *'] = json_val_dict['No. Double Glazed Windows *'] - json_val_dict['No. Single Glazed Windows *']
         json_val_dict['Required per standards (mm2) *'] = round(sum_low * 10000)
         
         
+        # Work Order Recommendation:
+        json_val_dict['sloped_surface_area'] = slope_roof_area_sum
+        print(json_val_dict["sfi_dict"])
+        for t in [100, 150, 200, 250, 300]:
+            if str(t) in json_val_dict["sfi_dict"].keys():
+                json_val_dict[f'ins_{t}_area'] = json_val_dict["sfi_dict"][str(t)]
+
+        # json_val_dict['ins_150_area'] = json_val_dict["sfi_dict"]["150"]
+        # json_val_dict['ins_200_area'] = json_val_dict["sfi_dict"]["200"]
+        # json_val_dict['ins_250_area'] = json_val_dict["sfi_dict"]["250"]
+        # json_val_dict['ins_300_area'] = json_val_dict["sfi_dict"]["300"]
+
+        json_val_dict['storage'] = json_val_dict['Suitable for Insulation *'] # What if only Slope?
         
-        # Fixed Values: (these should really only be added to output_dict as they are not JSON values)
+        json_val_dict['high_roof_vent_area'] = round(sum_high * 5000)
+        json_val_dict['low_roof_vent_area'] = json_val_dict['Required per standards (mm2) *']
+        
+        
+        
+        
+        
+        # Fixed Values: (should these only be added to output_dict as they are not JSON values?)
         json_val_dict['Roof 2 Required per standards (mm2) *'] = 0
         json_val_dict['Roof 2 Existing (mm2) *'] = 0
         json_val_dict['Roof 3 Required per standards (mm2) *'] = 0
@@ -1004,7 +1169,7 @@ def survey(root):
         # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
         
         output = str(ex)
-        # output = traceback.format_exc()
+        output = traceback.format_exc()
         # LOGGER.info('Exception : ' + str(traceback.format_exc()))
         
         # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
