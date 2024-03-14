@@ -1037,7 +1037,7 @@ def survey(root):
                         g = {}
                         for field in section["fields"]:
                         
-                        if datum["symbol_instance_id"] in xml_ref_dict.keys():
+                            if datum["symbol_instance_id"] in xml_ref_dict.keys():
                                 if field["label"] == "Roof Type*":
                                     # print(xml_ref_dict[datum["symbol_instance_id"]])
                                     xml_ref_dict[datum["symbol_instance_id"]] = field["value"]["value"]
