@@ -221,6 +221,32 @@ def roof_general(json_val_dict):
             if json_val_dict[f"Roof {n} Type"] == "Dormer / room in roof":
                 json_val_dict["Room in Roof"] = True
 
+def XML_2_dict(root):
+    try:
+        d = {}
+        floors = root.findall('interiorRoomPoints/floor')
+        for floor in floors:
+            # print('floorType: ' + floor.get('floorType'))
+            # print('uid: ' + floor.get('uid'))
+            d[floor.get('floorType')] = floor.get('uid')
+            d[floor.get('uid')] = floor.get('floorType')
+            for room in floor.findall('floorRoom'):
+                # print('type: ' + room.get('type'))
+                # print('uid: ' + room.get('uid'))
+                if room.get('type') not in d.keys():
+                    d[room.get('type')] = []
+                d[room.get('type')].append(room.get('uid'))
+                d[room.get('uid')] = room.get('type')
+    
+    except Exception as ex:
+        output = str(ex) + "\n\n" + traceback.format_exc()
+        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
+        print(output)
+    
+    finally:
+        return d
+
+
 
 def ber_old(root):
     
@@ -869,17 +895,11 @@ def survey(root):
         # rating_purpose = root.find('values/value[@key="qf.34d66ce4q4"]').text
         
         date = root.find('values/value[@key="date"]').text
-        json_val_dict = {'Survey Date *': date}
-        
-        
-        # floorType="1000"
-        # roof_area = root.findall('floor[@floorType="1000"]').areaWithInteriorWallsOnly
-        # uid="65e9e3fa.a426cbff" 
+        json_val_dict['Survey Date *'] = date
         
         
 
-        
-        
+        xml_ref_dict = XML_2_dict(root)
         
         
         ofl_general = ['Dwelling Type*'
@@ -1007,6 +1027,34 @@ def survey(root):
         json_val_dict['No. Single Glazed Windows *'] = 0
         # json_ref_dict = {}
         
+        slopes = []
+        for datum in JSON["data"]:
+            # print(datum["symbol_name"])
+            # print(datum["symbol_instance_id"])
+            for form in datum["forms"]:
+                for section in form["sections"]:
+                    for n in range(1, 5):
+                        g = {}
+                        for field in section["fields"]:
+                        
+                        if datum["symbol_instance_id"] in xml_ref_dict.keys():
+                                if field["label"] == "Roof Type*":
+                                    # print(xml_ref_dict[datum["symbol_instance_id"]])
+                                    xml_ref_dict[datum["symbol_instance_id"]] = field["value"]["value"]
+                                    # print(xml_ref_dict[datum["symbol_instance_id"]])
+
+                            g[field["label"]] = field["value"]["value"]
+                        
+                        if "Roof Type*" in g.keys() and f"Roof Type {n} Sloping Ceiling Suitable for Insulation*" in g.keys():
+                            if g["Roof Type*"] == "Sloped Ceiling" and g[f"Roof Type {n} Sloping Ceiling Suitable for Insulation*"] == True:
+                                print("Need slope for: ", g["Part of roof type?*"])
+                                slopes.append(g["Part of roof type?*"])
+                            
+        
+        
+        
+        
+        
         # print(df)
         print('len(df.forms): ', len(df.forms))
         for form in df.forms:
@@ -1016,13 +1064,19 @@ def survey(root):
                 for field in df3.fields:
                     df4 = pd.DataFrame(field)
                     for index, row in df4.iterrows():
+                        # if row["label"] == "Roof Type*" and row["value"]["value"] == "Sloped Ceiling":
+                            
+                        
+                        
                         if row["label"] == "Is the window Single glazed?":
                             if row["value"]["value"] == True:
                                 json_val_dict['No. Single Glazed Windows *'] += 1
+                        
                         if row["label"] == "Existing Roof Ventilation (mm2)*":
                             if not row["value"]["value"].isdigit():
                                 continue
                             json_val_dict["Existing (mm2)*"] += int(row["value"]["value"])
+                        
                         v = ''
                         if row["value"]["value"] == None:
                             vals = [val["value"] for val in row["value"]["values"]]
@@ -1062,7 +1116,8 @@ def survey(root):
         slope_roof_area_sum = 0
         new_hatch_count = 0
         for floor in df.floors:
-            if floor["name"] in ["Ground Floor", "1st Floor", "2nd Floor", "3rd Floor", "4th Floor", "5th Floor", "6th Floor", "7th Floor", "8th Floor", "9th Floor"]:
+            if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
+            # in ["Ground Floor", "1st Floor", "2nd Floor", "3rd Floor", "4th Floor", "5th Floor", "6th Floor", "7th Floor", "8th Floor", "9th Floor"]:
                 json_val_dict['Number of Storeys *'] += 1
                 json_val_dict['Gross floor area (m2) *'] += floor["area_with_interior_walls_only"]
             
@@ -1074,14 +1129,14 @@ def survey(root):
                         sum_high += float(furniture["width"])
                     if furniture["name"] == "New Hatch":
                         new_hatch_count += 1
-                for wall_item in room["wall_items"]:
-                    if wall_item["name"] == "Single Glazed Window":
-                        json_val_dict['No. Single Glazed Windows *'] += 1
+                # for wall_item in room["wall_items"]:
+                    # if wall_item["name"] == "Single Glazed Window":
+                        # json_val_dict['No. Single Glazed Windows *'] += 1
                         # print("json_val_dict['No. Single Glazed Windows *']: ", json_val_dict['No. Single Glazed Windows *'])
         
 
         for floor in df.floors:
-            if floor["name"] in ["Roof", "10th Floor"]:
+            if int(xml_ref_dict[floor["uid"]]) == 1000: # i.e. type "Roof"
                 roof_area_total = floor["area_with_interior_walls_only"]
                 print('roof_area_total (unused variable): ', roof_area_total)
                 
@@ -1097,7 +1152,7 @@ def survey(root):
                     roof_area_sum += room["area_with_interior_walls_only"]
                     for n in range(1, 5):
                         # print('n: ', n)
-                        if f"Roof Type {n} Slope" in room["name"]:
+                        if f"Roof Type {n}" in slopes:
                             if f"Roof {n} Pitch (degrees)*" in json_val_dict.keys():
                                 pitch = json_val_dict[f"Roof {n} Pitch (degrees)*"]
                             else:
@@ -1105,7 +1160,8 @@ def survey(root):
                             this_slope_area = room["area_with_interior_walls_only"] / cos(pitch/57.2958)
                             slope_roof_area_sum += this_slope_area
                         else:
-                            if f"Roof Type {n}" in room["name"]:
+                            # if f"Roof Type {n}" in room["name"]:
+                            if xml_ref_dict[room["uid"]] == f"Roof Type {n}":
                                 json_val_dict[f"roof_{n}_area"] += room["area_with_interior_walls_only"]
 
  
