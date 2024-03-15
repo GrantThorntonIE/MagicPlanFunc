@@ -176,14 +176,6 @@ def roof_general(json_val_dict):
                 break
 
 
-
-
-    # print('json_val_dict["sfi_dict"]: ', json_val_dict["sfi_dict"])
-
-
-
-
-
     for n in range(1, 5):
         if json_val_dict["Suitable for Insulation *"] == False:
             if f"Roof Type {n} Not Suitable Details" in json_val_dict.keys():
@@ -221,6 +213,68 @@ def roof_general(json_val_dict):
             if json_val_dict[f"Roof {n} Type"] == "Dormer / room in roof":
                 json_val_dict["Room in Roof"] = True
 
+
+def walls_general(json_val_dict):
+
+    json_val_dict["Is the property suitable for wall insulation? *"] = False
+    json_val_dict["No wall insulation details *"] = ''
+    json_val_dict["Notes (Walls)"] = ''
+    
+    if "sfwi" not in json_val_dict.keys():
+        json_val_dict["sfwi"] = []
+    if "sfwi_dict" not in json_val_dict.keys():
+        json_val_dict["sfwi_dict"] = {}
+    
+    
+    
+    
+    for n in range(1, 5):
+        if f"Is wall type {n} suitable for wall insulation?" in json_val_dict.keys():
+            print(f"Is wall type {n} suitable for wall insulation?", json_val_dict[f"Is wall type {n} suitable for wall insulation?"])
+            if json_val_dict[f"Is wall type {n} suitable for wall insulation?"] == True:
+                json_val_dict["Is the property suitable for wall insulation? *"] = True
+                json_val_dict["sfwi"].append(n)
+                # json_val_dict["sfwi_dict"][n] = 300
+
+        if f"Is wall type {n} suitable for wall insulation?*" in json_val_dict.keys():
+            print(f"Is wall type {n} suitable for wall insulation?*", json_val_dict[f"Is wall type {n} suitable for wall insulation?*"])
+            if json_val_dict[f"Is wall type {n} suitable for wall insulation?*"] == True:
+                json_val_dict["Is the property suitable for wall insulation? *"] = True
+                json_val_dict["sfwi"].append(n)
+                # json_val_dict["sfwi_dict"][n] = 300
+
+
+    print('sfwi: ', json_val_dict["sfwi"])
+    # print('sfwi: ', json_val_dict["sfwi_dict"])
+
+
+
+    for n in range(1, 5):
+        if json_val_dict["Is the property suitable for wall insulation? *"] == False:
+            if f"No wall type {n} insulation details" in json_val_dict.keys():
+                print('n', ': ', n, json_val_dict[f"No wall type {n} insulation details"])
+                json_val_dict["No wall insulation details *"] += f"No wall type {n} insulation details: "
+                json_val_dict["No wall insulation details *"] += json_val_dict[f"No wall type {n} insulation details"]
+                json_val_dict["No wall insulation details *"] += "<BR>"
+        else:
+            json_val_dict["No wall insulation details *"] = 'N/A'
+    print('json_val_dict["No wall insulation details *"]: ', json_val_dict["No wall insulation details *"])
+    
+    for n in range(1, 5):
+        if f"Notes (Wall type {n} Walls)" in json_val_dict.keys():
+            json_val_dict["Notes (Walls)"] += f"Notes (Wall type {n} Walls): "
+            json_val_dict["Notes (Walls)"] += json_val_dict[f"Notes (Wall type {n} Walls)"]
+            json_val_dict["Notes (Walls)"] += "<BR>"
+        if f"Notes (Wall type {n} Walls)*" in json_val_dict.keys():
+            json_val_dict["Notes (Walls)"] += f"Notes (Wall type {n} Walls)*: "
+            json_val_dict["Notes (Walls)"] += json_val_dict[f"Notes (Wall type {n} Walls)*"]
+            json_val_dict["Notes (Walls)"] += "<BR>"
+    print('json_val_dict["Notes (Walls)"]: ', json_val_dict["Notes (Walls)"])
+    
+
+
+
+
 def XML_2_dict(root):
     try:
         d = {}
@@ -245,7 +299,6 @@ def XML_2_dict(root):
     
     finally:
         return d
-
 
 
 def ber_old(root):
@@ -994,7 +1047,38 @@ def survey(root):
                 , 'Suitable for Insulation *'
                 , 'Not suitable details*'
                 , 'Notes (Roof)']
-        
+        ofl_walls = ['Wall Type 1*'
+                    , 'Wall 1 wall thickness (mm)*'
+                    , 'Wall 1 Insulation Present?*'
+                    , 'Wall 1 Insulation Type*'
+                    , 'Can Wall type 1 Insulation Thickness be Measured?*'
+                    , "If 'Yes' enter Wall type 1 insulation thickness (mm)*"
+                    , 'Wall Type 2'
+                    , 'Wall 2 wall thickness (mm)*'
+                    , 'Wall 2 Insulation Present?*'
+                    , 'Wall 2 Insulation Type*'
+                    , 'Can Wall type 2 Insulation Thickness be Measured?*'
+                    , "If 'Yes' enter Wall type 2 insulation thickness (mm)*"
+                    , 'Wall Type 3'
+                    , 'Wall 3 wall thickness (mm)*'
+                    , 'Wall 3 Insulation Present?*'
+                    , 'Wall 3 Insulation Type*'
+                    , 'Can Wall type 3 Insulation Thickness be Measured?*'
+                    , "If 'Yes' enter Wall type 3 insulation thickness (mm)*"
+                    , 'Wall Type 4'
+                    , 'Wall 4 wall thickness (mm)*'
+                    , 'Wall 4 Insulation Present?*'
+                    , 'Wall 4 Insulation Type*'
+                    , 'Wall 4 Residual Cavity Width (mm)*'
+                    , 'Can Wall type 4 Insulation Thickness be Measured?*'
+                    , "If 'Yes' enter Wall type 4 insulation thickness (mm)*"
+                    , "Is the property suitable for wall insulation? *"
+                    , "No wall insulation details *"
+                    , "Notes (Walls)"
+                    , 'Suitable for Draught Proofing'
+                    , 'Not suitable details Draughtproofing*'
+                    , 
+                    ]
         
 
         
@@ -1018,38 +1102,15 @@ def survey(root):
         df = pd.DataFrame(JSON["data"])
         
         
-        # file = plan_name + '_forms.json'
-        # with open(file, 'w') as outfile:
-            # json.dump(JSON, outfile, indent=4)
+
             
         # json_val_dict['new_hatch_count'] = 0
         json_val_dict["Existing (mm2)*"] = int(0)
         json_val_dict['No. Single Glazed Windows *'] = 0
         # json_ref_dict = {}
         
-        slopes = []
-        for datum in JSON["data"]:
-            # print(datum["symbol_name"])
-            # print(datum["symbol_instance_id"])
-            for form in datum["forms"]:
-                for section in form["sections"]:
-                    for n in range(1, 5):
-                        g = {}
-                        for field in section["fields"]:
-                        
-                            if datum["symbol_instance_id"] in xml_ref_dict.keys():
-                                if field["label"] == "Roof Type*":
-                                    # print(xml_ref_dict[datum["symbol_instance_id"]])
-                                    xml_ref_dict[datum["symbol_instance_id"]] = field["value"]["value"]
-                                    # print(xml_ref_dict[datum["symbol_instance_id"]])
+        
 
-                            g[field["label"]] = field["value"]["value"]
-                        
-                        if "Roof Type*" in g.keys() and f"Roof Type {n} Sloping Ceiling Suitable for Insulation*" in g.keys():
-                            if g["Roof Type*"] == "Sloped Ceiling" and g[f"Roof Type {n} Sloping Ceiling Suitable for Insulation*"] == True:
-                                print("Need slope for: ", g["Part of roof type?*"])
-                                slopes.append(g["Part of roof type?*"])
-                            
         
         
         
@@ -1064,9 +1125,6 @@ def survey(root):
                 for field in df3.fields:
                     df4 = pd.DataFrame(field)
                     for index, row in df4.iterrows():
-                        # if row["label"] == "Roof Type*" and row["value"]["value"] == "Sloped Ceiling":
-                            
-                        
                         
                         if row["label"] == "Is the window Single glazed?":
                             if row["value"]["value"] == True:
@@ -1088,10 +1146,52 @@ def survey(root):
                         json_val_dict[row["label"]] = v
 
 
+        # create list of slopes - actually maybe dict...
+        # update XML dict with "Roof Type {n}" (instead of "Attic")
+        
+        slopes = [] # list of Roof Types with a sloped section that needs to be calculated
+        slope_dict = {} # Roof Type {n}: Angle (Pitch)
+        for datum in JSON["data"]:
+            # print(datum["symbol_name"])
+            # print(datum["symbol_instance_id"])
+            for form in datum["forms"]:
+                for section in form["sections"]:
+                    for field in section["fields"]:
+                        if datum["symbol_instance_id"] in xml_ref_dict.keys():
+                            if field["label"] == "Roof Type*":
+                                print('before: ', xml_ref_dict[datum["symbol_instance_id"]])
+                                xml_ref_dict[datum["symbol_instance_id"]] = field["value"]["value"]
+                                print('after: ', xml_ref_dict[datum["symbol_instance_id"]])
+                        g = {} # temporary dictionary containing the answers to questions
+                        for field in section["fields"]:
+                            g[field["label"]] = field["value"]["value"]
+                    for n in range(1, 5):
+                        if "Roof Type*" in g.keys() and f"Roof Type {n} Sloping Ceiling Suitable for Insulation*" in g.keys():
+                            print('g: ', g)
+                            if g["Roof Type*"] == "Sloped Ceiling" and g[f"Roof Type {n} Sloping Ceiling Suitable for Insulation*"] == True:
+                                print("Need slope for: ", g["Part of roof type?*"])
+                                slopes.append(g["Part of roof type?*"])
+                                if f"Roof {n} Pitch (degrees)*" in json_val_dict.keys():
+                                    pitch = json_val_dict[f"Roof {n} Pitch (degrees)*"]
+                                else:
+                                    pitch = 30
+                                slope_dict[g["Part of roof type?*"]] = pitch
+        print('slopes', ': ', slopes)
+        print('slope_dict', ': ', slope_dict)
+
+
+
+
+
+
+
+
+
+
         # for x in json_val_dict:
             # print(x, json_val_dict[x])
 
-        # roof_general(json_val_dict) # adds a number of fields contingent on the above
+
         
         
         json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
@@ -1137,36 +1237,45 @@ def survey(root):
 
         for floor in df.floors:
             if int(xml_ref_dict[floor["uid"]]) == 1000: # i.e. type "Roof"
-                roof_area_total = floor["area_with_interior_walls_only"]
-                print('roof_area_total (unused variable): ', roof_area_total)
+                # roof_area_total = floor["area_with_interior_walls_only"]
+                # print('roof_area_total (unused variable): ', roof_area_total)
                 
+                slope_roof_area_sum = 0
                 for n in range(1, 5):
                     json_val_dict[f"roof_{n}_area"] = 0
-                
-                # print(json_val_dict["sfi"]) # list (from JSON_forms) of which roof types are Suitable For Insulation
-                
+
                 for room in floor["rooms"]:
-                    # print(room["uid"])
-                    # print(room["name"])
-                    # print(room["area_with_interior_walls_only"])
-                    roof_area_sum += room["area_with_interior_walls_only"]
-                    for n in range(1, 5):
+                    print('room["uid"]', ': ', room["uid"])
+                    print(xml_ref_dict[room["uid"]])
+                    print('area:', room["area_with_interior_walls_only"])
+                    
+                    if xml_ref_dict[room["uid"]] in slope_dict.keys():
+                        pitch = slope_dict[xml_ref_dict[room["uid"]]]
+                        print('pitch' ': ', pitch)
+                        this_slope_area = room["area_with_interior_walls_only"] / cos(pitch/57.2958)
+                        print('this_slope_area' ': ', this_slope_area)
+                        slope_roof_area_sum += this_slope_area
+                    else:
+                        json_val_dict[f"roof_{n}_area"] += room["area_with_interior_walls_only"]
+                    
+                    
+                    
+                    # for n in range(1, 5):
                         # print('n: ', n)
-                        if f"Roof Type {n}" in slopes:
-                            if f"Roof {n} Pitch (degrees)*" in json_val_dict.keys():
-                                pitch = json_val_dict[f"Roof {n} Pitch (degrees)*"]
-                            else:
-                                pitch = 45
-                            this_slope_area = room["area_with_interior_walls_only"] / cos(pitch/57.2958)
-                            slope_roof_area_sum += this_slope_area
-                        else:
-                            # if f"Roof Type {n}" in room["name"]:
-                            if xml_ref_dict[room["uid"]] == f"Roof Type {n}":
-                                json_val_dict[f"roof_{n}_area"] += room["area_with_interior_walls_only"]
+                        # if f"Roof Type {n}" in slopes:
+                            # if f"Roof {n} Pitch (degrees)*" in json_val_dict.keys():
+                                # pitch = json_val_dict[f"Roof {n} Pitch (degrees)*"]
+                            # else:
+                                # pitch = 45
+                            # this_slope_area = room["area_with_interior_walls_only"] / cos(pitch/57.2958)
+                            # slope_roof_area_sum += this_slope_area
+                        # else:
+                            # if xml_ref_dict[room["uid"]] == f"Roof Type {n}":
+                                # json_val_dict[f"roof_{n}_area"] += room["area_with_interior_walls_only"]
 
  
                             
-                print('roof_area_sum: ', roof_area_sum)
+                # print('roof_area_sum: ', roof_area_sum)
                     
 
         # print('json_val_dict["roof_4_area"]', ': ', json_val_dict["roof_4_area"])
@@ -1176,12 +1285,15 @@ def survey(root):
         
         
         roof_general(json_val_dict) # adds a number of fields contingent on the above
-
+        
+        walls_general(json_val_dict)
+        
+        
         json_val_dict['No. Double Glazed Windows *'] = json_val_dict['No. Double Glazed Windows *'] - json_val_dict['No. Single Glazed Windows *']
         json_val_dict['Required per standards (mm2) *'] = round(sum_low * 10000)
         
         
-        # Work Order Recommendation:
+        # Work Order Recommendation (Roof):
         json_val_dict['sloped_surface_area'] = round(slope_roof_area_sum)
         print(json_val_dict["sfi_dict"])
         json_val_dict['storage'] = 0
@@ -1219,6 +1331,8 @@ def survey(root):
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
             <h1>Roof</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)} \
+            <h1>Walls</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_walls)} \
             </div>"""
 
     except Exception as ex:
