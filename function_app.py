@@ -1072,7 +1072,29 @@ def survey(root):
                     , "Notes (Walls)"
                     , 'Suitable for Draught Proofing'
                     , 'Not suitable details Draughtproofing*'
-                    , 
+                    , "Draught Proofing (<= 20m installed)"
+                    , "Draught Proofing (> 20m installed)"
+                    , "MEV 15l/s Bathroom"
+                    , "MEV 30l/s Utility"
+                    , "MEV 60l/s Kitchen"
+                    , "New Permanent Vent"
+                    , "New Background Vent"
+                    , "Ducted Cooker Hood"
+                    , "Cavity Wall Insulation Bonded Bead"
+                    , "Loose Fibre Extraction"
+                    , "External Wall Insulation: Less than 60m2"
+                    , "External Wall Insulation: 60m2 to 85m2"
+                    , "External Wall Insulation: Greater than 85m2"
+                    , "ESB alteration"
+                    , "GNI meter alteration"
+                    , "GNI new connection"
+                    , "RGI Meter_No Heating"
+                    , 'Internal Wall Insulation: Vertical Surface'
+                    , "External wall insulation and CWI: less than 60m2"
+                    , "External wall insulation and CWI: 60m2 to 85m2"
+                    , "External wall insulation and CWI: greater than 85m2"
+                    , 'replace_window_area'
+                    , 'Notes (Windows and Doors)'
                     ]
         
 
@@ -1108,11 +1130,12 @@ def survey(root):
         
         
         
-        
+        replace_windows = []
         
         # print(df)
         print('len(df.forms): ', len(df.forms))
         for form in df.forms:
+            # print(form["symbol_instance_id"])
             df2 = pd.DataFrame(form)
             for section in df2.sections:
                 df3 = pd.DataFrame(section)
@@ -1142,18 +1165,33 @@ def survey(root):
                         json_val_dict[row["label"]] = v
 
 
-        # create list of slopes - actually maybe dict...
-        # update XML dict with "Roof Type {n}" (instead of "Attic")
         
-        # slopes = [] # list of Roof Types with a sloped section that needs to be calculated
+        
+        json_val_dict["ESB alteration"] = 0
+        json_val_dict["GNI meter alteration"] = 0
+        json_val_dict["Ducted Cooker Hood"] = 0
+        
         slope_dict = {}
         roof_type_dict = {}
         for datum in JSON["data"]:
-            # print(datum["symbol_name"])
+            print(datum["symbol_name"])
+            if datum["symbol_name"] == "ESB alteration":
+                json_val_dict["ESB alteration"] += 1
+            if datum["symbol_name"] == "GNI meter alteration":
+                json_val_dict["GNI meter alteration"] += 1
             # print(datum["symbol_instance_id"])
+            if datum["symbol_name"] == "GNI new connection":
+                json_val_dict["GNI new connection"] += 1
+            if datum["symbol_name"] == "RGI Meter_No Heating":
+                json_val_dict["RGI Meter_No Heating"] += 1
+            if datum["symbol_name"] == "Ducted Cooker Hood":
+                json_val_dict["Ducted Cooker Hood"] += 1
             for form in datum["forms"]:
                 for section in form["sections"]:
                     for field in section["fields"]:
+                        if field["label"] == "Is it being recommended for replacement?" and field["value"]["value"] == True:
+                            replace_windows.append(datum["symbol_instance_id"]) 
+                        
                         if datum["symbol_instance_id"] in xml_ref_dict.keys():
                             if field["label"] == "Roof Type*":
                                 # print('before: ', xml_ref_dict[datum["symbol_instance_id"]])
@@ -1205,16 +1243,72 @@ def survey(root):
         
         json_val_dict['Number of Storeys *'] = 0
         json_val_dict['Gross floor area (m2) *'] = 0.00
+        new_draughtproofing = 0
         sum_low = 0
         sum_high = 0
         roof_area_sum = 0
         slope_roof_area_sum = 0
         new_hatch_count = 0
+        json_val_dict["MEV 15l/s Bathroom"] = 0
+        json_val_dict["MEV 30l/s Utility"] = 0
+        json_val_dict["MEV 60l/s Kitchen"] = 0
+        json_val_dict["New Permanent Vent"] = 0
+        json_val_dict["New Background Vent"] = 0
+        
+        json_val_dict["Cavity Wall Insulation Bonded Bead"] = 0
+        json_val_dict["Loose Fibre Extraction"] = 0
+        external_wall_insulation = 0
+        json_val_dict["External Wall Insulation: Less than 60m2"] = 0
+        json_val_dict["External Wall Insulation: 60m2 to 85m2"] = 0
+        json_val_dict["External Wall Insulation: Greater than 85m2"] = 0
+        json_val_dict["Internal Wall Insulation: Vertical Surface"] = 0
+        external_wall_insulation_and_cwi = 0
+        json_val_dict["External wall insulation and CWI: less than 60m2"] = 0
+        json_val_dict["External wall insulation and CWI: 60m2 to 85m2"] = 0
+        json_val_dict["External wall insulation and CWI: greater than 85m2"] = 0
+
+
+
+
+
+        json_val_dict['replace_window_area'] = 0
+        # print(xml_ref_dict)
+        print(replace_windows)
         for floor in df.floors:
+            if int(xml_ref_dict[floor["uid"]]) == 20:
+                external_wall_insulation += floor["area_with_interior_walls_only"]
+            if int(xml_ref_dict[floor["uid"]]) == 21:
+                json_val_dict["Cavity Wall Insulation Bonded Bead"] += floor["area_with_interior_walls_only"]
+            if int(xml_ref_dict[floor["uid"]]) == 22:
+                json_val_dict["Internal Wall Insulation: Vertical Surface"] += floor["area_with_interior_walls_only"]
+            if int(xml_ref_dict[floor["uid"]]) == 23:
+                json_val_dict["Loose Fibre Extraction"] += floor["area_with_interior_walls_only"]
+            if int(xml_ref_dict[floor["uid"]]) == 24:
+                external_wall_insulation_and_cwi += floor["area_with_interior_walls_only"]
             if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
                 json_val_dict['Number of Storeys *'] += 1
                 json_val_dict['Gross floor area (m2) *'] += floor["area_with_interior_walls_only"]
-            
+                for room in floor["rooms"]:
+                    for wall_item in room["wall_items"]:
+                        if wall_item["uid"] in replace_windows:
+                            json_val_dict['replace_window_area'] += (wall_item["width"] * wall_item["height"])
+                    for furniture in room["furnitures"]:
+                        if furniture["name"] == "New Draughtproofing":
+                            new_draughtproofing += 1
+                        if furniture["name"] == "New Mechanical Vent":
+                            # print(xml_ref_dict[room["uid"]])
+                            if xml_ref_dict[room["uid"]] in ['ensuite', 'bathroom', 'WC', 'Half Bathroom', 'Toilet', 'Primary Bathroom']:
+                                json_val_dict["MEV 15l/s Bathroom"] += 1
+                            if xml_ref_dict[room["uid"]] in ['Laundry Room']:
+                                json_val_dict["MEV 30l/s Utility"] += 1
+                            if xml_ref_dict[room["uid"]] in ['Kitchen']:
+                                json_val_dict["MEV 60l/s Kitchen"] += 1
+                        if furniture["name"] == "New Permanent Vent":
+                            json_val_dict["New Permanent Vent"] += 1
+                        if furniture["name"] == "New Background Vent":
+                            json_val_dict["New Background Vent"] += 1
+
+                            
             for room in floor["rooms"]:
                 for furniture in room["furnitures"]:
                     if furniture["name"] == "New Low Level Roof Ventilation": # only found in Roof?
@@ -1223,6 +1317,31 @@ def survey(root):
                         sum_high += float(furniture["width"])
                     if furniture["name"] == "New Hatch": # only found in -1 to 9 and Roof?
                         new_hatch_count += 1
+        if new_draughtproofing == 0:
+            json_val_dict["Draught Proofing (<= 20m installed)"] = ''
+            json_val_dict["Draught Proofing (> 20m installed)"] = ''
+        if 1 <= new_draughtproofing <= 4:
+            json_val_dict["Draught Proofing (<= 20m installed)"] = 1
+            json_val_dict["Draught Proofing (> 20m installed)"] = ''
+        if new_draughtproofing > 4:
+            json_val_dict["Draught Proofing (<= 20m installed)"] = ''
+            json_val_dict["Draught Proofing (> 20m installed)"] = 1
+        
+        if external_wall_insulation <= 60:
+            json_val_dict["External Wall Insulation: Less than 60m2"] = 1
+        if 60 < external_wall_insulation <= 85:
+            json_val_dict["External Wall Insulation: 60m2 to 85m2"] = 1
+        if external_wall_insulation > 85:
+            json_val_dict["External Wall Insulation: Greater than 85m2"] = 1
+            
+        if external_wall_insulation_and_cwi <= 60:
+            json_val_dict["External wall insulation and CWI: less than 60m2"] = 1
+        if 60 < external_wall_insulation_and_cwi <= 85:
+            json_val_dict["External wall insulation and CWI: 60m2 to 85m2"] = 1
+        if external_wall_insulation_and_cwi > 85:
+            json_val_dict["External wall insulation and CWI: greater than 85m2"] = 1
+            
+        
         
         
         for floor in df.floors:
