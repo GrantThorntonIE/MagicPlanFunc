@@ -1079,7 +1079,7 @@ def survey(root):
                     , "MEV 60l/s Kitchen"
                     , "New Permanent Vent"
                     , "New Background Vent"
-                    , "Ducted Cooker Hood"
+                    , "Duct Cooker Hood"
                     , "Cavity Wall Insulation Bonded Bead"
                     , "Loose Fibre Extraction"
                     , "External Wall Insulation: Less than 60m2"
@@ -1169,12 +1169,12 @@ def survey(root):
         
         json_val_dict["ESB alteration"] = 0
         json_val_dict["GNI meter alteration"] = 0
-        json_val_dict["Ducted Cooker Hood"] = 0
+        json_val_dict["Duct Cooker Hood"] = 0
         
         slope_dict = {}
         roof_type_dict = {}
         for datum in JSON["data"]:
-            print(datum["symbol_name"])
+            # print(datum["symbol_name"])
             if datum["symbol_name"] == "ESB alteration":
                 json_val_dict["ESB alteration"] += 1
             if datum["symbol_name"] == "GNI meter alteration":
@@ -1184,8 +1184,6 @@ def survey(root):
                 json_val_dict["GNI new connection"] += 1
             if datum["symbol_name"] == "RGI Meter_No Heating":
                 json_val_dict["RGI Meter_No Heating"] += 1
-            if datum["symbol_name"] == "Ducted Cooker Hood":
-                json_val_dict["Ducted Cooker Hood"] += 1
             for form in datum["forms"]:
                 for section in form["sections"]:
                     for field in section["fields"]:
@@ -1220,7 +1218,8 @@ def survey(root):
 
         # for x in json_val_dict:
             # print(x, json_val_dict[x])
-
+        json_val_dict["ESB alteration"] = json_val_dict["ESB alteration"] if json_val_dict["ESB alteration"] != 0 else 'N/A'
+        json_val_dict["GNI meter alteration"] = json_val_dict["GNI meter alteration"] if json_val_dict["GNI meter alteration"] != 0 else 'N/A'
 
         
         
@@ -1293,11 +1292,12 @@ def survey(root):
                         if wall_item["uid"] in replace_windows:
                             json_val_dict['replace_window_area'] += (wall_item["width"] * wall_item["height"])
                     for furniture in room["furnitures"]:
+                        print(furniture["name"])
                         if furniture["name"] == "New Draughtproofing":
                             new_draughtproofing += 1
                         if furniture["name"] == "New Mechanical Vent":
                             # print(xml_ref_dict[room["uid"]])
-                            if xml_ref_dict[room["uid"]] in ['ensuite', 'bathroom', 'WC', 'Half Bathroom', 'Toilet', 'Primary Bathroom']:
+                            if xml_ref_dict[room["uid"]] in ['Bathroom', 'Half Bathroom', 'Toilet']:
                                 json_val_dict["MEV 15l/s Bathroom"] += 1
                             if xml_ref_dict[room["uid"]] in ['Laundry Room']:
                                 json_val_dict["MEV 30l/s Utility"] += 1
@@ -1307,6 +1307,8 @@ def survey(root):
                             json_val_dict["New Permanent Vent"] += 1
                         if furniture["name"] == "New Background Vent":
                             json_val_dict["New Background Vent"] += 1
+                        if furniture["name"] == "Duct Cooker Hood":
+                            json_val_dict["Duct Cooker Hood"] += 1
 
                             
             for room in floor["rooms"]:
@@ -1317,29 +1319,36 @@ def survey(root):
                         sum_high += float(furniture["width"])
                     if furniture["name"] == "New Hatch": # only found in -1 to 9 and Roof?
                         new_hatch_count += 1
+        
+        json_val_dict["Cavity Wall Insulation Bonded Bead"] = round(json_val_dict["Cavity Wall Insulation Bonded Bead"]) if json_val_dict["Cavity Wall Insulation Bonded Bead"] != 0 else 'N/A'
+        json_val_dict["Loose Fibre Extraction"] = round(json_val_dict["Loose Fibre Extraction"]) if json_val_dict["Loose Fibre Extraction"] != 0 else 'N/A'
+        json_val_dict["Internal Wall Insulation: Vertical Surface"] = round(json_val_dict["Internal Wall Insulation: Vertical Surface"]) if json_val_dict["Internal Wall Insulation: Vertical Surface"] != 0 else 'N/A'
+        json_val_dict['replace_window_area'] = round(json_val_dict['replace_window_area']) if json_val_dict['replace_window_area'] != 0 else 'N/A'
+        json_val_dict['Notes (Windows and Doors)'] = json_val_dict['Notes (Windows and Doors)'] if json_val_dict['Notes (Windows and Doors)'] != '' else 'N/A'
+        
         if new_draughtproofing == 0:
-            json_val_dict["Draught Proofing (<= 20m installed)"] = ''
-            json_val_dict["Draught Proofing (> 20m installed)"] = ''
-        if 1 <= new_draughtproofing <= 4:
+            json_val_dict["Draught Proofing (<= 20m installed)"] = 'N/A'
+            json_val_dict["Draught Proofing (> 20m installed)"] = 'N/A'
+        if 1 <= new_draughtproofing <= 3:
             json_val_dict["Draught Proofing (<= 20m installed)"] = 1
-            json_val_dict["Draught Proofing (> 20m installed)"] = ''
-        if new_draughtproofing > 4:
-            json_val_dict["Draught Proofing (<= 20m installed)"] = ''
+            json_val_dict["Draught Proofing (> 20m installed)"] = 'N/A'
+        if new_draughtproofing >= 4:
+            json_val_dict["Draught Proofing (<= 20m installed)"] = 'N/A'
             json_val_dict["Draught Proofing (> 20m installed)"] = 1
         
-        if external_wall_insulation <= 60:
-            json_val_dict["External Wall Insulation: Less than 60m2"] = 1
-        if 60 < external_wall_insulation <= 85:
-            json_val_dict["External Wall Insulation: 60m2 to 85m2"] = 1
-        if external_wall_insulation > 85:
-            json_val_dict["External Wall Insulation: Greater than 85m2"] = 1
+        
+        json_val_dict["External Wall Insulation: Less than 60m2"] = round(external_wall_insulation) if external_wall_insulation <= 60 else 'N/A'
+        
+        json_val_dict["External Wall Insulation: 60m2 to 85m2"] = round(external_wall_insulation) if 60 < external_wall_insulation <= 85  else 'N/A'
+        
+        json_val_dict["External Wall Insulation: Greater than 85m2"] = round(external_wall_insulation) if external_wall_insulation > 85  else 'N/A'
             
-        if external_wall_insulation_and_cwi <= 60:
-            json_val_dict["External wall insulation and CWI: less than 60m2"] = 1
-        if 60 < external_wall_insulation_and_cwi <= 85:
-            json_val_dict["External wall insulation and CWI: 60m2 to 85m2"] = 1
-        if external_wall_insulation_and_cwi > 85:
-            json_val_dict["External wall insulation and CWI: greater than 85m2"] = 1
+        
+        json_val_dict["External wall insulation and CWI: less than 60m2"] = round(external_wall_insulation_and_cwi) if external_wall_insulation_and_cwi <= 60 else 'N/A'
+        
+        json_val_dict["External wall insulation and CWI: 60m2 to 85m2"] = round(external_wall_insulation_and_cwi) if 60 < external_wall_insulation_and_cwi <= 85 else 'N/A'
+        
+        json_val_dict["External wall insulation and CWI: greater than 85m2"] = round(external_wall_insulation_and_cwi) if external_wall_insulation_and_cwi > 85 else 'N/A'
             
         
         
