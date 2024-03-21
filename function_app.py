@@ -207,6 +207,8 @@ def roof_general(json_val_dict):
             # print(f"Roof {n} Type", json_val_dict[f"Roof {n} Type"])
             if json_val_dict[f"Roof {n} Type"] == "Dormer / room in roof":
                 json_val_dict["Room in Roof"] = True
+    
+    
 
 
 def walls_general(json_val_dict):
@@ -266,6 +268,8 @@ def walls_general(json_val_dict):
             json_val_dict["Notes (Walls)"] += "<BR>"
     # print('json_val_dict["Notes (Walls)"]: ', json_val_dict["Notes (Walls)"])
     
+    if json_val_dict["Is the property suitable for wall insulation? *"] == False:
+        json_val_dict["No wall insulation details *"] += json_val_dict["Notes (Walls)"]
 
 
 
@@ -1046,24 +1050,31 @@ def survey(root):
                     , 'Wall 1 wall thickness (mm)*'
                     , 'Wall 1 Insulation Present?*'
                     , 'Wall 1 Insulation Type*'
+                    , "Wall 1 Fill Type*"
+                    , 'Wall 1 Residual Cavity Width (mm)*'
                     , 'Can Wall type 1 Insulation Thickness be Measured?*'
-                    , "If 'Yes' enter Wall type 1 insulation thickness (mm)*"
+                    , "If 'Yes' enter insulation thickness (mm)*"
                     , 'Wall Type 2'
                     , 'Wall 2 wall thickness (mm)*'
                     , 'Wall 2 Insulation Present?*'
                     , 'Wall 2 Insulation Type*'
+                    , "Wall 2 Fill Type*"
+                    , 'Wall 2 Residual Cavity Width (mm)*'
                     , 'Can Wall type 2 Insulation Thickness be Measured?*'
                     , "If 'Yes' enter Wall type 2 insulation thickness (mm)*"
                     , 'Wall Type 3'
                     , 'Wall 3 wall thickness (mm)*'
                     , 'Wall 3 Insulation Present?*'
                     , 'Wall 3 Insulation Type*'
+                    , "Wall 3 Fill Type*"
+                    , 'Wall 3 Residual Cavity Width (mm)*'
                     , 'Can Wall type 3 Insulation Thickness be Measured?*'
                     , "If 'Yes' enter Wall type 3 insulation thickness (mm)*"
                     , 'Wall Type 4'
                     , 'Wall 4 wall thickness (mm)*'
                     , 'Wall 4 Insulation Present?*'
                     , 'Wall 4 Insulation Type*'
+                    , "Wall 4 Fill Type*"
                     , 'Wall 4 Residual Cavity Width (mm)*'
                     , 'Can Wall type 4 Insulation Thickness be Measured?*'
                     , "If 'Yes' enter Wall type 4 insulation thickness (mm)*"
@@ -1168,7 +1179,9 @@ def survey(root):
         
         
         json_val_dict["ESB alteration"] = 0
+        esb_alterations = []
         json_val_dict["GNI meter alteration"] = 0
+        
         json_val_dict["Duct Cooker Hood"] = 0
         
         slope_dict = {}
@@ -1177,6 +1190,7 @@ def survey(root):
             # print(datum["symbol_name"])
             if datum["symbol_name"] == "ESB alteration":
                 json_val_dict["ESB alteration"] += 1
+                esb_alterations += datum["symbol_instance_id"]
             if datum["symbol_name"] == "GNI meter alteration":
                 json_val_dict["GNI meter alteration"] += 1
             # print(datum["symbol_instance_id"])
@@ -1233,13 +1247,10 @@ def survey(root):
         df = pd.DataFrame(JSON["data"]["project_statistics"])
         # print()
         
-        json_val_dict['No. Double Glazed Windows *'] = JSON["data"]["project_statistics"]["window_count"] - json_val_dict['No. Single Glazed Windows *']
-        print('JSON["data"]["project_statistics"]["window_count"]' ', ', JSON["data"]["project_statistics"]["window_count"])
-        print('No. Single Glazed Windows *' ', ', json_val_dict['No. Single Glazed Windows *'])
-        print('No. Double Glazed Windows *' ', ', json_val_dict['No. Double Glazed Windows *'])
-        print('alt_double_glazed_count' ', ', alt_double_glazed_count)
+
         
         
+        json_val_dict['No. Double Glazed Windows *'] = 0
         json_val_dict['Number of Storeys *'] = 0
         json_val_dict['Gross floor area (m2) *'] = 0.00
         new_draughtproofing = 0
@@ -1287,6 +1298,8 @@ def survey(root):
             if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
                 json_val_dict['Number of Storeys *'] += 1
                 json_val_dict['Gross floor area (m2) *'] += floor["area_with_interior_walls_only"]
+                json_val_dict['No. Double Glazed Windows *'] += floor["window_count"]
+
                 for room in floor["rooms"]:
                     for wall_item in room["wall_items"]:
                         if wall_item["uid"] in replace_windows:
@@ -1309,7 +1322,8 @@ def survey(root):
                             json_val_dict["New Background Vent"] += 1
                         if furniture["name"] == "Duct Cooker Hood":
                             json_val_dict["Duct Cooker Hood"] += 1
-
+                        if furniture["name"] == "New Hatch": # only found in -1 to 9 and Roof?
+                            new_hatch_count += 1
                             
             for room in floor["rooms"]:
                 for furniture in room["furnitures"]:
@@ -1317,14 +1331,15 @@ def survey(root):
                         sum_low += float(furniture["width"])
                     if furniture["name"] == "New High Level Roof Ventilation": # only found in Roof?
                         sum_high += float(furniture["width"])
-                    if furniture["name"] == "New Hatch": # only found in -1 to 9 and Roof?
-                        new_hatch_count += 1
         
         json_val_dict["Cavity Wall Insulation Bonded Bead"] = round(json_val_dict["Cavity Wall Insulation Bonded Bead"]) if json_val_dict["Cavity Wall Insulation Bonded Bead"] != 0 else 'N/A'
         json_val_dict["Loose Fibre Extraction"] = round(json_val_dict["Loose Fibre Extraction"]) if json_val_dict["Loose Fibre Extraction"] != 0 else 'N/A'
         json_val_dict["Internal Wall Insulation: Vertical Surface"] = round(json_val_dict["Internal Wall Insulation: Vertical Surface"]) if json_val_dict["Internal Wall Insulation: Vertical Surface"] != 0 else 'N/A'
         json_val_dict['replace_window_area'] = round(json_val_dict['replace_window_area']) if json_val_dict['replace_window_area'] != 0 else 'N/A'
+        json_val_dict['replace_window_area'] = 1 if json_val_dict['replace_window_area'] == 0 else json_val_dict['replace_window_area']
         json_val_dict['Notes (Windows and Doors)'] = json_val_dict['Notes (Windows and Doors)'] if json_val_dict['Notes (Windows and Doors)'] != '' else 'N/A'
+        json_val_dict['No. Double Glazed Windows *'] = json_val_dict['No. Double Glazed Windows *'] - json_val_dict['No. Single Glazed Windows *']
+        
         
         if new_draughtproofing == 0:
             json_val_dict["Draught Proofing (<= 20m installed)"] = 'N/A'
@@ -1342,8 +1357,8 @@ def survey(root):
         json_val_dict["External Wall Insulation: 60m2 to 85m2"] = round(external_wall_insulation) if 60 < external_wall_insulation <= 85  else 'N/A'
         
         json_val_dict["External Wall Insulation: Greater than 85m2"] = round(external_wall_insulation) if external_wall_insulation > 85  else 'N/A'
-            
-        
+
+
         json_val_dict["External wall insulation and CWI: less than 60m2"] = round(external_wall_insulation_and_cwi) if external_wall_insulation_and_cwi <= 60 else 'N/A'
         
         json_val_dict["External wall insulation and CWI: 60m2 to 85m2"] = round(external_wall_insulation_and_cwi) if 60 < external_wall_insulation_and_cwi <= 85 else 'N/A'
@@ -1373,7 +1388,9 @@ def survey(root):
                     if room["uid"] in slope_dict.keys():
                         this_slope_area = room["area_with_interior_walls_only"] / cos(slope_dict[room["uid"]]/57.2958)
                         slope_roof_area_sum += this_slope_area
-        
+                    for furniture in room["furnitures"]:
+                        if furniture["name"] == "New Hatch": # only found in -1 to 9 and Roof?
+                            new_hatch_count += 1
         # print(json_val_dict)
         
         
@@ -1388,7 +1405,8 @@ def survey(root):
         
         # Work Order Recommendation (Roof):
         json_val_dict['sloped_surface_area'] = round(slope_roof_area_sum) if round(slope_roof_area_sum) != 0 else 'N/A'
-        # print(json_val_dict["sfi_dict"])
+        
+        print('sfi_dict', ': ', json_val_dict["sfi_dict"])
         json_val_dict['storage'] = 0
         for t in [100, 150, 200, 250, 300]:
             if str(t) in json_val_dict["sfi_dict"].keys():
@@ -1400,6 +1418,13 @@ def survey(root):
         json_val_dict['high_roof_vent_area'] = round(sum_high * 5000)
         # json_val_dict['low_roof_vent_area'] = json_val_dict['Required per standards (mm2) *']
         
+        for n in range(1, 5):
+            if f"Wall Type {n}" in json_val_dict.keys():
+                json_val_dict[f"Wall Type {n}"] = json_val_dict[f"Wall Type {n}"] if json_val_dict[f"Wall Type {n}"] != '' else 'N/A'
+            if f"Wall Type {n} Residual Cavity Width (mm)" in json_val_dict.keys():
+                json_val_dict[f"Wall Type {n} Residual Cavity Width (mm)"] = json_val_dict[f"Wall Type {n} Residual Cavity Width (mm)"] if json_val_dict[f"Wall Type {n} Residual Cavity Width (mm)"] != 0 else 'N/A'
+            if f"Wall Type {n} Fill Type" in json_val_dict.keys():
+                json_val_dict[f"Wall Type {n} Fill Type"] = json_val_dict[f"Wall Type {n} Fill Type"] if json_val_dict[f"Wall Type {n} Fill Type"] != 0 else 'N/A'
         
         
         
