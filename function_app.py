@@ -1227,7 +1227,8 @@ def survey(root):
         
         # heating_appliances = ['Wall Mounted Electric Fire', 'Gas Combi Boiler', 'Gas Boiler', 'Fixed Electric Inset Fire', 'Gas Fire with Back Boiler', 'Oil Range Cooker', 'Oil Boiler', 'Open Fire', 'Wood Pellet Stove Room Heater', 'Solid Fuel Stove Room Heater', 'Solid Fuel Range', 'Open Fire With Enclosure Door', 'Oil Stove Room Heater', 'Gas Fire Room Heater', 'Wood Pellet Stove with Back Boiler', 'Open Fire with Back Boiler With Enclosure Door', 'Open Fire with Back Boiler', 'Flueless combustion room heater', 'Electric Storage Heater', 'Fixed Electric Radiator', 'Solid Fuel Stove with Back Boiler', 'Solid Fuel Range with Back Boiler', 'Oil Stove with Back Boiler', 'Oil Combi Boiler', 'Electric ceiling heating', 'Solid Fuel boiler', 'Warm Air System', 'Heat Pump Outdoor Unit', 'Gas Combi Boiler', 'Oil Combi Boiler']
         
-        
+        json_val_dict['Heating System *'] = 'N/A'
+        json_val_dict['Secondary Heating System'] = 'N/A'
         
         json_val_dict['HWC Controls *'] = 'None'
         json_val_dict['No. Single Glazed Windows * 2'] = 0
