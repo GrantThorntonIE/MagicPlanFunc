@@ -1107,7 +1107,54 @@ def survey(root):
                     , 'replace_window_area'
                     , 'Notes (Windows and Doors)'
                     ]
-        
+        ofl_heating = ['Heating System *'
+                    , 'Qualifying Boiler'
+                    , 'System Age *'
+                    , 'Fully Working *'
+                    , 'Requires Service *'
+                    , 'Other"Other Primary Heating Details *"'
+                    , 'Not Working Details Primary Heating *'
+                    , 'Requires Service (App?)*'
+                    , 'Requires Service Details Primary Heating *'
+                    
+                    , 'Hot Water System Exists *'
+                    , 'From Primary heating system'
+                    , 'From Secondary heating system'
+                    , 'Electric Immersion'
+                    , 'Electric Instantaneous'
+                    , 'Instantaneous Combi Boiler'
+                    , 'Other'
+                    , 'Other HW Details *'
+                    , 'HWS'
+                    
+                    , 'Hot Water Cylinder*'
+                    , 'Insulation *'
+                    , 'Condition of Lagging Jacket *'
+                    , 'HWC Controls *'
+                    
+                    , 'Heating Systems Controls *'
+                    , 'Partial Details *'
+                    , 'Programmer / Timeclock *'
+                    , 'Room Thermostat Number *'
+                    , 'Rads Number *'
+                    , 'TRVs Number *'
+                    
+                    , 'Suitable for Heating Measures *'
+                    , 'Not suitable details*'
+                    , 'Notes (Heating)'
+                    , 'Secondary Heating System'
+                    , 'Secondary System Age *'
+                    , 'Secondary System Fully Working *'
+                    , 'Secondary System Requires Service *'
+                    , 'Not Working Details Secondary Heating *'
+                    , 'Secondary System Requires Service (App?)*'
+                    , 'Requires Service Details Secondary Heating *'
+
+
+
+
+
+                    ]
 
         
         
@@ -1153,7 +1200,6 @@ def survey(root):
                 for field in df3.fields:
                     df4 = pd.DataFrame(field)
                     for index, row in df4.iterrows():
-                        
                         if row["label"] == "Is the window Single glazed?":
                             if row["value"]["value"] == True:
                                 json_val_dict['No. Single Glazed Windows *'] += 1
@@ -1173,21 +1219,63 @@ def survey(root):
                                 v += '<BR>'
                         else:
                             v = row["value"]["value"]
+                        
+                        # print(row["label"], ': ', v)
                         json_val_dict[row["label"]] = v
 
 
         
+        # heating_appliances = ['Wall Mounted Electric Fire', 'Gas Combi Boiler', 'Gas Boiler', 'Fixed Electric Inset Fire', 'Gas Fire with Back Boiler', 'Oil Range Cooker', 'Oil Boiler', 'Open Fire', 'Wood Pellet Stove Room Heater', 'Solid Fuel Stove Room Heater', 'Solid Fuel Range', 'Open Fire With Enclosure Door', 'Oil Stove Room Heater', 'Gas Fire Room Heater', 'Wood Pellet Stove with Back Boiler', 'Open Fire with Back Boiler With Enclosure Door', 'Open Fire with Back Boiler', 'Flueless combustion room heater', 'Electric Storage Heater', 'Fixed Electric Radiator', 'Solid Fuel Stove with Back Boiler', 'Solid Fuel Range with Back Boiler', 'Oil Stove with Back Boiler', 'Oil Combi Boiler', 'Electric ceiling heating', 'Solid Fuel boiler', 'Warm Air System', 'Heat Pump Outdoor Unit', 'Gas Combi Boiler', 'Oil Combi Boiler']
         
+        
+        
+        json_val_dict['HWC Controls *'] = 'None'
+        json_val_dict['No. Single Glazed Windows * 2'] = 0
+        json_val_dict["Existing (mm2)* 2"] = 0
+        programmers = []
+        room_thermostats = []
         json_val_dict["ESB alteration"] = 0
         esb_alterations = []
         json_val_dict["GNI meter alteration"] = 0
+        json_val_dict["RGI Meter_No Heating"] = 0
+        json_val_dict["GNI new connection"] = 0
+        json_val_dict["New Gas Connection"] = 0
         
         json_val_dict["Duct Cooker Hood"] = 0
         
         slope_dict = {}
         roof_type_dict = {}
+        h = {}
+        h_index = 0
         for datum in JSON["data"]:
             # print(datum["symbol_name"])
+            if 'Combi Boiler' in datum["symbol_name"]:
+                json_val_dict['Hot Water System Exists *'] = True
+                
+            if 'Hot Water Cylinder' in datum["symbol_name"]:
+                json_val_dict['Hot Water Cylinder*'] = True
+                json_val_dict['Hot Water System Exists *'] = True
+                if 'Bad' in datum["symbol_name"] or 'No Insulation' in datum["symbol_name"]:
+                    json_val_dict['Condition of Lagging Jacket *'] = 'Bad'
+                else:
+                    json_val_dict['Condition of Lagging Jacket *'] = 'Good'
+                
+                if 'Lagging Jacket' in datum["symbol_name"]:
+                    json_val_dict['Insulation *'] = 'Lagging Jacket'
+                if 'Factory Fitted' in datum["symbol_name"]:
+                    json_val_dict['Insulation *'] = 'Factory Fitted'
+                if 'No Insulation' in datum["symbol_name"]:
+                    json_val_dict['Insulation *'] = 'No Insulation'
+                    
+                    
+                    
+                
+                
+            if datum["symbol_name"] == "Programmer":
+                programmers += datum["symbol_instance_id"]
+            if datum["symbol_name"] == "Room Thermostat":
+                room_thermostats += datum["symbol_instance_id"]
+            
             if datum["symbol_name"] == "ESB alteration":
                 json_val_dict["ESB alteration"] += 1
                 esb_alterations += datum["symbol_instance_id"]
@@ -1196,14 +1284,40 @@ def survey(root):
             # print(datum["symbol_instance_id"])
             if datum["symbol_name"] == "GNI new connection":
                 json_val_dict["GNI new connection"] += 1
+            if datum["symbol_name"] == "New Gas Connection":
+                json_val_dict["New Gas Connection"] += 1
             if datum["symbol_name"] == "RGI Meter_No Heating":
                 json_val_dict["RGI Meter_No Heating"] += 1
+            
+            
             for form in datum["forms"]:
                 for section in form["sections"]:
                     for field in section["fields"]:
+                            
+                        if field["label"] == "Heating designation on Portal*" and field["value"]["value"] == "Primary":
+                            json_val_dict['Heating System *'] = datum["symbol_name"]
+                        if field["label"] == "Heating designation on Portal*" and field["value"]["value"] == "Secondary":
+                            json_val_dict['Secondary Heating System'] = datum["symbol_name"]
+                        if field["label"] == "Is there a timer?" and field["value"]["value"] == True:
+                            json_val_dict['HWC Controls *'] = 'Independent Timer'
+                        if field["label"] == "Is there a cylinder stat?" and field["value"]["value"] == True:
+                            json_val_dict['HWC Controls *'] = 'Cylinder Thermostat'
+                        if field["label"] == "Is the cylinder heated from the primary heating system?":
+                            if field["value"]["value"] == True:
+                                json_val_dict['HWS'] = 'From Primary heating system'
+                            if field["value"]["value"] == False:
+                                json_val_dict['HWS'] = 'Other'
+                        if field["label"] == "Is there an electric immersion?" and field["value"]["value"] == True:
+                            json_val_dict['HWS'] = 'Electric Immersion'
+                        
+                        if field["label"] == "Existing Roof Ventilation (mm2)*":
+                            if not field["value"]["value"].isdigit():
+                                continue
+                            json_val_dict["Existing (mm2)* 2"] += int(field["value"]["value"])
+                        if field["label"] == "Is the window Single glazed?" and field["value"]["value"] == True:
+                                json_val_dict['No. Single Glazed Windows * 2'] += 1
                         if field["label"] == "Is it being recommended for replacement?" and field["value"]["value"] == True:
                             replace_windows.append(datum["symbol_instance_id"]) 
-                        
                         if datum["symbol_instance_id"] in xml_ref_dict.keys():
                             if field["label"] == "Roof Type*":
                                 # print('before: ', xml_ref_dict[datum["symbol_instance_id"]])
@@ -1212,20 +1326,86 @@ def survey(root):
                                 for n in range(1, 5):
                                     if field["value"]["value"] == f"Roof Type {n}":
                                         roof_type_dict[datum["symbol_instance_id"]] = n
-                        g = {} # temporary dictionary containing the answers to questions
-                        for field in section["fields"]:
-                            g[field["label"]] = field["value"]["value"]
+                    g = {} # temporary dictionary containing the answers to all questions in a section (roof-related)
+                    for field in section["fields"]:
+                        g[field["label"]] = field["value"]["value"]
                     for n in range(1, 5):
                         if "Roof Type*" in g.keys() and f"Roof Type {n} Sloping Ceiling Suitable for Insulation*" in g.keys():
                             # print('g: ', g)
                             if g["Roof Type*"] == "Sloped Ceiling" and g[f"Roof Type {n} Sloping Ceiling Suitable for Insulation*"] == True:
-                                # print("Need slope for: ", g["Part of roof type?*"])
-                                # slopes.append(g["Part of roof type?*"])
                                 if f"Roof {n} Pitch (degrees)*" in json_val_dict.keys():
                                     pitch = json_val_dict[f"Roof {n} Pitch (degrees)*"]
                                 else:
                                     pitch = 30
                                 slope_dict[datum["symbol_instance_id"]] = pitch
+        
+
+        # Go through Forms again to get values for Primary & Secondary Heating Systems
+        for datum in JSON["data"]:
+            if datum["symbol_name"] == json_val_dict['Heating System *']:
+                for form in datum["forms"]:
+                    for section in form["sections"]:
+                        for field in section["fields"]:
+                            if 'age (years)*' in field['label']:
+                                json_val_dict['System Age *'] = field["value"]["value"]
+                            if field['label'] == 'Fully Working?':
+                                json_val_dict['Fully Working *'] = field["value"]["value"]
+                            if 'require service?' in field['label']:
+                                json_val_dict['Requires Service *'] = field["value"]["value"]
+                            if field['label'] == '':
+                                json_val_dict['Other"Other Primary Heating Details *"'] = field["value"]["value"]
+                            if field['label'] == 'Not working details *':
+                                json_val_dict['Not Working Details Primary Heating *'] = field["value"]["value"]
+                            # if field['label'] == 'Does the appliance require service?':
+                                # json_val_dict['Requires Service (App?)*'] = field["value"]["value"]
+                            if field['label'] == 'Service details':
+                                json_val_dict['Requires Service Details Primary Heating *'] = field["value"]["value"]
+            if datum["symbol_name"] == json_val_dict['Secondary Heating System']:
+                for form in datum["forms"]:
+                    for section in form["sections"]:
+                        for field in section["fields"]:
+                            if 'age (years)*' in field['label']:
+                                json_val_dict['Secondary System Age *'] = field["value"]["value"]
+                            if field['label'] == 'Fully Working?':
+                                json_val_dict['Secondary System Fully Working *'] = field["value"]["value"]
+                            if 'require service?' in field['label']:
+                                json_val_dict['Secondary System Requires Service *'] = field["value"]["value"]
+                            if field['label'] == '':
+                                json_val_dict['Other"Other Primary Heating Details *"'] = field["value"]["value"]
+                            if field['label'] == 'Not working details *':
+                                json_val_dict['Not Working Details Secondary Heating *'] = field["value"]["value"]
+                            # if field['label'] == 'Does the appliance require service?':
+                                # json_val_dict['Secondary System Requires Service (App?)*'] = field["value"]["value"]
+                            if field['label'] == 'Service details':
+                                json_val_dict['Requires Service Details Secondary Heating *'] = field["value"]["value"]
+                    
+                    
+
+                    
+                    
+                    
+                    
+                    
+
+                    # , 'Qualifying Boiler'
+
+
+
+                    # 'Working details'  (I have not witnessed anything to suggest that the appliance is not working)
+                    # 'Is the boiler Condensing?'
+                    
+                    # 'Is it a Balanced Flue?'
+                    # 'Is the boiler interlinked with any other appliance?'
+                    # 'Interlinked with?'
+                    # 'Heating notes*'
+        
+        
+
+         
+        
+        
+        
+        
         # print('slopes', ': ', slopes)
         # print('roof_type_dict', ': ', roof_type_dict)
         # print('slope_dict', ': ', slope_dict)
@@ -1278,12 +1458,19 @@ def survey(root):
         json_val_dict["External wall insulation and CWI: greater than 85m2"] = 0
 
 
-
+        # , 'Heating Systems Controls *'
+        # , 'Partial Details *'
+        
+        json_val_dict['Programmer / Timeclock *'] = 0
+        json_val_dict['Room Thermostat Number *'] = 0
+        json_val_dict['Rads Number *'] = 0
+        json_val_dict['TRVs Number *'] = 0
+        
 
 
         json_val_dict['replace_window_area'] = 0
         # print(xml_ref_dict)
-        print(replace_windows)
+        print('replace_windows', ': ', replace_windows)
         for floor in df.floors:
             if int(xml_ref_dict[floor["uid"]]) == 20:
                 external_wall_insulation += floor["area_with_interior_walls_only"]
@@ -1295,6 +1482,20 @@ def survey(root):
                 json_val_dict["Loose Fibre Extraction"] += floor["area_with_interior_walls_only"]
             if int(xml_ref_dict[floor["uid"]]) == 24:
                 external_wall_insulation_and_cwi += floor["area_with_interior_walls_only"]
+            if 0 <= int(xml_ref_dict[floor["uid"]]) <= 4:
+                for room in floor["rooms"]:
+                    for furniture in room["furnitures"]:
+                        if furniture["name"] in ["Radiator", "Radiator with TRV", "Water Radiator"]:
+                            json_val_dict['Rads Number *'] += 1
+                        if furniture["name"] == "Radiator with TRV":
+                            json_val_dict['TRVs Number *'] += 1
+                    for wall_item in room["wall_items"]:
+                        if wall_item["name"] == "Room Thermostat":
+                            json_val_dict['Room Thermostat Number *'] += 1
+                        if wall_item["name"] == "Programmer":
+                            json_val_dict['Programmer / Timeclock *'] += 1
+                            
+                            
             if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
                 json_val_dict['Number of Storeys *'] += 1
                 json_val_dict['Gross floor area (m2) *'] += floor["area_with_interior_walls_only"]
@@ -1305,7 +1506,7 @@ def survey(root):
                         if wall_item["uid"] in replace_windows:
                             json_val_dict['replace_window_area'] += (wall_item["width"] * wall_item["height"])
                     for furniture in room["furnitures"]:
-                        print(furniture["name"])
+                        # print(furniture["name"])
                         if furniture["name"] == "New Draughtproofing":
                             new_draughtproofing += 1
                         if furniture["name"] == "New Mechanical Vent":
@@ -1451,6 +1652,8 @@ def survey(root):
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)} \
             <h1>Walls</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_walls)} \
+            <h1>Heating</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_heating)} \
             </div>"""
 
     except Exception as ex:
