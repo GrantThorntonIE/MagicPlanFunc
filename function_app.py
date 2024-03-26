@@ -1125,7 +1125,7 @@ def survey(root):
                     , 'Instantaneous Combi Boiler'
                     , 'Other'
                     , 'Other HW Details *'
-                    , 'HWS'
+                    # , 'HWS'
                     
                     , 'Hot Water Cylinder*'
                     , 'Insulation *'
@@ -1306,11 +1306,22 @@ def survey(root):
                         if field["label"] == "Is the cylinder heated from the primary heating system?":
                             if field["value"]["value"] == True:
                                 json_val_dict['HWS'] = 'From Primary heating system'
-                            if field["value"]["value"] == False:
-                                json_val_dict['HWS'] = 'Other'
+                                json_val_dict['From Primary heating system'] = True
+                        if field["label"] == "Is the cylinder heated from the secondary heating system?":
+                            if field["value"]["value"] == True:
+                                json_val_dict['HWS'] = 'From Secondary heating system'
+                                json_val_dict['From Secondary heating system'] = True
                         if field["label"] == "Is there an electric immersion?" and field["value"]["value"] == True:
                             json_val_dict['HWS'] = 'Electric Immersion'
+                            json_val_dict['Electric Immersion'] = True
+                        if field["label"] == "How is the cylinder heated? (Do not include immersion)" and field["value"]["has_value"] == True:
+                            json_val_dict['HWS'] = 'Other'
+                            json_val_dict["Other HW Details *"] = field["value"]["value"]
+                            
                         
+
+
+
                         if field["label"] == "Existing Roof Ventilation (mm2)*":
                             if not field["value"]["value"].isdigit():
                                 continue
@@ -1467,6 +1478,7 @@ def survey(root):
         json_val_dict['Rads Number *'] = 0
         json_val_dict['TRVs Number *'] = 0
         
+        
 
 
         json_val_dict['replace_window_area'] = 0
@@ -1483,13 +1495,17 @@ def survey(root):
                 json_val_dict["Loose Fibre Extraction"] += floor["area_with_interior_walls_only"]
             if int(xml_ref_dict[floor["uid"]]) == 24:
                 external_wall_insulation_and_cwi += floor["area_with_interior_walls_only"]
-            if 0 <= int(xml_ref_dict[floor["uid"]]) <= 4:
+            if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
                 for room in floor["rooms"]:
                     for furniture in room["furnitures"]:
                         if furniture["name"] in ["Radiator", "Radiator with TRV", "Water Radiator"]:
                             json_val_dict['Rads Number *'] += 1
                         if furniture["name"] == "Radiator with TRV":
                             json_val_dict['TRVs Number *'] += 1
+                        if furniture["name"] == "Electric Instantaneous":
+                            json_val_dict['Electric Instantaneous'] = True
+                        if furniture["name"] in ["Gas Combi Boiler", "Oil Combi Boiler"]:
+                            json_val_dict['Instantaneous Combi Boiler'] = True
                     for wall_item in room["wall_items"]:
                         if wall_item["name"] == "Room Thermostat":
                             json_val_dict['Room Thermostat Number *'] += 1
