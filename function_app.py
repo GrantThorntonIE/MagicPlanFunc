@@ -1178,7 +1178,8 @@ def survey(root):
         
         
             
-        # json_val_dict['new_hatch_count'] = 0
+        json_val_dict['Qualifying Boiler'] = 'N/A' # depends on Wall field "EWI/IWI > 25% *"
+        
         json_val_dict["Existing (mm2)*"] = int(0)
         json_val_dict['No. Single Glazed Windows *'] = 0
         # json_ref_dict = {}
@@ -1226,7 +1227,7 @@ def survey(root):
 
         
         # heating_appliances = ['Wall Mounted Electric Fire', 'Gas Combi Boiler', 'Gas Boiler', 'Fixed Electric Inset Fire', 'Gas Fire with Back Boiler', 'Oil Range Cooker', 'Oil Boiler', 'Open Fire', 'Wood Pellet Stove Room Heater', 'Solid Fuel Stove Room Heater', 'Solid Fuel Range', 'Open Fire With Enclosure Door', 'Oil Stove Room Heater', 'Gas Fire Room Heater', 'Wood Pellet Stove with Back Boiler', 'Open Fire with Back Boiler With Enclosure Door', 'Open Fire with Back Boiler', 'Flueless combustion room heater', 'Electric Storage Heater', 'Fixed Electric Radiator', 'Solid Fuel Stove with Back Boiler', 'Solid Fuel Range with Back Boiler', 'Oil Stove with Back Boiler', 'Oil Combi Boiler', 'Electric ceiling heating', 'Solid Fuel boiler', 'Warm Air System', 'Heat Pump Outdoor Unit', 'Gas Combi Boiler', 'Oil Combi Boiler']
-        
+        cylinder_stat = False
         json_val_dict['Heating System *'] = 'N/A'
         json_val_dict['Secondary Heating System'] = 'N/A'
         
@@ -1303,6 +1304,7 @@ def survey(root):
                             json_val_dict['HWC Controls *'] = 'Independent Timer'
                         if field["label"] == "Is there a cylinder stat?" and field["value"]["value"] == True:
                             json_val_dict['HWC Controls *'] = 'Cylinder Thermostat'
+                            cylinder_stat = True
                         if field["label"] == "Is the cylinder heated from the primary heating system?":
                             if field["value"]["value"] == True:
                                 json_val_dict['HWS'] = 'From Primary heating system'
@@ -1413,17 +1415,18 @@ def survey(root):
         
         
 
-         
+        json_val_dict['Programmer / Timeclock *'] = 0
+        json_val_dict['Room Thermostat Number *'] = 0
+        json_val_dict['Rads Number *'] = 0
+        json_val_dict['TRVs Number *'] = 0
         
-        
-        
-        
-        # print('slopes', ': ', slopes)
-        # print('roof_type_dict', ': ', roof_type_dict)
-        # print('slope_dict', ': ', slope_dict)
 
-        # for x in json_val_dict:
-            # print(x, json_val_dict[x])
+
+        
+
+        
+        
+
         json_val_dict["ESB alteration"] = json_val_dict["ESB alteration"] if json_val_dict["ESB alteration"] != 0 else 'N/A'
         json_val_dict["GNI meter alteration"] = json_val_dict["GNI meter alteration"] if json_val_dict["GNI meter alteration"] != 0 else 'N/A'
 
@@ -1473,10 +1476,7 @@ def survey(root):
         # , 'Heating Systems Controls *'
         # , 'Partial Details *'
         
-        json_val_dict['Programmer / Timeclock *'] = 0
-        json_val_dict['Room Thermostat Number *'] = 0
-        json_val_dict['Rads Number *'] = 0
-        json_val_dict['TRVs Number *'] = 0
+
         
         
 
@@ -1519,6 +1519,10 @@ def survey(root):
                 json_val_dict['No. Double Glazed Windows *'] += floor["window_count"]
 
                 for room in floor["rooms"]:
+                    print(xml_ref_dict[room["uid"]])
+                    if xml_ref_dict[room["uid"]] in ["Unfinished Basement", "Garage", "Furnace Room", "Outbuilding", "Workshop"]:
+                        json_val_dict['Gross floor area (m2) *'] -= room["area_with_interior_walls_only"]
+                        
                     for wall_item in room["wall_items"]:
                         if wall_item["uid"] in replace_windows:
                             json_val_dict['replace_window_area'] += (wall_item["width"] * wall_item["height"])
@@ -1619,6 +1623,48 @@ def survey(root):
         
         json_val_dict['Gross floor area (m2) *'] = round(json_val_dict['Gross floor area (m2) *'], 2)
         json_val_dict['Required per standards (mm2) *'] = round(sum_low * 10000)
+        
+        
+        HSC_count = 0
+        # Yes to Cylinder stat in form for hot water cylinder
+        if cylinder_stat == True:
+            HSC_count += 1
+        # Object count of "Programmer" >0
+        if json_val_dict['Programmer / Timeclock *'] > 0:
+            HSC_count += 1
+        # Object count of "Room Thermostat" >0
+        if json_val_dict['Room Thermostat Number *'] > 0:
+            HSC_count += 1
+        # % of Radiators/Rads with TRVs >=50%
+        if json_val_dict['TRVs Number *'] / json_val_dict['Rads Number *'] >= 0.5:
+            HSC_count += 1
+        
+        if HSC_count == 0:
+            json_val_dict['Heating Systems Controls *'] = 'No Controls'
+        if 1 <= HSC_count <= 3:
+            json_val_dict['Heating Systems Controls *'] = 'Partial Controls'
+            json_val_dict["Partial Details *"] = 'No of Programmers: ' + str(json_val_dict['Programmer / Timeclock *']) + "<BR>" + 'No of Room Stats: ' + str(json_val_dict['Room Thermostat Number *']) + "<BR>" + '% of Radiators  with TRVs: ' + str(json_val_dict['TRVs Number *'] / json_val_dict['Rads Number *']) + "<BR>" + 'Cylinder Stat?: ' + str(cylinder_stat)
+            # If programmer present (Y/N)
+            # Number of Room Stats (whole number)
+            # % of Radiators  with TRVs (calculation)
+            # If cylinder stat present (Y/N)
+        if HSC_count == 4:
+            json_val_dict['Heating Systems Controls *'] = 'Full zone control to spec'
+            
+            
+        json_val_dict['Suitable for Heating Measures *'] = 'No'
+        if json_val_dict['Qualifying Boiler'] == 'Yes':
+            json_val_dict['Suitable for Heating Measures *'] = 'Yes'
+        # if json_val_dict["Suitable for Insulation *"] == True or json_val_dict["Is the property suitable for wall insulation? *"] == True:
+            # if Object 'Open Fire with Back Boiler' or 'Solid Fuel Range with Back Boiler' then "Yes"
+
+        # 'Open Fire with Back Boiler With Enclosure Door'
+        
+        
+        
+        
+        
+        
         
         
         # Work Order Recommendation (Roof):
