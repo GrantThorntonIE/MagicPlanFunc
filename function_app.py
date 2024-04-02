@@ -1192,37 +1192,38 @@ def survey(root):
         replace_windows = []
         
         # print(df)
-        print('len(df.forms): ', len(df.forms))
-        for form in df.forms:
+        # print('len(df.forms): ', len(df.forms))
+        # for form in df.forms:
             # print(form["symbol_instance_id"])
-            df2 = pd.DataFrame(form)
-            for section in df2.sections:
-                df3 = pd.DataFrame(section)
-                for field in df3.fields:
-                    df4 = pd.DataFrame(field)
-                    for index, row in df4.iterrows():
-                        if row["label"] == "Is the window Single glazed?":
-                            if row["value"]["value"] == True:
-                                json_val_dict['No. Single Glazed Windows *'] += 1
-                            if row["value"]["value"] == False:
-                                alt_double_glazed_count += 1
+            # df2 = pd.DataFrame(form)
+            # for section in df2.sections:
+                # df3 = pd.DataFrame(section)
+                # for field in df3.fields:
+                    # df4 = pd.DataFrame(field)
+                    # for index, row in df4.iterrows():
+                        # if row["label"] == "Is the window Single glazed?":
+                            # if row["value"]["value"] == True:
+                                # json_val_dict['No. Single Glazed Windows *'] += 1
+
+                            # if row["value"]["value"] == False:
+                                # alt_double_glazed_count += 1
                         
-                        if row["label"] == "Existing Roof Ventilation (mm2)*":
-                            if not row["value"]["value"].isdigit():
-                                continue
-                            json_val_dict["Existing (mm2)*"] += int(row["value"]["value"])
+                        # if row["label"] == "Existing Roof Ventilation (mm2)*":
+                            # if not row["value"]["value"].isdigit():
+                                # continue
+                            # json_val_dict["Existing (mm2)*"] += int(row["value"]["value"])
                         
-                        v = ''
-                        if row["value"]["value"] == None:
-                            vals = [val["value"] for val in row["value"]["values"]]
-                            for val in vals:
-                                v += val
-                                v += '<BR>'
-                        else:
-                            v = row["value"]["value"]
+                        # v = ''
+                        # if row["value"]["value"] == None:
+                            # vals = [val["value"] for val in row["value"]["values"]]
+                            # for val in vals:
+                                # v += val
+                                # v += '<BR>'
+                        # else:
+                            # v = row["value"]["value"]
                         
                         # print(row["label"], ': ', v)
-                        json_val_dict[row["label"]] = v
+                        # json_val_dict[row["label"]] = v
 
 
         
@@ -1232,13 +1233,15 @@ def survey(root):
         json_val_dict['Secondary Heating System'] = 'N/A'
         
         json_val_dict['HWC Controls *'] = 'None'
-        json_val_dict['No. Single Glazed Windows * 2'] = 0
-        json_val_dict["Existing (mm2)* 2"] = 0
+        # json_val_dict['No. Single Glazed Windows * 2'] = 0
+        single_glazed_windows = []
+        # json_val_dict["Existing (mm2)* 2"] = 0
         programmers = []
         room_thermostats = []
         json_val_dict["ESB alteration"] = 0
         esb_alterations = []
         json_val_dict["GNI meter alteration"] = 0
+        gni_alterations = []
         json_val_dict["RGI Meter_No Heating"] = 0
         json_val_dict["GNI new connection"] = 0
         json_val_dict["New Gas Connection"] = 0
@@ -1283,6 +1286,7 @@ def survey(root):
                 esb_alterations += datum["symbol_instance_id"]
             if datum["symbol_name"] == "GNI meter alteration":
                 json_val_dict["GNI meter alteration"] += 1
+                gni_alterations += datum["symbol_instance_id"]
             # print(datum["symbol_instance_id"])
             if datum["symbol_name"] == "GNI new connection":
                 json_val_dict["GNI new connection"] += 1
@@ -1295,7 +1299,18 @@ def survey(root):
             for form in datum["forms"]:
                 for section in form["sections"]:
                     for field in section["fields"]:
-                            
+                        v = ''
+                        if field["value"]["value"] == None:
+                            vals = [val["value"] for val in field["value"]["values"]]
+                            for val in vals:
+                                v += val
+                                v += '<BR>'
+                        else:
+                            v = field["value"]["value"]
+                        
+                        # print(field["label"], ': ', v)
+                        json_val_dict[field["label"]] = v
+                        
                         if field["label"] == "Heating designation on Portal*" and field["value"]["value"] == "Primary":
                             json_val_dict['Heating System *'] = datum["symbol_name"]
                         if field["label"] == "Heating designation on Portal*" and field["value"]["value"] == "Secondary":
@@ -1327,9 +1342,12 @@ def survey(root):
                         if field["label"] == "Existing Roof Ventilation (mm2)*":
                             if not field["value"]["value"].isdigit():
                                 continue
-                            json_val_dict["Existing (mm2)* 2"] += int(field["value"]["value"])
+                            json_val_dict["Existing (mm2)*"] += int(field["value"]["value"])
+                        
                         if field["label"] == "Is the window Single glazed?" and field["value"]["value"] == True:
-                                json_val_dict['No. Single Glazed Windows * 2'] += 1
+                            # json_val_dict['No. Single Glazed Windows *'] += 1
+                            # single_glazed_windows.append(datum["symbol_instance_id"])
+                            single_glazed_windows.append(datum["symbol_instance_id"])
                         if field["label"] == "Is it being recommended for replacement?" and field["value"]["value"] == True:
                             replace_windows.append(datum["symbol_instance_id"]) 
                         if datum["symbol_instance_id"] in xml_ref_dict.keys():
@@ -1422,7 +1440,8 @@ def survey(root):
         
 
 
-        
+        print('single_glazed_windows', ': ')
+        print(single_glazed_windows)
 
         
         
@@ -1517,15 +1536,20 @@ def survey(root):
                 json_val_dict['Number of Storeys *'] += 1
                 json_val_dict['Gross floor area (m2) *'] += floor["area_with_interior_walls_only"]
                 json_val_dict['No. Double Glazed Windows *'] += floor["window_count"]
+                print("json_val_dict['No. Double Glazed Windows *']", ': ', json_val_dict['No. Double Glazed Windows *'])
 
                 for room in floor["rooms"]:
                     print(xml_ref_dict[room["uid"]])
-                    if xml_ref_dict[room["uid"]] in ["Unfinished Basement", "Garage", "Furnace Room", "Outbuilding", "Workshop"]:
+                    if xml_ref_dict[room["uid"]] in ["Unfinished Basement", "Garage", "Furnace Room", "Outbuilding", "Workshop", "Balcony", "Storage", "Patio", "Deck", "Porch", "Cellar"]:
                         json_val_dict['Gross floor area (m2) *'] -= room["area_with_interior_walls_only"]
                         
                     for wall_item in room["wall_items"]:
                         if wall_item["uid"] in replace_windows:
                             json_val_dict['replace_window_area'] += (wall_item["width"] * wall_item["height"])
+                        if wall_item["uid"] in single_glazed_windows:
+                            print(wall_item["uid"] + "found in " + str(single_glazed_windows))
+                            json_val_dict['No. Single Glazed Windows *'] += 1
+                            
                     for furniture in room["furnitures"]:
                         # print(furniture["name"])
                         if furniture["name"] == "New Draughtproofing":
@@ -1546,7 +1570,8 @@ def survey(root):
                             json_val_dict["Duct Cooker Hood"] += 1
                         if furniture["name"] == "New Hatch": # only found in -1 to 9 and Roof?
                             new_hatch_count += 1
-                            
+                
+                
             for room in floor["rooms"]:
                 for furniture in room["furnitures"]:
                     if furniture["name"] == "New Low Level Roof Ventilation": # only found in Roof?
@@ -1554,13 +1579,26 @@ def survey(root):
                     if furniture["name"] == "New High Level Roof Ventilation": # only found in Roof?
                         sum_high += float(furniture["width"])
         
+        
+        print("before:")
+        print("json_val_dict['No. Double Glazed Windows *']", ': ', json_val_dict['No. Double Glazed Windows *'])
+        print("json_val_dict['No. Single Glazed Windows *']", ': ', json_val_dict['No. Single Glazed Windows *'])
+        json_val_dict['No. Double Glazed Windows *'] -= json_val_dict['No. Single Glazed Windows *']
+        print("after:")
+        print("json_val_dict['No. Double Glazed Windows *']", ': ', json_val_dict['No. Double Glazed Windows *'])
+        print("json_val_dict['No. Single Glazed Windows *']", ': ', json_val_dict['No. Single Glazed Windows *'])
+        
+        
+        
+        
+        
         json_val_dict["Cavity Wall Insulation Bonded Bead"] = round(json_val_dict["Cavity Wall Insulation Bonded Bead"]) if json_val_dict["Cavity Wall Insulation Bonded Bead"] != 0 else 'N/A'
         json_val_dict["Loose Fibre Extraction"] = round(json_val_dict["Loose Fibre Extraction"]) if json_val_dict["Loose Fibre Extraction"] != 0 else 'N/A'
         json_val_dict["Internal Wall Insulation: Vertical Surface"] = round(json_val_dict["Internal Wall Insulation: Vertical Surface"]) if json_val_dict["Internal Wall Insulation: Vertical Surface"] != 0 else 'N/A'
         json_val_dict['replace_window_area'] = round(json_val_dict['replace_window_area']) if json_val_dict['replace_window_area'] != 0 else 'N/A'
         json_val_dict['replace_window_area'] = 1 if json_val_dict['replace_window_area'] == 0 else json_val_dict['replace_window_area']
         json_val_dict['Notes (Windows and Doors)'] = json_val_dict['Notes (Windows and Doors)'] if json_val_dict['Notes (Windows and Doors)'] != '' else 'N/A'
-        json_val_dict['No. Double Glazed Windows *'] = json_val_dict['No. Double Glazed Windows *'] - json_val_dict['No. Single Glazed Windows *']
+        # json_val_dict['No. Double Glazed Windows *'] = json_val_dict['No. Double Glazed Windows *'] - json_val_dict['No. Single Glazed Windows *']
         
         
         if new_draughtproofing == 0:
