@@ -18,7 +18,6 @@ MAX_REAL_FLOORS = 10
 
 
 
-
 def cart_distance(p1 : tuple[float, float], p2 : tuple[float, float]) -> float:
     (x1, y1) = p1
     (x2, y2) = p2
@@ -310,12 +309,43 @@ def XML_2_dict(root, t = "floor"):
         # w = {}
         o = {}
         
-        # floors = root.findall('interiorRoomPoints/floor')
+        floors = root.findall('interiorRoomPoints/floor')
+        for floor in floors:
+            ft = floor.get('floorType')
+            for room in floor.findall('floorRoom'):
+                rt = room.get('type')
+                print(room.get('type'))
+                x = {}
+                room_x = room.get('x')
+                room_y = room.get('y')
+                w_index = 0
+                for point in room.findall('point'):
+                    w_index += 1
+                    x[w_index] = {}
+                    x[w_index]['x1'] = float(point.get('snappedX')) + float(room_x)
+                    x[w_index]['y1'] = -float(point.get('snappedY')) - float(room_y)
+                    x[w_index]['h'] = point.get('height')
+                    x[w_index]['uid'] = point.get('uid')
+                print('x', ': ', x)
+        
         floors = root.findall('floor')
         for floor in floors:
             ft = floor.get('floorType')
             nwa_dict[ft] = {}
             # floor/exploded/window
+            for p in floor.findall('exploded/door'):
+                si = p.get('symbolInstance')
+                o[si] = {}
+                # o[si]['symbolInstance'] = window.get('symbolInstance')
+                o[si]['x1'] = p.get('x1')
+                o[si]['y1'] = -float(p.get('y1'))
+                o[si]['x2'] = p.get('x2')
+                o[si]['y2'] = -float(p.get('y2'))
+                o[si]['w'] = p.get('width')
+                o[si]['d'] = p.get('depth')
+                o[si]['h'] = p.get('height')
+                o[si]['a'] = float(o[si]['w']) * float(o[si]['h'])
+            
             for window in floor.findall('exploded/window'):
                 # o_index += 1
                 si = window.get('symbolInstance')
@@ -347,8 +377,8 @@ def XML_2_dict(root, t = "floor"):
                 print(room.get('type'))
                 
                 w = {}
-                for window in room.findall('window'):
-                    symbolInstance = window.get('symbolInstance')
+                # for window in room.findall('window'):
+                    # symbolInstance = window.get('symbolInstance')
                 # print('type: ' + room.get('type'))
                 # print('uid: ' + room.get('uid'))
                 room_x = room.get('x')
@@ -375,7 +405,7 @@ def XML_2_dict(root, t = "floor"):
                         w[w_index]['x2'] = w[1]['x1']
                         w[w_index]['y2'] = w[1]['y1']
                     w[w_index]['l'] = cart_distance((w[w_index]['x1'], w[w_index]['y1']), (w[w_index]['x2'], w[w_index]['y2']))
-                    w[w_index]['a'] = float(w[w_index]['l']) * float(w[w_index]['h'])
+                    w[w_index]['a'] = (float(w[w_index]['l']) - 0.0625) * (float(w[w_index]['h']) - 0.0625)
                 
                         
                         
@@ -391,7 +421,7 @@ def XML_2_dict(root, t = "floor"):
                             print('yes')
                     # print("w[wall]['windows']", ': ', w[wall]['windows'])
                 
-                # print(w)
+                print('w', ': ', w)
                 nwa_dict[ft][rt] = w
                 
                 
@@ -1058,27 +1088,23 @@ def survey(root):
         xml_ref_dict, nwa_dict = XML_2_dict(root)
         
         
-        print(nwa_dict)
-        
+        # print(nwa_dict)
+        wt_dict = {}
         nwa_temp_dict = {}
         for floor in nwa_dict.keys():
-            # print('floor ' + floor)
-            # print('len(nwa_dict[floor])', ': ', len(nwa_dict[floor]))
-            # print('nwa_dict[floor]', ': ', nwa_dict[floor])
             for room in nwa_dict[floor]:
-                # print('nwa_dict[floor][room] ' + nwa_dict[floor][room])
-                # print('len(nwa_dict[floor][room])', ': ', len(nwa_dict[floor][room]))
                 for wall in nwa_dict[floor][room]:
-                    # print(wall)
                     for key in nwa_dict[floor][room][wall]:
                         name = 'floor ' + floor + '_' + room + '_wall ' + str(wall) + '_' + key
-                        # print(name)
-                        # print(key)
                         nwa_temp_dict[name] = nwa_dict[floor][room][wall][key]
-                        # print(nwa_temp_dict[name])
+                        if key == 'qf.c52807ebq1':
+                            if nwa_dict[floor][room][wall][key] in wt_dict.keys():
+                                wt_dict[nwa_dict[floor][room][wall][key]] += nwa_dict[floor][room][wall]['net_a']
+                            else:
+                                wt_dict[nwa_dict[floor][room][wall][key]] = nwa_dict[floor][room][wall]['net_a']
         
-        
-        print(nwa_temp_dict)
+        # print(nwa_temp_dict)
+        print(wt_dict)
         
         
         ofl_general = ['Dwelling Type*'
@@ -1894,6 +1920,8 @@ def survey(root):
 
         styling = "border=\"1\""
         output = f"""\
+            <h1>Total Net Wall Areas by Type</h1> \
+            {create_table_text(wt_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'])} \
             <h1>Net Wall Areas</h1> \
             {create_table_text(nwa_temp_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'])} \
             <h1>General</h1> \
