@@ -18,6 +18,7 @@ MAX_REAL_FLOORS = 10
 
 
 
+
 def cart_distance(p1 : tuple[float, float], p2 : tuple[float, float]) -> float:
     (x1, y1) = p1
     (x2, y2) = p2
