@@ -312,27 +312,83 @@ def XML_2_dict(root, t = "floor"):
         floors = root.findall('interiorRoomPoints/floor')
         for floor in floors:
             ft = floor.get('floorType')
+            d[floor.get('floorType')] = floor.get('uid')
+            d[floor.get('uid')] = floor.get('floorType')
+            nwa_dict[ft] = {}
             for room in floor.findall('floorRoom'):
-                rt = room.get('type')
+                if room.get('type') not in d.keys():
+                    d[room.get('type')] = []
+                d[room.get('type')].append(room.get('uid'))
+                d[room.get('uid')] = room.get('type')
                 print(room.get('type'))
+                
+                rt = room.get('type') + ' (' + room.get('uid') + ')'
                 x = {}
                 room_x = room.get('x')
                 room_y = room.get('y')
                 w_index = 0
                 for point in room.findall('point'):
                     w_index += 1
+                    # uid = point.get('uid')
                     x[w_index] = {}
-                    x[w_index]['x1'] = float(point.get('snappedX')) + float(room_x)
-                    x[w_index]['y1'] = -float(point.get('snappedY')) - float(room_y)
-                    x[w_index]['h'] = point.get('height')
+                    for value in point.findall('values/value'):
+                        if value.get('key') in ['qf.c52807ebq1', 'qf.bdbaf056q1']:
+                            x[w_index]['type'] = value.text
+                    # if 'type' not in list(x[w_index].keys()):
+                        # x.pop(w_index)
+                        # continue
                     x[w_index]['uid'] = point.get('uid')
-                print('x', ': ', x)
+                    x[w_index]['x1'] = float(point.get('snappedX')) # + float(room_x)
+                    x[w_index]['y1'] = -float(point.get('snappedY')) # - float(room_y)
+                    x[w_index]['h'] = point.get('height')
+                # print('x', ': ', x)
+                # print('len(x)', ': ', len(x))
+                
+                # for point_1 in x:
+                    # for point_2 in x:
+                        
+                w_index = 0
+                for wall in x:
+                    w_index += 1
+                    # print(list(x[1].keys()))
+                    if w_index + 1 in list(x.keys()):
+                        x[w_index]['x2'] = x[w_index + 1]['x1']
+                        x[w_index]['y2'] = x[w_index + 1]['y1']
+                    else:
+                        x[w_index]['x2'] = x[1]['x1']
+                        x[w_index]['y2'] = x[1]['y1']
+                    x[w_index]['l'] = cart_distance((x[w_index]['x1'], x[w_index]['y1']), (x[w_index]['x2'], x[w_index]['y2']))
+                    x[w_index]['a'] = float(x[w_index]['l']) * float(x[w_index]['h'])
+                
+                y = {}
+                for wall in x:
+                    uid = x[wall]['uid']
+                    y[uid] = {}
+                    if 'type' in list(x[wall].keys()):
+                        y[uid]['type'] = x[wall]['type']
+                    y[uid]['x1'] = x[wall]['x1']
+                    y[uid]['y1'] = x[wall]['y1']
+                    y[uid]['x2'] = x[wall]['x2']
+                    y[uid]['y2'] = x[wall]['y2']
+                    y[uid]['h'] = x[wall]['h']
+                    y[uid]['l'] = x[wall]['l']
+                    y[uid]['a'] = x[wall]['a']
+                
+                # print('len(y)', ': ', len(y))
+                # print('y', ': ', y)
+                print('adding wall dict y for room ' + rt + ' to nwa_dict')
+                nwa_dict[ft][rt] = y
+        print('nwa_dict', ': ', nwa_dict)
+        
+        
+        
+        
         
         floors = root.findall('floor')
         for floor in floors:
             ft = floor.get('floorType')
-            nwa_dict[ft] = {}
-            # floor/exploded/window
+            
+            
             for p in floor.findall('exploded/door'):
                 si = p.get('symbolInstance')
                 o[si] = {}
@@ -359,70 +415,82 @@ def XML_2_dict(root, t = "floor"):
                 o[si]['d'] = window.get('depth')
                 o[si]['h'] = window.get('height')
                 o[si]['a'] = float(o[si]['w']) * float(o[si]['h'])
-                
             
-            # floor/floorRoom/window
-            # print(o)
-            
-            # print('floorType: ' + floor.get('floorType'))
-            # print('uid: ' + floor.get('uid'))
-            d[floor.get('floorType')] = floor.get('uid')
-            d[floor.get('uid')] = floor.get('floorType')
+            # d[floor.get('floorType')] = floor.get('uid')
+            # d[floor.get('uid')] = floor.get('floorType')
             for room in floor.findall('floorRoom'):
-                rt = room.get('type')
-                if room.get('type') not in d.keys():
-                    d[room.get('type')] = []
-                d[room.get('type')].append(room.get('uid'))
-                d[room.get('uid')] = room.get('type')
-                print(room.get('type'))
+                rt = room.get('type') + ' (' + room.get('uid') + ')'
+                # if room.get('type') not in d.keys():
+                    # d[room.get('type')] = []
+                # d[room.get('type')].append(room.get('uid'))
+                # d[room.get('uid')] = room.get('type')
+                # print(room.get('type'))
                 
                 w = {}
-                # for window in room.findall('window'):
-                    # symbolInstance = window.get('symbolInstance')
-                # print('type: ' + room.get('type'))
-                # print('uid: ' + room.get('uid'))
                 room_x = room.get('x')
                 room_y = room.get('y')
                 w_index = 0
                 for point in room.findall('point'):
                     w_index += 1
                     w[w_index] = {}
-                    w[w_index]['x1'] = float(point.get('snappedX')) + float(room_x)
-                    w[w_index]['y1'] = -float(point.get('snappedY')) - float(room_y)
-                    w[w_index]['h'] = point.get('height')
+                    w[w_index]['x3'] = float(point.get('snappedX')) + float(room_x)
+                    w[w_index]['y3'] = -float(point.get('snappedY')) - float(room_y)
+                    # w[w_index]['h'] = point.get('height')
                     w[w_index]['uid'] = point.get('uid')
-                    for value in point.findall('values/value'):
-                        w[w_index][value.get('key')] = value.text
+                    # for value in point.findall('values/value'):
+                        # w[w_index][value.get('key')] = value.text
+                        # print(value.get('key'))
                 
                 w_index = 0
                 for wall in w:
                     w_index += 1
                     # print(list(w.keys()))
                     if w_index + 1 in list(w.keys()):
-                        w[w_index]['x2'] = w[w_index + 1]['x1']
-                        w[w_index]['y2'] = w[w_index + 1]['y1']
+                        w[w_index]['x4'] = w[w_index + 1]['x3']
+                        w[w_index]['y4'] = w[w_index + 1]['y3']
                     else:
-                        w[w_index]['x2'] = w[1]['x1']
-                        w[w_index]['y2'] = w[1]['y1']
-                    w[w_index]['l'] = cart_distance((w[w_index]['x1'], w[w_index]['y1']), (w[w_index]['x2'], w[w_index]['y2']))
-                    w[w_index]['a'] = (float(w[w_index]['l']) - 0.0625) * (float(w[w_index]['h']) - 0.0625)
-                
-                        
-                        
+                        w[w_index]['x4'] = w[1]['x3']
+                        w[w_index]['y4'] = w[1]['y3']
+                    # w[w_index]['l'] = cart_distance((w[w_index]['x3'], w[w_index]['y3']), (w[w_index]['x4'], w[w_index]['y4']))
+                    # w[w_index]['a'] = float(w[w_index]['l']) * float(w[w_index]['h'])
+                print('ft', ': ', ft)
+                print('rt', ': ', rt)
+                print('nwa_dict[ft][rt]', ': ', nwa_dict[ft][rt])
                 for wall in w:
-                    w[wall]['windows'] = []
-                    w[wall]['net_a'] = w[wall]['a']
+                    uid = w[wall]['uid']
+                    
+                    nwa_dict[ft][rt][uid]['x3'] = w[wall]['x3']
+                    nwa_dict[ft][rt][uid]['y3'] = w[wall]['y3']
+                    nwa_dict[ft][rt][uid]['x4'] = w[wall]['x4']
+                    nwa_dict[ft][rt][uid]['y4'] = w[wall]['y4']
+                
+                
+                
+                
+                y = nwa_dict[ft][rt]
+                
+                w_index = 0
+                for wall in y:
+                    w_index += 1
+                    # print(w[w_index].keys())
+                    # if all(code not in list(w[w_index].keys()) for code in ['qf.c52807ebq1', 'qf.bdbaf056q1']):
+                    # if 'qf.c52807ebq1' not in list(y[w_index].keys()) and 'qf.bdbaf056q1' not in list(y[w_index].keys()):
+                        # y[w_index] = {}
+                        # y.pop(w_index)
+                        # continue
+                    y[wall]['windows'] = []
+                    y[wall]['net_a'] = y[wall]['a']
                     for window in o:
-                        # print('checking if window ' + str(window) + ' (' + str(o[window]['x1']) + ',' + str(o[window]['y1']) + ') -> (' + str(o[window]['x2']) + ',' + str(o[window]['y2']) + ') is in wall ' + str(wall) + ' (' + str(w[wall]['x1']) + ',' + str(w[wall]['y1']) + ') -> (' + str(w[wall]['x2']) + ',' + str(w[wall]['y2']) + ')')
-                        if linear_subset(
-                        float(o[window]['x1']), float(o[window]['y1']), float(o[window]['x2']), float(o[window]['y2']), float(w[wall]['x1']), float(w[wall]['y1']), float(w[wall]['x2']), float(w[wall]['y2'])) == True:
-                            w[wall]['windows'].append(window)
-                            w[wall]['net_a'] -= o[window]['a']
+                        # print('checking if window ' + str(window) + ' (' + str(o[window]['x1']) + ',' + str(o[window]['y1']) + ') -> (' + str(o[window]['x2']) + ',' + str(o[window]['y2']) + ') is in wall ' + str(wall) + ' (' + str(y[wall]['x1']) + ',' + str(y[wall]['y1']) + ') -> (' + str(y[wall]['x2']) + ',' + str(y[wall]['y2']) + ')')
+                        # if linear_subset(float(o[window]['x1']), float(o[window]['y1']), float(o[window]['x2']), float(o[window]['y2']), float(y[wall]['x1']), float(y[wall]['y1']), float(y[wall]['x2']), float(y[wall]['y2'])) == True:
+                        if linear_subset(float(o[window]['x1']), float(o[window]['y1']), float(o[window]['x2']), float(o[window]['y2']), float(y[wall]['x3']), float(y[wall]['y3']), float(y[wall]['x4']), float(y[wall]['y4'])) == True:
+                            y[wall]['windows'].append(window)
+                            y[wall]['net_a'] -= o[window]['a']
                             print('yes')
                     # print("w[wall]['windows']", ': ', w[wall]['windows'])
                 
-                print('w', ': ', w)
-                nwa_dict[ft][rt] = w
+                # print('y', ': ', y)
+                nwa_dict[ft][rt] = y
                 
                 
     except Exception as ex:
@@ -1097,10 +1165,15 @@ def survey(root):
                     for key in nwa_dict[floor][room][wall]:
                         name = 'floor ' + floor + '_' + room + '_wall ' + str(wall) + '_' + key
                         nwa_temp_dict[name] = nwa_dict[floor][room][wall][key]
-                        if key == 'qf.c52807ebq1':
+                        # if key == 'qf.c52807ebq1':
+                        # if key in ['qf.c52807ebq1', 'qf.bdbaf056q1']:
+                        if key == 'type':
                             if nwa_dict[floor][room][wall][key] in wt_dict.keys():
                                 wt_dict[nwa_dict[floor][room][wall][key]] += nwa_dict[floor][room][wall]['net_a']
                             else:
+                                print(floor)
+                                print(room)
+                                print(wall)
                                 wt_dict[nwa_dict[floor][room][wall][key]] = nwa_dict[floor][room][wall]['net_a']
         
         # print(nwa_temp_dict)
