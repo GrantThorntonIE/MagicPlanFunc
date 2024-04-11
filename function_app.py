@@ -306,8 +306,10 @@ def XML_2_dict(root, t = "floor"):
     try:
         d = {}
         nwa_dict = {}
+        obj_dict = {}
         # w = {}
-        o = {}
+        
+        wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108', '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74', '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f', '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e', '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57', '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789', '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111', '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a', '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c', '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f', '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a', '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49', '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e', '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592', 'arcdoor', 'doorbypass', 'doorbypassglass', 'doordoublefolding', 'doordoublehinged', 'doordoublesliding', 'doorfolding', 'doorfrench', 'doorgarage', 'doorglass', 'doorhinged', 'doorpocket', 'doorsliding', 'doorslidingglass', 'doorswing', 'doorwithwindow', 'windowarched', 'windowawning', 'windowbay', 'windowbow', 'windowcasement', 'windowfixed', 'windowfrench', 'windowhopper', 'windowhung', 'windowsliding', 'windowtrapezoid', 'windowtriangle', 'windowtskylight1', 'windowtskylight2', 'windowtskylight3']
         
         floors = root.findall('interiorRoomPoints/floor')
         for floor in floors:
@@ -315,6 +317,7 @@ def XML_2_dict(root, t = "floor"):
             d[floor.get('floorType')] = floor.get('uid')
             d[floor.get('uid')] = floor.get('floorType')
             nwa_dict[ft] = {}
+            
             for room in floor.findall('floorRoom'):
                 if room.get('type') not in d.keys():
                     d[room.get('type')] = []
@@ -376,9 +379,9 @@ def XML_2_dict(root, t = "floor"):
                 
                 # print('len(y)', ': ', len(y))
                 # print('y', ': ', y)
-                print('adding wall dict y for room ' + rt + ' to nwa_dict')
+                # print('adding wall dict y for room ' + rt + ' to nwa_dict')
                 nwa_dict[ft][rt] = y
-        print('nwa_dict', ': ', nwa_dict)
+        # print('nwa_dict', ': ', nwa_dict)
         
         
         
@@ -388,105 +391,103 @@ def XML_2_dict(root, t = "floor"):
         for floor in floors:
             ft = floor.get('floorType')
             
+            o = {}
+            
+            for p in floor.findall('symbolInstance'):
+                # print("p.get('uid')", ': ', p.get('uid'))
+                if p.get('symbol') in wd_list:
+                    id = p.get('id')
+                    o[id] = {}
+                    o[id]['uid'] = p.get('uid')
+                    o[id]['symbol'] = p.get('symbol')
+            print('o', ': ', o)
+                
+            
             
             for p in floor.findall('exploded/door'):
                 si = p.get('symbolInstance')
-                o[si] = {}
+                print('si', ': ', si)
+                if si in list(o.keys()):
+                # o[si] = {}
                 # o[si]['symbolInstance'] = window.get('symbolInstance')
-                o[si]['x1'] = p.get('x1')
-                o[si]['y1'] = -float(p.get('y1'))
-                o[si]['x2'] = p.get('x2')
-                o[si]['y2'] = -float(p.get('y2'))
-                o[si]['w'] = p.get('width')
-                o[si]['d'] = p.get('depth')
-                o[si]['h'] = p.get('height')
-                o[si]['a'] = float(o[si]['w']) * float(o[si]['h'])
+                    o[si]['x1'] = p.get('x1')
+                    o[si]['y1'] = -float(p.get('y1'))
+                    o[si]['x2'] = p.get('x2')
+                    o[si]['y2'] = -float(p.get('y2'))
+                    o[si]['w'] = p.get('width')
+                    o[si]['d'] = p.get('depth')
+                    o[si]['h'] = p.get('height')
+                    o[si]['a'] = float(o[si]['w']) * float(o[si]['h'])
             
-            for window in floor.findall('exploded/window'):
+            for p in floor.findall('exploded/window'):
                 # o_index += 1
-                si = window.get('symbolInstance')
-                o[si] = {}
+                si = p.get('symbolInstance')
+                print('si', ': ', si)
+                if si in list(o.keys()):
+                # o[si] = {}
                 # o[si]['symbolInstance'] = window.get('symbolInstance')
-                o[si]['x1'] = window.get('x1')
-                o[si]['y1'] = -float(window.get('y1'))
-                o[si]['x2'] = window.get('x2')
-                o[si]['y2'] = -float(window.get('y2'))
-                o[si]['w'] = window.get('width')
-                o[si]['d'] = window.get('depth')
-                o[si]['h'] = window.get('height')
-                o[si]['a'] = float(o[si]['w']) * float(o[si]['h'])
+                    o[si]['x1'] = p.get('x1')
+                    o[si]['y1'] = -float(p.get('y1'))
+                    o[si]['x2'] = p.get('x2')
+                    o[si]['y2'] = -float(p.get('y2'))
+                    o[si]['w'] = p.get('width')
+                    o[si]['d'] = p.get('depth')
+                    o[si]['h'] = p.get('height')
+                    o[si]['a'] = float(o[si]['w']) * float(o[si]['h'])
             
-            # d[floor.get('floorType')] = floor.get('uid')
-            # d[floor.get('uid')] = floor.get('floorType')
+            
+            
+            
+            print('o', ': ', o)
+            obj_dict[ft] = o
+            
             for room in floor.findall('floorRoom'):
                 rt = room.get('type') + ' (' + room.get('uid') + ')'
-                # if room.get('type') not in d.keys():
-                    # d[room.get('type')] = []
-                # d[room.get('type')].append(room.get('uid'))
-                # d[room.get('uid')] = room.get('type')
-                # print(room.get('type'))
+                print(rt)
                 
                 w = {}
                 room_x = room.get('x')
                 room_y = room.get('y')
                 w_index = 0
-                for point in room.findall('point'):
+                for point in room.findall('point'): # get (x3, y3)
                     w_index += 1
                     w[w_index] = {}
+                    w[w_index]['uid'] = point.get('uid')
                     w[w_index]['x3'] = float(point.get('snappedX')) + float(room_x)
                     w[w_index]['y3'] = -float(point.get('snappedY')) - float(room_y)
-                    # w[w_index]['h'] = point.get('height')
-                    w[w_index]['uid'] = point.get('uid')
-                    # for value in point.findall('values/value'):
-                        # w[w_index][value.get('key')] = value.text
-                        # print(value.get('key'))
                 
                 w_index = 0
-                for wall in w:
+                for wall in w: # get (x4, y4)
                     w_index += 1
-                    # print(list(w.keys()))
                     if w_index + 1 in list(w.keys()):
                         w[w_index]['x4'] = w[w_index + 1]['x3']
                         w[w_index]['y4'] = w[w_index + 1]['y3']
                     else:
                         w[w_index]['x4'] = w[1]['x3']
                         w[w_index]['y4'] = w[1]['y3']
-                    # w[w_index]['l'] = cart_distance((w[w_index]['x3'], w[w_index]['y3']), (w[w_index]['x4'], w[w_index]['y4']))
-                    # w[w_index]['a'] = float(w[w_index]['l']) * float(w[w_index]['h'])
-                print('ft', ': ', ft)
-                print('rt', ': ', rt)
-                print('nwa_dict[ft][rt]', ': ', nwa_dict[ft][rt])
-                for wall in w:
+                for wall in w: # transfer values to dict y
                     uid = w[wall]['uid']
-                    
                     nwa_dict[ft][rt][uid]['x3'] = w[wall]['x3']
                     nwa_dict[ft][rt][uid]['y3'] = w[wall]['y3']
                     nwa_dict[ft][rt][uid]['x4'] = w[wall]['x4']
                     nwa_dict[ft][rt][uid]['y4'] = w[wall]['y4']
-                
-                
-                
-                
                 y = nwa_dict[ft][rt]
                 
                 w_index = 0
                 for wall in y:
                     w_index += 1
-                    # print(w[w_index].keys())
-                    # if all(code not in list(w[w_index].keys()) for code in ['qf.c52807ebq1', 'qf.bdbaf056q1']):
-                    # if 'qf.c52807ebq1' not in list(y[w_index].keys()) and 'qf.bdbaf056q1' not in list(y[w_index].keys()):
-                        # y[w_index] = {}
-                        # y.pop(w_index)
-                        # continue
+                    print(wall)
                     y[wall]['windows'] = []
                     y[wall]['net_a'] = y[wall]['a']
                     for window in o:
-                        # print('checking if window ' + str(window) + ' (' + str(o[window]['x1']) + ',' + str(o[window]['y1']) + ') -> (' + str(o[window]['x2']) + ',' + str(o[window]['y2']) + ') is in wall ' + str(wall) + ' (' + str(y[wall]['x1']) + ',' + str(y[wall]['y1']) + ') -> (' + str(y[wall]['x2']) + ',' + str(y[wall]['y2']) + ')')
-                        # if linear_subset(float(o[window]['x1']), float(o[window]['y1']), float(o[window]['x2']), float(o[window]['y2']), float(y[wall]['x1']), float(y[wall]['y1']), float(y[wall]['x2']), float(y[wall]['y2'])) == True:
+                        if 'x1' not in list(o[window].keys()):
+                            continue
+                        print(window)
                         if linear_subset(float(o[window]['x1']), float(o[window]['y1']), float(o[window]['x2']), float(o[window]['y2']), float(y[wall]['x3']), float(y[wall]['y3']), float(y[wall]['x4']), float(y[wall]['y4'])) == True:
-                            y[wall]['windows'].append(window)
+                            y[wall]['windows'].append(window + ' (' + str(o[window]['a']) + ')')
                             y[wall]['net_a'] -= o[window]['a']
-                            print('yes')
+                            print('object ' + str(window) + ' (' + str(o[window]['x1']) + '\t' + str(o[window]['y1']) + ') -> (' + str(o[window]['x2']) + '\t' + str(o[window]['y2']) + ') is colinear with wall ' + str(wall) + ' (' + str(y[wall]['x3']) + '\t' + str(y[wall]['y3']) + ') -> (' + str(y[wall]['x4']) + '\t' + str(y[wall]['y4']) + ')')
+                            # print('yes')
                     # print("w[wall]['windows']", ': ', w[wall]['windows'])
                 
                 # print('y', ': ', y)
@@ -1154,6 +1155,18 @@ def survey(root):
         
 
         xml_ref_dict, nwa_dict = XML_2_dict(root)
+        # xml_ref_dict, wall_dict, obj_dict = XML_2_dict(root)
+        
+        # after the above 3 dict are returned 
+        # need to filter obj_dict
+        # most entries need to be dropped as they are not windoors
+        # then go through walls, subtracting windoor areas from gross areas
+        
+        # We could just go through nwa_dict[ft][rt][wall]['windows'] at this point...
+        # Use Statistics?
+        
+        
+        
         
         
         # print(nwa_dict)
