@@ -308,9 +308,10 @@ def XML_2_dict(root, t = "floor"):
         nwa_dict = {}
         obj_dict = {}
         # w = {}
-        d['include_rooms'] = []
-        d['exclude_rooms'] = []
         wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108', '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74', '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f', '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e', '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57', '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789', '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111', '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a', '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c', '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f', '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a', '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49', '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e', '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592', 'arcdoor', 'doorbypass', 'doorbypassglass', 'doordoublefolding', 'doordoublehinged', 'doordoublesliding', 'doorfolding', 'doorfrench', 'doorgarage', 'doorglass', 'doorhinged', 'doorpocket', 'doorsliding', 'doorslidingglass', 'doorswing', 'doorwithwindow', 'windowarched', 'windowawning', 'windowbay', 'windowbow', 'windowcasement', 'windowfixed', 'windowfrench', 'windowhopper', 'windowhung', 'windowsliding', 'windowtrapezoid', 'windowtriangle', 'windowtskylight1', 'windowtskylight2', 'windowtskylight3']
+        d['exclude_rooms'] = []
+        d['include_rooms'] = []
+        d['exclude_room_types'] = ['Attic', 'Balcony', 'Storage', 'Patio', 'Deck', 'Porch', 'Cellar', 'Garage', 'Furnace room', 'Outbuilding', 'Unfinished Basement', 'Workshop']
         
         floors = root.findall('interiorRoomPoints/floor')
         for floor in floors:
@@ -325,17 +326,22 @@ def XML_2_dict(root, t = "floor"):
                 d[room.get('type')].append(room.get('uid'))
                 d[room.get('uid')] = room.get('type')
                 # print(room.get('type'))
+                if room.get('type') in d['exclude_room_types']:
+                    d['exclude_rooms'].append(room.get('uid'))
                 for value in room.findall('values/value'):
                     key = value.get('key')
-                    print(key)
+                    # print(key)
                     if key == "qcustomfield.2979903aq1":
-                        print(room.get('type'))
+                        # print(room.get('type'))
                         floor_area_include = value.text
-                        print(floor_area_include)
-                        if floor_area_include == '0':
-                            d['exclude_rooms'].append(room.get('type'))
+                        # print(floor_area_include)
+                        # if floor_area_include == '0':
+                            # d['exclude_rooms'].append(room.get('uid'))
                         if floor_area_include == '1':
-                            d['include_rooms'].append(room.get('type'))
+                            d['include_rooms'].append(room.get('uid'))
+                            d['exclude_rooms'].remove(room.get('uid'))
+                            print(d['exclude_rooms'])
+                            print(room.get('type'))
                 
                 
                 rt = room.get('type') + ' (' + room.get('uid') + ')'
@@ -500,7 +506,7 @@ def XML_2_dict(root, t = "floor"):
                         if linear_subset(float(o[window]['x1']), float(o[window]['y1']), float(o[window]['x2']), float(o[window]['y2']), float(y[wall]['x3']), float(y[wall]['y3']), float(y[wall]['x4']), float(y[wall]['y4'])) == True:
                             y[wall]['windows'].append(window + ' (' + str(o[window]['a']) + ')')
                             y[wall]['net_a'] -= o[window]['a']
-                            print('object ' + str(window) + ' (' + str(o[window]['x1']) + '\t' + str(o[window]['y1']) + ') -> (' + str(o[window]['x2']) + '\t' + str(o[window]['y2']) + ') is colinear with wall ' + str(wall) + ' (' + str(y[wall]['x3']) + '\t' + str(y[wall]['y3']) + ') -> (' + str(y[wall]['x4']) + '\t' + str(y[wall]['y4']) + ')')
+                            # print('object ' + str(window) + ' (' + str(o[window]['x1']) + '\t' + str(o[window]['y1']) + ') -> (' + str(o[window]['x2']) + '\t' + str(o[window]['y2']) + ') is colinear with wall ' + str(wall) + ' (' + str(y[wall]['x3']) + '\t' + str(y[wall]['y3']) + ') -> (' + str(y[wall]['x4']) + '\t' + str(y[wall]['y4']) + ')')
                             # print('yes')
                     # print("w[wall]['windows']", ':', w[wall]['windows'])
                 
@@ -1169,24 +1175,8 @@ def survey(root):
         
 
         xml_ref_dict, nwa_dict = XML_2_dict(root)
-        # xml_ref_dict, wall_dict, obj_dict = XML_2_dict(root)
-        
-        print('xml_ref_dict["exclude_rooms"]', ':', xml_ref_dict["exclude_rooms"])
-        print('xml_ref_dict["include_rooms"]', ':', xml_ref_dict["include_rooms"])
-        
-        # after the above 3 dict are returned 
-        # need to filter obj_dict
-        # most entries need to be dropped as they are not windoors
-        # then go through walls, subtracting windoor areas from gross areas
-        
-        # We could just go through nwa_dict[ft][rt][wall]['windows'] at this point...
-        # Use Statistics?
         
         
-        
-        
-        
-        # print(nwa_dict)
         wt_dict = {}
         wt_dict['gross'] = 0
         wt_dict['total'] = 0
@@ -1442,6 +1432,28 @@ def survey(root):
             }
         
         
+        # json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
+        # request = urllib.request.Request(json_url, headers=headers)
+        # JSON = urllib.request.urlopen(request).read()
+        # JSON = json.loads(JSON)
+        # for file in JSON["data"]["files"]:
+            # if file["file_type"] == ".pdf":
+                # request = urllib.request.Request(file["url"], headers=headers)
+                # file_content = urllib.request.urlopen(request).read()
+                # file_path = 'Project Files/' + file["name"]
+                # with open(file_path, 'wb') as outfile:
+                    # outfile.write(file_content)
+        # for file in JSON["data"]["photos"]:
+            # print(file["name"])
+            # print(file["url"])
+            # request = urllib.request.Request(file["url"], headers=headers)
+            # file_content = urllib.request.urlopen(request).read()
+            # file_path = 'Project Files/' + file["name"]
+            # with open(file_path, 'wb') as outfile:
+                # outfile.write(file_content)
+        
+        
+        
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(id)
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
@@ -1525,16 +1537,18 @@ def survey(root):
 
 
             if datum["symbol_name"] == "ESB alteration":
-                # json_val_dict["ESB alteration"] += 1
-                esb_alterations.append(datum["symbol_instance_id"])
+                json_val_dict["ESB alteration"] = 1
+                # esb_alterations.append(datum["symbol_instance_id"])
             if datum["symbol_name"] == "GNI meter alteration":
-                # json_val_dict["GNI meter alteration"] += 1
-                gni_alterations.append(datum["symbol_instance_id"])
+                json_val_dict["GNI meter alteration"] = 1
+                # gni_alterations.append(datum["symbol_instance_id"])
             
             if datum["symbol_name"] == "New Gas Connection":
-                new_gas_connection.append(datum["symbol_instance_id"])
+                json_val_dict["New Gas Connection"] = 1
+                # new_gas_connection.append(datum["symbol_instance_id"])
             if datum["symbol_name"] == "RGI Meter_No Heating":
-                rgi_meter_no_heating.append(datum["symbol_instance_id"])
+                json_val_dict["RGI Meter_No Heating"] = 1
+                # rgi_meter_no_heating.append(datum["symbol_instance_id"])
             
             for form in datum["forms"]:
                 for section in form["sections"]:
@@ -1750,15 +1764,15 @@ def survey(root):
                 for room in floor["rooms"]:
                     for furniture in room["furnitures"]:
                     
-                        if furniture["name"] == "ESB alteration":
-                            json_val_dict["ESB alteration"] = 1
-                        if furniture["name"] == "GNI meter alteration":
-                            json_val_dict["GNI meter alteration"] = 1
+                        # if furniture["name"] == "ESB alteration":
+                            # json_val_dict["ESB alteration"] = 1
+                        # if furniture["name"] == "GNI meter alteration":
+                            # json_val_dict["GNI meter alteration"] = 1
                             
-                        if furniture["name"] == "New Gas Connection":
-                            json_val_dict["New Gas Connection"] = 1
-                        if furniture["name"] == "RGI Meter_No Heating":
-                            json_val_dict["RGI Meter_No Heating"] = 1
+                        # if furniture["name"] == "New Gas Connection":
+                            # json_val_dict["New Gas Connection"] = 1
+                        # if furniture["name"] == "RGI Meter_No Heating":
+                            # json_val_dict["RGI Meter_No Heating"] = 1
                             
                             
                             
@@ -1787,7 +1801,7 @@ def survey(root):
             if int(xml_ref_dict[floor["uid"]]) == 10:
                 json_val_dict['Thermal Envelope - Heat loss floor area'] = floor["area_with_interior_walls_only"]
                 for room in floor["rooms"]:
-                    if xml_ref_dict[room["uid"]] in xml_ref_dict['exclude_rooms']:
+                    if room["uid"] in xml_ref_dict['exclude_rooms']:
                         json_val_dict['Thermal Envelope - Heat loss floor area'] -= room["area_with_interior_walls_only"]
 
             if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
@@ -1797,7 +1811,7 @@ def survey(root):
 
                 for room in floor["rooms"]:
                     print(xml_ref_dict[room["uid"]])
-                    if xml_ref_dict[room["uid"]] in xml_ref_dict['exclude_rooms']:
+                    if room["uid"] in xml_ref_dict['exclude_rooms']:
                         json_val_dict['Gross floor area (m2) *'] -= room["area_with_interior_walls_only"]
                         
                     for wall_item in room["wall_items"]:
@@ -2033,10 +2047,6 @@ def survey(root):
         output = f"""\
             <h1>Major Renovation</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
-            <h1>Total Net Wall Areas by Type</h1> \
-            {create_table_text(wt_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'])} \
-            <h1>Net Wall Areas</h1> \
-            {create_table_text(nwa_temp_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'])} \
             <h1>General</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
             <h1>Roof</h1> \
