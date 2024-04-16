@@ -1431,7 +1431,13 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        
+        account_url = os.environ['AZ_STR_URL']
+        default_credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        container_name = os.environ['AZ_CNTR_ST']
+        container_client = blob_service_client.get_container_client(container_name)
+        if not container_client.exists():
+            container_client = blob_service_client.create_container(container_name)
         json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
