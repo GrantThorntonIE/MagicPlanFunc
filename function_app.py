@@ -1432,7 +1432,21 @@ def survey(root):
             }
         
         
-
+        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
+        request = urllib.request.Request(json_url, headers=headers)
+        JSON = urllib.request.urlopen(request).read()
+        JSON = json.loads(JSON)
+        
+        for file in JSON["data"]["files"]:
+            if file["file_type"] == ".pdf":
+                request = urllib.request.Request(file["url"], headers=headers)
+                file_content = urllib.request.urlopen(request).read()
+                
+                local_file_name = file["name"]
+                # local_file_name = 'Project Files/' + file["name"]
+                # local_file_name = str(uuid.uuid4()) + '.json'
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                blob_client.upload_blob(file_content)
         
         
         
@@ -2043,7 +2057,7 @@ def survey(root):
         # exc_type, exc_obj, exc_tb = sys.exc_info()
         # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
         
-        output = str(ex)
+        # output = str(ex)
         output = traceback.format_exc()
         # LOGGER.info('Exception : ' + str(traceback.format_exc()))
         
@@ -2159,6 +2173,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
     except Exception as ex:
         output = str(ex)
+        output = traceback.format_exc()
         sc = 503    # Service Unavailable
         
 
@@ -2206,11 +2221,13 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                 # file_path = 'Project Files/' + file["name"]
                 # with open(file_path, 'wb') as outfile:
                     # outfile.write(file_content)
-            
+            return_body = '0'
             
         except Exception as ex:
             output = str(ex)
+            output = traceback.format_exc()
             sc = 500     # Internal Server Error
-        return func.HttpResponse(status_code=sc)
+            return_body = output
+        return func.HttpResponse(status_code=sc, body=return_body)
 
     
