@@ -1432,25 +1432,7 @@ def survey(root):
             }
         
         
-        # json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
-        # request = urllib.request.Request(json_url, headers=headers)
-        # JSON = urllib.request.urlopen(request).read()
-        # JSON = json.loads(JSON)
-        # for file in JSON["data"]["files"]:
-            # if file["file_type"] == ".pdf":
-                # request = urllib.request.Request(file["url"], headers=headers)
-                # file_content = urllib.request.urlopen(request).read()
-                # file_path = 'Project Files/' + file["name"]
-                # with open(file_path, 'wb') as outfile:
-                    # outfile.write(file_content)
-        # for file in JSON["data"]["photos"]:
-            # print(file["name"])
-            # print(file["url"])
-            # request = urllib.request.Request(file["url"], headers=headers)
-            # file_content = urllib.request.urlopen(request).read()
-            # file_path = 'Project Files/' + file["name"]
-            # with open(file_path, 'wb') as outfile:
-                # outfile.write(file_content)
+
         
         
         
@@ -2189,9 +2171,43 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             container_client = blob_service_client.get_container_client(container_name)
             if not container_client.exists():
                 container_client = blob_service_client.create_container(container_name)
+            
             local_file_name = str(uuid.uuid4()) + '.json'
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
             blob_client.upload_blob(json_data)
+            
+            
+            
+            json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
+            request = urllib.request.Request(json_url, headers=headers)
+            JSON = urllib.request.urlopen(request).read()
+            JSON = json.loads(JSON)
+            
+            for file in JSON["data"]["files"]:
+                if file["file_type"] == ".pdf":
+                    request = urllib.request.Request(file["url"], headers=headers)
+                    file_content = urllib.request.urlopen(request).read()
+                    
+                    local_file_name = file["name"]
+                    # local_file_name = 'Project Files/' + file["name"]
+                    # local_file_name = str(uuid.uuid4()) + '.json'
+                    blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                    blob_client.upload_blob(file_content)
+                    # with open(file_path, 'wb') as outfile:
+                        # outfile.write(file_content)
+            
+            
+            
+            # for file in JSON["data"]["photos"]:
+                # print(file["name"])
+                # print(file["url"])
+                # request = urllib.request.Request(file["url"], headers=headers)
+                # file_content = urllib.request.urlopen(request).read()
+                # file_path = 'Project Files/' + file["name"]
+                # with open(file_path, 'wb') as outfile:
+                    # outfile.write(file_content)
+            
+            
         except Exception as ex:
             output = str(ex)
             sc = 500     # Internal Server Error
