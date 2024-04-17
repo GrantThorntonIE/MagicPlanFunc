@@ -1454,7 +1454,7 @@ def survey(root):
                 container_client = blob_service_client.get_container_client(container_name)
                 if not container_client.exists():
                     container_client = blob_service_client.create_container(container_name)
-                local_file_name = file["name"]
+                local_file_name = file["name"].replace(" ", "_")
                 # local_file_name = 'Project Files/' + file["name"]
                 # local_file_name = str(uuid.uuid4()) + '.json'
                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
@@ -2217,7 +2217,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                     request = urllib.request.Request(file["url"], headers=headers)
                     file_content = urllib.request.urlopen(request).read()
                     
-                    local_file_name = file["name"]
+                    local_file_name = file["name"].replace(" ", "_")
                     # local_file_name = 'Project Files/' + file["name"]
                     # local_file_name = str(uuid.uuid4()) + '.json'
                     blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
@@ -2227,11 +2227,14 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             
             
             
-            # for file in JSON["data"]["photos"]:
+            for file in JSON["data"]["photos"]:
                 # print(file["name"])
                 # print(file["url"])
-                # request = urllib.request.Request(file["url"], headers=headers)
-                # file_content = urllib.request.urlopen(request).read()
+                request = urllib.request.Request(file["url"], headers=headers)
+                file_content = urllib.request.urlopen(request).read()
+                local_file_name = file["name"].replace(" ", "_")
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                blob_client.upload_blob(file_content)
                 # file_path = 'Project Files/' + file["name"]
                 # with open(file_path, 'wb') as outfile:
                     # outfile.write(file_content)
