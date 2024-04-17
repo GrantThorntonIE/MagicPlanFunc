@@ -311,7 +311,7 @@ def XML_2_dict(root, t = "floor"):
         wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108', '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74', '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f', '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e', '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57', '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789', '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111', '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a', '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c', '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f', '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a', '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49', '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e', '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592', 'arcdoor', 'doorbypass', 'doorbypassglass', 'doordoublefolding', 'doordoublehinged', 'doordoublesliding', 'doorfolding', 'doorfrench', 'doorgarage', 'doorglass', 'doorhinged', 'doorpocket', 'doorsliding', 'doorslidingglass', 'doorswing', 'doorwithwindow', 'windowarched', 'windowawning', 'windowbay', 'windowbow', 'windowcasement', 'windowfixed', 'windowfrench', 'windowhopper', 'windowhung', 'windowsliding', 'windowtrapezoid', 'windowtriangle', 'windowtskylight1', 'windowtskylight2', 'windowtskylight3']
         d['exclude_rooms'] = []
         d['include_rooms'] = []
-        d['exclude_room_types'] = ['Attic', 'Balcony', 'Storage', 'Patio', 'Deck', 'Porch', 'Cellar', 'Garage', 'Furnace room', 'Outbuilding', 'Unfinished Basement', 'Workshop']
+        d['exclude_room_types'] = ['Attic', 'Balcony', 'Storage', 'Patio', 'Deck', 'Porch', 'Cellar', 'Garage', 'Furnace Room', 'Outbuilding', 'Unfinished Basement', 'Workshop']
         
         floors = root.findall('interiorRoomPoints/floor')
         for floor in floors:
@@ -328,6 +328,10 @@ def XML_2_dict(root, t = "floor"):
                 # print(room.get('type'))
                 if room.get('type') in d['exclude_room_types']:
                     d['exclude_rooms'].append(room.get('uid'))
+                    d['exclude_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                else:
+                    d['include_rooms'].append(room.get('uid'))
+                    d['include_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
                 for value in room.findall('values/value'):
                     key = value.get('key')
                     # print(key)
@@ -338,10 +342,10 @@ def XML_2_dict(root, t = "floor"):
                         # if floor_area_include == '0':
                             # d['exclude_rooms'].append(room.get('uid'))
                         if floor_area_include == '1':
-                            d['include_rooms'].append(room.get('uid'))
                             d['exclude_rooms'].remove(room.get('uid'))
-                            print(d['exclude_rooms'])
-                            print(room.get('type'))
+                            d['exclude_rooms'].remove('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                            # print(d['exclude_rooms'])
+                            # print(room.get('type'))
                 
                 
                 rt = room.get('type') + ' (' + room.get('uid') + ')'
@@ -402,8 +406,8 @@ def XML_2_dict(root, t = "floor"):
                 nwa_dict[ft][rt] = y
         # print('nwa_dict', ':', nwa_dict)
         
-        print("d['exclude_rooms']", ':', str(d['exclude_rooms']))
-        print("d['include_rooms']", ':', str(d['include_rooms']))
+        # print("d['exclude_rooms']", ':', str(d['exclude_rooms']))
+        # print("d['include_rooms']", ':', str(d['include_rooms']))
         
         
         
@@ -1176,6 +1180,8 @@ def survey(root):
 
         xml_ref_dict, nwa_dict = XML_2_dict(root)
         
+        print("exclude_rooms", ':', xml_ref_dict["exclude_rooms"])
+        print("include_rooms", ':', xml_ref_dict["include_rooms"])
         
         wt_dict = {}
         wt_dict['gross'] = 0
@@ -1199,7 +1205,7 @@ def survey(root):
                             wt_dict['total'] += nwa_dict[floor][room][wall]['net_a']
         
         # print(nwa_temp_dict)
-        print(wt_dict)
+        # print(wt_dict)
         
         # (if any value blank then 0)
         ofl_mr = ['Thermal Envelope - Heat loss walls, windows and doors' # all walls from floors 10 - 13 except Loadbearing/Party walls and internal walls)
@@ -1804,6 +1810,7 @@ def survey(root):
                 json_val_dict['Thermal Envelope - Heat loss floor area'] = floor["area_with_interior_walls_only"]
                 for room in floor["rooms"]:
                     if room["uid"] in xml_ref_dict['exclude_rooms']:
+                        # print('floor 10, excluding ' + room["uid"] + xml_ref_dict[room["uid"]])
                         json_val_dict['Thermal Envelope - Heat loss floor area'] -= room["area_with_interior_walls_only"]
 
             if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
@@ -1812,7 +1819,7 @@ def survey(root):
                 json_val_dict['No. Double Glazed Windows *'] += floor["window_count"]
 
                 for room in floor["rooms"]:
-                    print(xml_ref_dict[room["uid"]])
+                    # print(xml_ref_dict[room["uid"]])
                     if room["uid"] in xml_ref_dict['exclude_rooms']:
                         json_val_dict['Gross floor area (m2) *'] -= room["area_with_interior_walls_only"]
                         
@@ -1820,7 +1827,7 @@ def survey(root):
                         if wall_item["uid"] in replace_windows:
                             json_val_dict['replace_window_area'] += (wall_item["width"] * wall_item["height"])
                         if wall_item["uid"] in single_glazed_windows:
-                            print(wall_item["uid"] + "found in " + str(single_glazed_windows))
+                            # print(wall_item["uid"] + " found in " + str(single_glazed_windows))
                             json_val_dict['No. Single Glazed Windows *'] += 1
                             
                     for furniture in room["furnitures"]:
