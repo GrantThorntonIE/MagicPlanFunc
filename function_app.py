@@ -309,9 +309,20 @@ def XML_2_dict(root, t = "floor"):
         obj_dict = {}
         # w = {}
         wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108', '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74', '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f', '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e', '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57', '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789', '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111', '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a', '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c', '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f', '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a', '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49', '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e', '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592', 'arcdoor', 'doorbypass', 'doorbypassglass', 'doordoublefolding', 'doordoublehinged', 'doordoublesliding', 'doorfolding', 'doorfrench', 'doorgarage', 'doorglass', 'doorhinged', 'doorpocket', 'doorsliding', 'doorslidingglass', 'doorswing', 'doorwithwindow', 'windowarched', 'windowawning', 'windowbay', 'windowbow', 'windowcasement', 'windowfixed', 'windowfrench', 'windowhopper', 'windowhung', 'windowsliding', 'windowtrapezoid', 'windowtriangle', 'windowtskylight1', 'windowtskylight2', 'windowtskylight3']
+        d['habitable_rooms'] = []
+        d['wet_rooms'] = []
         d['exclude_rooms'] = []
-        d['include_rooms'] = []
+        # d['include_rooms'] = []
         d['exclude_room_types'] = ['Attic', 'Balcony', 'Storage', 'Patio', 'Deck', 'Porch', 'Cellar', 'Garage', 'Furnace Room', 'Outbuilding', 'Unfinished Basement', 'Workshop']
+        
+        d['habitable_room_types'] = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
+        d['wet_room_types'] = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
+
+        
+        
+        
+        
+        
         
         floors = root.findall('interiorRoomPoints/floor')
         for floor in floors:
@@ -326,12 +337,20 @@ def XML_2_dict(root, t = "floor"):
                 d[room.get('type')].append(room.get('uid'))
                 d[room.get('uid')] = room.get('type')
                 # print(room.get('type'))
+                if room.get('type') in d['habitable_room_types']:
+                    d['habitable_rooms'].append(room.get('uid'))
+                    d['habitable_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid'))
+                
+                if room.get('type') in d['wet_room_types']:
+                    d['wet_rooms'].append(room.get('uid'))
+                    d['wet_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid'))
+                
                 if room.get('type') in d['exclude_room_types']:
                     d['exclude_rooms'].append(room.get('uid'))
                     d['exclude_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
-                else:
-                    d['include_rooms'].append(room.get('uid'))
-                    d['include_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                # else:
+                    # d['include_rooms'].append(room.get('uid'))
+                    # d['include_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
                 for value in room.findall('values/value'):
                     key = value.get('key')
                     # print(key)
@@ -1176,12 +1195,39 @@ def survey(root):
         date = root.find('values/value[@key="date"]').text
         json_val_dict['Survey Date *'] = date
         
+        ofl_pm = ['Internal Wall Insulation: Sloped or flat (horizontal) surface'
+                            , 'Attic (Loft) Insulation 100 mm top-up'
+                            , 'Attic (Loft) Insulation 150 mm top-up'
+                            , 'Attic (Loft) Insulation 200 mm top-up'
+                            , 'Attic (Loft) Insulation 250 mm top up'
+                            , 'Attic (Loft) Insulation 300 mm'
+                            , 'Cavity Wall Insulation Bonded Bead'
+                            , 'Loose Fibre Extraction'
+                            , 'External Wall Insulation: Less than 60m2'
+                            , 'External Wall Insulation: 60m2 to 85m2'
+                            , 'External Wall Insulation: Greater than 85m2'
+                            , 'Internal Wall Insulation: Vertical Surface'
+                            , 'External wall insulation and CWI: less than 60m2'
+                            , 'External wall insulation and CWI: 60m2 to 85m2'
+                            , 'External wall insulation and CWI: greater than 85m2'
+                            , 'Basic gas heating system'
+                            , 'Basic oil heating system'
+                            , 'Full gas heating system installation'
+                            , 'Full oil heating system installation'
+                            , 'Gas boiler and controls (Basic & controls pack)'
+                            , 'Oil boiler and controls (Basic & controls pack)'
+                            ]
+        habitable_room_types = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
+        wet_room_types = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
+        json_val_dict["Number of habitable rooms in the property"] = 0
+        json_val_dict["Number of wet rooms in the property"] = 0
         
-
+        json_val_dict["No. of habitable/wet rooms w/ open flued appliance"] = 0
+        
         xml_ref_dict, nwa_dict = XML_2_dict(root)
         
-        print("exclude_rooms", ':', xml_ref_dict["exclude_rooms"])
-        print("include_rooms", ':', xml_ref_dict["include_rooms"])
+        # print("exclude_rooms", ':', xml_ref_dict["exclude_rooms"])
+        # print("include_rooms", ':', xml_ref_dict["include_rooms"])
         
         wt_dict = {}
         wt_dict['gross'] = 0
@@ -1219,7 +1265,12 @@ def survey(root):
                     , 'Is Major Renovation?' # yes if greater than or equal to 23%
                     ]
         
-        
+        ofl_mae = ["Number of habitable rooms in the property"
+                    , "Number of wet rooms in the property"
+                    , "No. of habitable/wet rooms w/ open flued appliance"
+                    , "LED Bulbs: supply only (4 no.)"
+                    , "Air-tightness test recommended?"
+                    ]
         
         
         ofl_general = ['Dwelling Type*'
@@ -1348,9 +1399,11 @@ def survey(root):
                     , "If 'Yes' enter Wall type 4 insulation thickness (mm)*"
                     , "Is the property suitable for wall insulation? *"
                     , "No wall insulation details *"
-                    , "Notes (Walls)"
+                    , "EWI/IWI > 25% *"
                     , 'Suitable for Draught Proofing'
                     , 'Not suitable details Draughtproofing*'
+                    , "Notes (Walls)"
+                    
                     , "Draught Proofing (<= 20m installed)"
                     , "Draught Proofing (> 20m installed)"
                     , "MEV 15l/s Bathroom"
@@ -1438,57 +1491,7 @@ def survey(root):
             }
         
         
-        # account_url = os.environ['AZ_STR_URL']
-        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
-        print(account_url)
-        default_credential = DefaultAzureCredential()
-        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-        # container_name = os.environ['AZ_CNTR_ST']
-        container_name = "magicplan-container"
-        container_client = blob_service_client.get_container_client(container_name)
-        if not container_client.exists():
-            container_client = blob_service_client.create_container(container_name)
-        
-        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
-        request = urllib.request.Request(json_url, headers=headers)
-        JSON = urllib.request.urlopen(request).read()
-        JSON = json.loads(JSON)
 
-        for file in JSON["data"]["files"]:
-            if file["file_type"] == ".pdf":
-                request = urllib.request.Request(file["url"], headers=headers)
-                file_content = urllib.request.urlopen(request).read()
-                # print(file["name"])
-                local_file_name = file["name"]
-                # local_file_name = file["name"].replace(" ", "_")
-                # local_file_name = 'Project Files/' + file["name"]
-                # local_file_name = str(uuid.uuid4()) + ".pdf"
-                
-                # Create a local directory to hold blob data
-                local_path = "./Project_Files"
-                os.mkdir(local_path)
-                
-                # Create a file in the local data directory to upload and download
-                upload_file_path = os.path.join(local_path, local_file_name)
-                
-                # Write text to the file
-                # file = open(file=upload_file_path, mode='w')
-                # file.write("Hello, World!")
-                # file.close()
-                
-                with open(upload_file_path, 'wb') as outfile:
-                    outfile.write(file_content)
-                
-                
-                blob_client.upload_blob(file_content)
-                # Create a blob client using the local file name as the name for the blob
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-
-                print("\nUploading to Azure Storage as blob:\n\t" + local_file_name)
-
-                # Upload the created file
-                with open(file=upload_file_path, mode="rb") as data:
-                    blob_client.upload_blob(data)
         
         
         
@@ -1531,10 +1534,10 @@ def survey(root):
         json_val_dict["RGI Meter_No Heating"] = ''
         json_val_dict["New Gas Connection"] = ''
         
-        esb_alterations = []
-        gni_alterations = []
-        rgi_meter_no_heating = []
-        new_gas_connection = []
+        # esb_alterations = []
+        # gni_alterations = []
+        # rgi_meter_no_heating = []
+        # new_gas_connection = []
         
         
         
@@ -1542,6 +1545,7 @@ def survey(root):
         
         json_val_dict["Duct Cooker Hood"] = 0
         
+        balanced_flues = []
         slope_dict = {}
         roof_type_dict = {}
         h = {}
@@ -1604,6 +1608,9 @@ def survey(root):
                         # print(field["label"], ':', v)
                         json_val_dict[field["label"]] = v
                         
+                        if field["label"] == "Is it a Balanced Flue?" and field["value"]["value"] == True:
+                            balanced_flues.append(datum["symbol_instance_id"])
+                        
                         if field["label"] == "Heating designation on Portal*" and field["value"]["value"] == "Primary":
                             json_val_dict['Heating System *'] = datum["symbol_name"]
                         if field["label"] == "Heating designation on Portal*" and field["value"]["value"] == "Secondary":
@@ -1663,7 +1670,7 @@ def survey(root):
                                 else:
                                     pitch = 30
                                 slope_dict[datum["symbol_instance_id"]] = pitch
-        
+        print('balanced_flues', ':', str(balanced_flues))
 
         # Go through Forms again to get values for Primary & Secondary Heating Systems
         for datum in JSON["data"]:
@@ -1783,7 +1790,7 @@ def survey(root):
         
 
         
-        
+        rooms_with_balanced_flues = []
 
         json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
         json_val_dict['replace_window_area'] = 0
@@ -1802,19 +1809,9 @@ def survey(root):
                 external_wall_insulation_and_cwi += floor["area_with_interior_walls_only"]
             if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
                 for room in floor["rooms"]:
-                    for furniture in room["furnitures"]:
                     
-                        # if furniture["name"] == "ESB alteration":
-                            # json_val_dict["ESB alteration"] = 1
-                        # if furniture["name"] == "GNI meter alteration":
-                            # json_val_dict["GNI meter alteration"] = 1
-                            
-                        # if furniture["name"] == "New Gas Connection":
-                            # json_val_dict["New Gas Connection"] = 1
-                        # if furniture["name"] == "RGI Meter_No Heating":
-                            # json_val_dict["RGI Meter_No Heating"] = 1
-                            
-                            
+                    
+                    for furniture in room["furnitures"]:
                             
                         if furniture["name"] in ["Radiator", "Radiator with TRV", "Water Radiator"]:
                             json_val_dict['Rads Number *'] += 1
@@ -1831,9 +1828,6 @@ def survey(root):
                             json_val_dict['Programmer / Timeclock *'] += 1
                             
                             
-            # exclude_rooms = ["Unfinished Basement", "Garage", "Furnace Room", "Outbuilding", "Workshop", "Balcony", "Storage", "Patio", "Deck", "Porch", "Cellar"]
-            
-            # <value key="qcustomfield.2979903aq1">1</value>
             
             
             
@@ -1842,7 +1836,6 @@ def survey(root):
                 json_val_dict['Thermal Envelope - Heat loss floor area'] = floor["area_with_interior_walls_only"]
                 for room in floor["rooms"]:
                     if room["uid"] in xml_ref_dict['exclude_rooms']:
-                        # print('floor 10, excluding ' + room["uid"] + xml_ref_dict[room["uid"]])
                         json_val_dict['Thermal Envelope - Heat loss floor area'] -= room["area_with_interior_walls_only"]
 
             if -1 <= int(xml_ref_dict[floor["uid"]]) <= 9:
@@ -1852,6 +1845,10 @@ def survey(root):
 
                 for room in floor["rooms"]:
                     # print(xml_ref_dict[room["uid"]])
+                    if room["uid"] in xml_ref_dict['habitable_rooms']:
+                        json_val_dict["Number of habitable rooms in the property"] += 1
+                    if room["uid"] in xml_ref_dict['wet_rooms']:
+                        json_val_dict["Number of wet rooms in the property"] += 1
                     if room["uid"] in xml_ref_dict['exclude_rooms']:
                         json_val_dict['Gross floor area (m2) *'] -= room["area_with_interior_walls_only"]
                         
@@ -1864,6 +1861,9 @@ def survey(root):
                             
                     for furniture in room["furnitures"]:
                         # print(furniture["name"])
+                        if furniture["uid"] in balanced_flues:
+                            rooms_with_balanced_flues.append(room["uid"])
+                            
                         if furniture["name"] == "New Draughtproofing":
                             new_draughtproofing += 1
                         if furniture["name"] == "New Mechanical Vent":
@@ -1892,14 +1892,11 @@ def survey(root):
                         sum_high += float(furniture["width"])
         
         
-        # print("before:")
-        # print("json_val_dict['No. Double Glazed Windows *']", ':', json_val_dict['No. Double Glazed Windows *'])
-        # print("json_val_dict['No. Single Glazed Windows *']", ':', json_val_dict['No. Single Glazed Windows *'])
         json_val_dict['No. Double Glazed Windows *'] -= json_val_dict['No. Single Glazed Windows *']
-        # print("after:")
-        # print("json_val_dict['No. Double Glazed Windows *']", ':', json_val_dict['No. Double Glazed Windows *'])
-        # print("json_val_dict['No. Single Glazed Windows *']", ':', json_val_dict['No. Single Glazed Windows *'])
-        
+
+        for room in rooms_with_balanced_flues:
+            if room in (xml_ref_dict['habitable_rooms'] + xml_ref_dict['wet_rooms']):
+                json_val_dict["No. of habitable/wet rooms w/ open flued appliance"] += 1
         
 
 
@@ -2057,6 +2054,8 @@ def survey(root):
         json_val_dict['Result %'] = 100 * (json_val_dict['Total Surface Area receiving EWWR (m2)'] / json_val_dict['Total Surface Area (m2)']) if json_val_dict['Total Surface Area (m2)'] > 0 else 0
         json_val_dict['Is Major Renovation?'] = 'Yes' if json_val_dict['Result %'] >= 23 else 'No'
                     
+        json_val_dict['EWI/IWI > 25% *'] = json_val_dict['Is Major Renovation?']
+        
         
         
         json_val_dict["ESB alteration"] = json_val_dict["ESB alteration"] if json_val_dict["ESB alteration"] != 0 else ''
@@ -2073,6 +2072,50 @@ def survey(root):
         # json_val_dict['No. Double Glazed Windows *'] = json_val_dict['No. Double Glazed Windows *'] - json_val_dict['No. Single Glazed Windows *']
         
         
+        
+        
+        
+        
+        
+        for pm in ofl_pm:
+            print(pm)
+            if pm not in json_val_dict.keys():
+                json_val_dict[pm] = ''
+            print('json_val_dict[pm]', ':', json_val_dict[pm])
+        
+        
+        json_val_dict['Internal Wall Insulation: Sloped or flat (horizontal) surface'] = '?'
+        if 'ins_100_area' in json_val_dict.keys():
+            json_val_dict['Attic (Loft) Insulation 100 mm top-up'] = json_val_dict['ins_100_area']
+        if 'ins_150_area' in json_val_dict.keys():
+            json_val_dict['Attic (Loft) Insulation 150 mm top-up'] = json_val_dict['ins_150_area']
+        if 'ins_200_area' in json_val_dict.keys():
+            json_val_dict['Attic (Loft) Insulation 200 mm top-up'] = json_val_dict['ins_200_area']
+        if 'ins_250_area' in json_val_dict.keys():
+            json_val_dict['Attic (Loft) Insulation 250 mm top up'] = json_val_dict['ins_250_area']
+        if 'ins_300_area' in json_val_dict.keys():
+            json_val_dict['Attic (Loft) Insulation 300 mm'] = json_val_dict['ins_300_area']
+        
+        
+        # json_val_dict['Cavity Wall Insulation Bonded Bead']
+        # json_val_dict['Loose Fibre Extraction']
+        # json_val_dict['External Wall Insulation: Less than 60m2']
+        # json_val_dict['External Wall Insulation: 60m2 to 85m2']
+        # json_val_dict['External Wall Insulation: Greater than 85m2']
+        # json_val_dict['Internal Wall Insulation: Vertical Surface']
+        # json_val_dict['External wall insulation and CWI: less than 60m2']
+        # json_val_dict['External wall insulation and CWI: 60m2 to 85m2']
+        # json_val_dict['External wall insulation and CWI: greater than 85m2']
+        json_val_dict['Basic gas heating system'] = '?'
+        json_val_dict['Basic oil heating system'] = '?'
+        json_val_dict['Full gas heating system installation'] = '?'
+        json_val_dict['Full oil heating system installation'] = '?'
+        json_val_dict['Gas boiler and controls (Basic & controls pack)'] = '?'
+        json_val_dict['Oil boiler and controls (Basic & controls pack)'] = '?'
+        
+        
+        
+        
 
         # print(json_val_dict)
         output_dict = json_val_dict
@@ -2086,6 +2129,11 @@ def survey(root):
 
         styling = "border=\"1\""
         output = f"""\
+            <h1>Primary Measures</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
+            <h1>Mechanical Ventilation Systems, Air Tightness Testing & Energy</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mae)} \
+
             <h1>Major Renovation</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
             <h1>General</h1> \
