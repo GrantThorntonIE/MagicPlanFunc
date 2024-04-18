@@ -1437,28 +1437,60 @@ def survey(root):
             , "accept": "application/json"
             }
         
+        
+        # account_url = os.environ['AZ_STR_URL']
+        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+        print(account_url)
+        default_credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        # container_name = os.environ['AZ_CNTR_ST']
+        container_name = "magicplan-container"
+        container_client = blob_service_client.get_container_client(container_name)
+        if not container_client.exists():
+            container_client = blob_service_client.create_container(container_name)
+        
         json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
-        
+
         for file in JSON["data"]["files"]:
             if file["file_type"] == ".pdf":
                 request = urllib.request.Request(file["url"], headers=headers)
                 file_content = urllib.request.urlopen(request).read()
-                print(file["name"])
-                account_url = os.environ['AZ_STR_URL']
-                default_credential = DefaultAzureCredential()
-                blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-                container_name = os.environ['AZ_CNTR_ST']
-                container_client = blob_service_client.get_container_client(container_name)
-                if not container_client.exists():
-                    container_client = blob_service_client.create_container(container_name)
-                local_file_name = file["name"].replace(" ", "_")
+                # print(file["name"])
+                local_file_name = file["name"]
+                # local_file_name = file["name"].replace(" ", "_")
                 # local_file_name = 'Project Files/' + file["name"]
-                # local_file_name = str(uuid.uuid4()) + '.json'
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                # local_file_name = str(uuid.uuid4()) + ".pdf"
+                
+                # Create a local directory to hold blob data
+                local_path = "./Project_Files"
+                os.mkdir(local_path)
+                
+                # Create a file in the local data directory to upload and download
+                upload_file_path = os.path.join(local_path, local_file_name)
+                
+                # Write text to the file
+                # file = open(file=upload_file_path, mode='w')
+                # file.write("Hello, World!")
+                # file.close()
+                
+                with open(upload_file_path, 'wb') as outfile:
+                    outfile.write(file_content)
+                
+                
                 blob_client.upload_blob(file_content)
+                # Create a blob client using the local file name as the name for the blob
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+
+                print("\nUploading to Azure Storage as blob:\n\t" + local_file_name)
+
+                # Upload the created file
+                with open(file=upload_file_path, mode="rb") as data:
+                    blob_client.upload_blob(data)
+        
+        
         
         
         
