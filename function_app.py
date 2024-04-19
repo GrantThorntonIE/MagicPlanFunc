@@ -1608,7 +1608,7 @@ def survey(root):
                         # print(field["label"], ':', v)
                         json_val_dict[field["label"]] = v
                         
-                        if field["label"] == "Is it a Balanced Flue?" and field["value"]["value"] == True:
+                        if field["label"] == "Is it a Balanced Flue?" and field["value"]["value"] == False:
                             balanced_flues.append(datum["symbol_instance_id"])
                         
                         if field["label"] == "Heating designation on Portal*" and field["value"]["value"] == "Primary":
