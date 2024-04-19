@@ -1518,7 +1518,7 @@ def survey(root):
         
         
             
-        
+        json_val_dict['Qualifying Boiler'] = False
         
         json_val_dict["Existing (mm2)*"] = int(0)
         json_val_dict['No. Single Glazed Windows *'] = 0
@@ -1553,7 +1553,8 @@ def survey(root):
         
         
         
-        
+        condensing = False
+        linked_stove_bb = False
         
         json_val_dict["Duct Cooker Hood"] = 0
         
@@ -2336,24 +2337,24 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                     request = urllib.request.Request(file["url"], headers=headers)
                     file_content = urllib.request.urlopen(request).read()
                     
-                    local_file_name = file["name"].replace(" ", "_")
+                    # local_file_name = file["name"].replace(" ", "_")
                     # local_file_name = 'Project Files/' + file["name"]
-                    # local_file_name = str(uuid.uuid4()) + '.json'
-                    blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-                    blob_client.upload_blob(file_content)
+                    local_file_name = str(uuid.uuid4()) + '.pdf'
+                    blob_client_2 = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                    blob_client_2.upload_blob(file_content)
                     # with open(file_path, 'wb') as outfile:
                         # outfile.write(file_content)
             
             
             
-            for file in JSON["data"]["photos"]:
+            # for file in JSON["data"]["photos"]:
                 # print(file["name"])
                 # print(file["url"])
-                request = urllib.request.Request(file["url"], headers=headers)
-                file_content = urllib.request.urlopen(request).read()
-                local_file_name = file["name"].replace(" ", "_")
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-                blob_client.upload_blob(file_content)
+                # request = urllib.request.Request(file["url"], headers=headers)
+                # file_content = urllib.request.urlopen(request).read()
+                # local_file_name = file["name"].replace(" ", "_")
+                # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                # blob_client.upload_blob(file_content)
                 # file_path = 'Project Files/' + file["name"]
                 # with open(file_path, 'wb') as outfile:
                     # outfile.write(file_content)
