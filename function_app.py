@@ -1544,17 +1544,17 @@ def survey(root):
         
         local_file_name = str(uuid.uuid4()) + ".txt"
         # Write text to the file
-        file = open(file=local_file_name, mode='w')
-        file.write("Hello, World!")
-        file.close()
+        # file = open(file=local_file_name, mode='w')
+        # file.write("Hello, World!")
+        # file.close()
 
 
-        
+        data = "Hello, World!"
         
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
         # Upload the created file
-        with open(file=local_file_name, mode="rb") as data:
-            blob_client.upload_blob(data)
+        # with open(file=local_file_name, mode="rb") as data:
+        blob_client.upload_blob(data)
         
         
         
