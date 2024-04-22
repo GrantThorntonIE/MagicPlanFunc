@@ -7,3 +7,4 @@ azure-storage-blob
 azure-identity
 pandas
 defusedxml
+openpyxl
