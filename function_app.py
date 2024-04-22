@@ -1521,27 +1521,40 @@ def survey(root):
         default_credential = DefaultAzureCredential()
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
         # container_name = os.environ['AZ_CNTR_ST']
-        container_name = "magicplan-container"
+        # container_name = "magicplan-container"
+        container_name = "attachment"
         container_client = blob_service_client.get_container_client(container_name)
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
         
         
         
-        email = 'RPASupport@ie.gt.com'
-        plan_name = 'test'
-        output = 'test string'
+        # email = 'RPASupport@ie.gt.com'
+        # plan_name = 'test'
+        # output = 'test string'
         
-        json_data = json.dumps({
-        'email' : email,
-        'name'  : plan_name, 
-        'table' : output
-        })
-        print(json_data)
+        # json_data = json.dumps({
+        # 'email' : email,
+        # 'name'  : plan_name, 
+        # 'table' : output
+        # })
+        # print(json_data)
+        # local_file_name = str(uuid.uuid4()) + '.json'
         
-        local_file_name = str(uuid.uuid4()) + '.json'
+        
+        local_file_name = str(uuid.uuid4()) + ".txt"
+        # Write text to the file
+        file = open(file=local_file_name, mode='w')
+        file.write("Hello, World!")
+        file.close()
+
+
+        
+        
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-        blob_client.upload_blob(json_data)
+        # Upload the created file
+        with open(file=local_file_name, mode="rb") as data:
+            blob_client.upload_blob(data)
         
         
         
