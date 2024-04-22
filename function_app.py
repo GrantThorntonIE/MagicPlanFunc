@@ -1196,27 +1196,37 @@ def survey(root):
         json_val_dict['Survey Date *'] = date
         
         ofl_pm = ['Internal Wall Insulation: Sloped or flat (horizontal) surface'
-                            , 'Attic (Loft) Insulation 100 mm top-up'
-                            , 'Attic (Loft) Insulation 150 mm top-up'
-                            , 'Attic (Loft) Insulation 200 mm top-up'
-                            , 'Attic (Loft) Insulation 250 mm top up'
-                            , 'Attic (Loft) Insulation 300 mm'
-                            , 'Cavity Wall Insulation Bonded Bead'
-                            , 'Loose Fibre Extraction'
-                            , 'External Wall Insulation: Less than 60m2'
-                            , 'External Wall Insulation: 60m2 to 85m2'
-                            , 'External Wall Insulation: Greater than 85m2'
-                            , 'Internal Wall Insulation: Vertical Surface'
-                            , 'External wall insulation and CWI: less than 60m2'
-                            , 'External wall insulation and CWI: 60m2 to 85m2'
-                            , 'External wall insulation and CWI: greater than 85m2'
-                            , 'Basic gas heating system'
-                            , 'Basic oil heating system'
-                            , 'Full gas heating system installation'
-                            , 'Full oil heating system installation'
-                            , 'Gas boiler and controls (Basic & controls pack)'
-                            , 'Oil boiler and controls (Basic & controls pack)'
-                            ]
+                , 'Attic (Loft) Insulation 100 mm top-up'
+                , 'Attic (Loft) Insulation 150 mm top-up'
+                , 'Attic (Loft) Insulation 200 mm top-up'
+                , 'Attic (Loft) Insulation 250 mm top up'
+                , 'Attic (Loft) Insulation 300 mm'
+                , 'Cavity Wall Insulation Bonded Bead'
+                , 'Loose Fibre Extraction'
+                , 'External Wall Insulation: Less than 60m2'
+                , 'External Wall Insulation: 60m2 to 85m2'
+                , 'External Wall Insulation: Greater than 85m2'
+                , 'Internal Wall Insulation: Vertical Surface'
+                , 'External wall insulation and CWI: less than 60m2'
+                , 'External wall insulation and CWI: 60m2 to 85m2'
+                , 'External wall insulation and CWI: greater than 85m2'
+                ]
+                
+                
+        ofl_hpm = ['Basic gas heating system'
+                , 'Basic oil heating system'
+                , 'Full gas heating system installation'
+                , 'Full oil heating system installation'
+                , 'Gas boiler and controls (Basic & controls pack)'
+                , 'Oil boiler and controls (Basic & controls pack)'
+                , 'Hot Water Cylinder Jacket'
+                ]
+                
+        
+        json_val_dict["Electric Storage Heater age (years)*"] = ''
+        json_val_dict["Warm Air System age (years)*"] = ''
+        json_val_dict["Is there Mains Gas in the area?"] = ''
+        
         habitable_room_types = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
         wet_room_types = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
         json_val_dict["Number of habitable rooms in the property"] = 0
@@ -1494,6 +1504,7 @@ def survey(root):
         
         id = root.get('id')
         print(id)
+        print(plan_name)
         
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
@@ -1518,7 +1529,7 @@ def survey(root):
         
         
             
-        json_val_dict['Qualifying Boiler'] = False
+        json_val_dict['Qualifying Boiler'] = True
         
         json_val_dict["Existing (mm2)*"] = int(0)
         json_val_dict['No. Single Glazed Windows *'] = 0
@@ -1559,6 +1570,7 @@ def survey(root):
         json_val_dict["Duct Cooker Hood"] = 0
         
         balanced_flues = []
+        req_lagging_jackets = []
         slope_dict = {}
         roof_type_dict = {}
         h = {}
@@ -1573,6 +1585,7 @@ def survey(root):
                 json_val_dict['Hot Water System Exists *'] = True
                 if 'Bad' in datum["symbol_name"] or 'No Insulation' in datum["symbol_name"]:
                     json_val_dict['Condition of Lagging Jacket *'] = 'Bad'
+                    req_lagging_jackets.append(datum["symbol_instance_id"])
                 else:
                     json_val_dict['Condition of Lagging Jacket *'] = 'Good'
                 
@@ -1625,6 +1638,8 @@ def survey(root):
                              # field["value"]["value"]
                              
                              
+
+                            
                         if field["label"] == "Is it a Balanced Flue?" and field["value"]["value"] == False:
                             balanced_flues.append(datum["symbol_instance_id"])
                         
@@ -1780,6 +1795,7 @@ def survey(root):
         roof_area_sum = 0
         slope_roof_area_sum = 0
         new_hatch_count = 0
+        
         json_val_dict["MEV 15l/s Bathroom"] = 0
         json_val_dict["MEV 30l/s Utility"] = 0
         json_val_dict["MEV 60l/s Kitchen"] = 0
@@ -1798,14 +1814,14 @@ def survey(root):
         json_val_dict["External wall insulation and CWI: 60m2 to 85m2"] = 0
         json_val_dict["External wall insulation and CWI: greater than 85m2"] = 0
 
-
         # , 'Heating Systems Controls *'
         # , 'Partial Details *'
         
-
         
         rooms_with_balanced_flues = []
-
+        req_lagging_jacket_count = 0
+        # json_val_dict['Hot Water Cylinder Jacket'] = 0
+        
         json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
         json_val_dict['replace_window_area'] = 0
         # print(xml_ref_dict)
@@ -1826,7 +1842,9 @@ def survey(root):
                     
                     
                     for furniture in room["furnitures"]:
-                            
+                        if furniture["uid"] in req_lagging_jackets:
+                            # json_val_dict['Hot Water Cylinder Jacket'] += 1
+                            req_lagging_jacket_count += 1
                         if furniture["name"] in ["Radiator", "Radiator with TRV", "Water Radiator"]:
                             json_val_dict['Rads Number *'] += 1
                         if furniture["name"] == "Radiator with TRV":
@@ -2058,14 +2076,14 @@ def survey(root):
         
         
         # (if any value blank then 0)
-        json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = wt_dict['gross']
-        # json_val_dict['Thermal Envelope - Heat loss floor area']
+        json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = round(wt_dict['gross'], 2)
+        json_val_dict['Thermal Envelope - Heat loss floor area'] = round(json_val_dict['Thermal Envelope - Heat loss floor area'], 2)
         json_val_dict['Thermal Envelope - Heat loss roof area'] = json_val_dict['Thermal Envelope - Heat loss floor area']
-        json_val_dict['Heat loss Wall Area recommended for EWI and IWI'] = wt_dict['total']
-        json_val_dict['New Windows being recommended for replacement'] = json_val_dict['replace_window_area']
-        json_val_dict['Total Surface Area (m2)'] = json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] + (2 * json_val_dict['Thermal Envelope - Heat loss floor area'])
-        json_val_dict['Total Surface Area receiving EWWR (m2)'] = float(wt_dict['total']) + float(json_val_dict['replace_window_area'])
-        json_val_dict['Result %'] = 100 * (json_val_dict['Total Surface Area receiving EWWR (m2)'] / json_val_dict['Total Surface Area (m2)']) if json_val_dict['Total Surface Area (m2)'] > 0 else 0
+        json_val_dict['Heat loss Wall Area recommended for EWI and IWI'] = round(wt_dict['total'], 2)
+        json_val_dict['New Windows being recommended for replacement'] = round(json_val_dict['replace_window_area'], 2)
+        json_val_dict['Total Surface Area (m2)'] = round(json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] + (2 * json_val_dict['Thermal Envelope - Heat loss floor area']), 2)
+        json_val_dict['Total Surface Area receiving EWWR (m2)'] = round(float(wt_dict['total']) + float(json_val_dict['replace_window_area']), 2)
+        json_val_dict['Result %'] = round(100 * (json_val_dict['Total Surface Area receiving EWWR (m2)'] / json_val_dict['Total Surface Area (m2)']), 2) if json_val_dict['Total Surface Area (m2)'] > 0 else 0
         json_val_dict['Is Major Renovation?'] = 'Yes' if json_val_dict['Result %'] >= 23 else 'No'
                     
         json_val_dict['EWI/IWI > 25% *'] = json_val_dict['Is Major Renovation?']
@@ -2076,7 +2094,7 @@ def survey(root):
             if condensing == True:
                 json_val_dict['Qualifying Boiler'] = False
             if condensing == False and linked_stove_bb == True:
-                json_val_dict['Qualifying Boiler'] = True
+                json_val_dict['Qualifying Boiler'] = False
             
             
         json_val_dict['Suitable for Heating Measures *'] = False
@@ -2124,17 +2142,18 @@ def survey(root):
         # json_val_dict['External wall insulation and CWI: less than 60m2']
         # json_val_dict['External wall insulation and CWI: 60m2 to 85m2']
         # json_val_dict['External wall insulation and CWI: greater than 85m2']
-        json_val_dict['Basic gas heating system'] = '?'
-        json_val_dict['Basic oil heating system'] = '?'
-        json_val_dict['Full gas heating system installation'] = '?'
-        json_val_dict['Full oil heating system installation'] = '?'
-        json_val_dict['Gas boiler and controls (Basic & controls pack)'] = '?'
-        json_val_dict['Oil boiler and controls (Basic & controls pack)'] = '?'
+        json_val_dict['Basic gas heating system'] = ''
+        json_val_dict['Basic oil heating system'] = ''
+        json_val_dict['Full gas heating system installation'] = ''
+        json_val_dict['Full oil heating system installation'] = ''
+        json_val_dict['Gas boiler and controls (Basic & controls pack)'] = ''
+        json_val_dict['Oil boiler and controls (Basic & controls pack)'] = ''
         
         for pm in ofl_pm:
             print(json_val_dict[pm])
             if str(json_val_dict[pm]) not in ['', '0', 'N/A']: # if any primary measure has any valid value
                 json_val_dict["LED Bulbs: supply only (4 no.)"] = 1
+                json_val_dict["Hot Water Cylinder Jacket"] = req_lagging_jacket_count
         
         
         # print(external_wall_insulation)
@@ -2154,6 +2173,47 @@ def survey(root):
         # json_val_dict['No. Double Glazed Windows *'] = json_val_dict['No. Double Glazed Windows *'] - json_val_dict['No. Single Glazed Windows *']
         
         
+        
+        
+
+        
+        
+        
+        if json_val_dict['Qualifying Boiler'] == True:
+            if json_val_dict['Heating Systems Controls *'] == 'Full zone control to spec':
+                if json_val_dict["Is there Mains Gas in the area?"] == True:
+                    json_val_dict['Basic gas heating system'] = True
+                else:
+                    json_val_dict['Basic oil heating system'] = True
+        
+        if (json_val_dict["Electric Storage Heater age (years)*"] == "25+" or json_val_dict["Warm Air System age (years)*"] == "25+") or json_val_dict['Heating System *'] in ["Open Fire with Back Boiler", "Open Fire with Back Boiler With Enclosure Door", "Solid Fuel Range", "Solid Fuel Range with Back Boiler"]:
+            if json_val_dict["Is there Mains Gas in the area?"] == True:
+                json_val_dict['Full gas heating system installation'] = True
+            else:
+                json_val_dict['Full oil heating system installation'] = True
+        
+        if json_val_dict['Qualifying Boiler'] == True:
+            if json_val_dict['Heating Systems Controls *'] != 'Full zone control to spec':
+                if json_val_dict["Is there Mains Gas in the area?"] == True:
+                    json_val_dict['Gas boiler and controls (Basic & controls pack)'] = True
+                else:
+                    json_val_dict['Oil boiler and controls (Basic & controls pack)'] = True
+            
+        
+        
+        
+            
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         # print(json_val_dict)
         output_dict = json_val_dict
         
@@ -2168,7 +2228,8 @@ def survey(root):
         output = f"""\
             <h1>Supplementary</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_s)} \
-            
+            <h1>Heating Primary Measures</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_hpm)} \
             <h1>Primary Measures</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
             <h1>Mechanical Ventilation Systems, Air Tightness Testing & Energy</h1> \
