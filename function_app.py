@@ -1527,7 +1527,18 @@ def survey(root):
             container_client = blob_service_client.create_container(container_name)
         
         
-        json_data = {'TEST': 'test'}
+        
+        email = 'RPASupport@ie.gt.com'
+        plan_name = 'test'
+        output = 'test string'
+        
+        json_data = json.dumps({
+        'email' : email,
+        'name'  : plan_name, 
+        'table' : output
+        })
+        print(json_data)
+        
         local_file_name = str(uuid.uuid4()) + '.json'
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
         blob_client.upload_blob(json_data)
