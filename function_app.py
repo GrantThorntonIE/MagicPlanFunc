@@ -1526,47 +1526,16 @@ def survey(root):
         container_client = blob_service_client.get_container_client(container_name)
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
-        
-        
-        
-        # email = 'RPASupport@ie.gt.com'
-        # plan_name = 'test'
-        # output = 'test string'
-        
-        # json_data = json.dumps({
-        # 'email' : email,
-        # 'name'  : plan_name, 
-        # 'table' : output
-        # })
-        # print(json_data)
-        # local_file_name = str(uuid.uuid4()) + '.json'
-        
-        
+
         local_file_name = str(uuid.uuid4()) + ".txt"
-        # Write text to the file
-        # file = open(file=local_file_name, mode='w')
-        # file.write("Hello, World!")
-        # file.close()
-
-
         data = "Hello, World!"
-        
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-        # Upload the created file
-        # with open(file=local_file_name, mode="rb") as data:
         blob_client.upload_blob(data)
-        
-        
-        
-        
 
         json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
-        # Create a local directory to hold blob data
-        local_path = "./Project_Files"
-        # os.mkdir(local_path)
 
         for file in JSON["data"]["files"]:
             print(file["file_type"])
@@ -1578,30 +1547,10 @@ def survey(root):
                 # local_file_name = file["name"].replace(" ", "_")
                 # local_file_name = 'Project Files/' + file["name"]
                 # local_file_name = str(uuid.uuid4()) + ".pdf"
-                
-                # Create a file in the local data directory to upload and download
-                upload_file_path = os.path.join(local_path, local_file_name)
-                
-                print(upload_file_path)
-                
-                # Write text to the file
-                # file = open(file=upload_file_path, mode='w')
-                # file.write("Hello, World!")
-                # file.close()
-                
-                with open(upload_file_path, 'wb') as outfile:
-                    outfile.write(file_content)
-                
-                
-                # blob_client.upload_blob(file_content)
-                # Create a blob client using the local file name as the name for the blob
+
                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
 
-                print("\nUploading to Azure Storage as blob:\n\t" + local_file_name)
-
-                # Upload the created file
-                with open(file=upload_file_path, mode="rb") as data:
-                    blob_client.upload_blob(data)
+                blob_client.upload_blob(file_content)
 
         
         
