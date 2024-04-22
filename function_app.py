@@ -1514,6 +1514,85 @@ def survey(root):
             }
         
         
+        
+        # azure_upload(json_data)
+        # account_url = os.environ['AZ_STR_URL']
+        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+        default_credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        
+        # container_name = os.environ['AZ_CNTR_ST']
+        container_name = "project-files"
+        container_client = blob_service_client.get_container_client(container_name)
+        if not container_client.exists():
+            container_client = blob_service_client.create_container(container_name)
+        
+        # local_file_name = str(uuid.uuid4()) + '.json'
+        # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+        # blob_client.upload_blob(json_data)
+        local_file_name = str(uuid.uuid4()) + ".txt"
+        data = "Hello, World!"
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+        blob_client.upload_blob(data)
+        
+        
+        
+        container_name = "project-files"
+        container_client = blob_service_client.get_container_client(container_name)
+        if not container_client.exists():
+            container_client = blob_service_client.create_container(container_name)
+
+        # local_file_name = str(uuid.uuid4()) + ".txt"
+        # data = "Hello, World!"
+        # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+        # blob_client.upload_blob(data)
+
+        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
+        request = urllib.request.Request(json_url, headers=headers)
+        JSON = urllib.request.urlopen(request).read()
+        JSON = json.loads(JSON)
+
+        for file in JSON["data"]["files"]:
+            print(file["file_type"])
+            if file["file_type"] == "pdf":
+                request = urllib.request.Request(file["url"], headers=headers)
+                file_content = urllib.request.urlopen(request).read()
+                local_file_name = file["name"]
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                blob_client.upload_blob(file_content)
+        
+        for file in JSON["data"]["photos"]:
+            request = urllib.request.Request(file["url"], headers=headers)
+            file_content = urllib.request.urlopen(request).read()
+            local_file_name = file["name"]
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+            blob_client.upload_blob(file_content)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(id)
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
@@ -2424,7 +2503,12 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             output = traceback.format_exc()
             sc = 500     # Internal Server Error
             # return_body = output
-            azure_upload(output)
+            json_data = json.dumps({
+                'email' : email,
+                'name'  : plan_name, 
+                'table' : output
+            })
+            azure_upload(json_data)
         return func.HttpResponse(status_code=sc, body=return_body)
 
 
