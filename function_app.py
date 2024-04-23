@@ -1618,7 +1618,7 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        # get_project_files(id, headers, plan_name)
+        get_project_files(id, headers, plan_name)
         
         
         
