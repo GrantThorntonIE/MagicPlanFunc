@@ -2693,7 +2693,7 @@ def populate_template(json_val_dict):
     container_client = blob_service_client.get_container_client(container= container_name) 
     
     template_file_name = 'template.xlsx'
-    local_path = "tmp" # str(json_val_dict['plan_name'])
+    local_path = "/tmp" # str(json_val_dict['plan_name'])
     instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
 
     print("\nDownloading blob to \n\t" + instance_file_path)
