@@ -1618,7 +1618,7 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        get_project_files(id, headers, plan_name)
+        # get_project_files(id, headers, plan_name)
         
         
         
@@ -2693,10 +2693,12 @@ def populate_template(json_val_dict):
     container_client = blob_service_client.get_container_client(container= container_name) 
     
     template_file_name = 'template.xlsx'
-    local_path = "tmp" # str(json_val_dict['plan_name'])
-    instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
 
     print("\nDownloading blob to \n\t" + instance_file_path)
+    local_path = "./tmp" # str(json_val_dict['plan_name'])
+    if not os.path.exists(local_path):
+        os.mkdir(local_path)
+    instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
 
     with open(file=instance_file_path, mode="wb") as download_file:
         download_file.write(container_client.download_blob("template.xlsx").readall())
@@ -2708,10 +2710,7 @@ def populate_template(json_val_dict):
         sheet[v[field]['Cell']] = v[field]['Value']
 
 
-    local_path = "tmp" # str(json_val_dict['plan_name'])
-    instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
-    if not os.path.exists(local_path):
-        os.mkdir(local_path)
+
     xfile.save(instance_file_path)
 
     with open(file=instance_file_path, mode="rb") as upload_file:
