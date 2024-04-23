@@ -2682,7 +2682,7 @@ def populate_template(json_val_dict):
 
     container_name = 'attachment'
     local_file_name = 'template.xlsx'
-    local_path = "./temp"
+    local_path = "./tmp/data"
     if not os.path.exists(local_path):
         os.mkdir(local_path)
 
