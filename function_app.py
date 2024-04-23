@@ -1176,7 +1176,7 @@ def qa(root):
 
 
 
-def get_project_files(id, headers):
+def get_project_files(id, headers, plan_name):
             
     try:
         # azure_upload(json_data)
@@ -1223,14 +1223,14 @@ def get_project_files(id, headers):
                 request = urllib.request.Request(file["url"], headers=headers)
                 file_content = urllib.request.urlopen(request).read()
                 local_file_name = file["name"]
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(id, file["name"]))
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
                 blob_client.upload_blob(file_content, overwrite=True)
         
         for file in JSON["data"]["photos"]:
             request = urllib.request.Request(file["url"], headers=headers)
             file_content = urllib.request.urlopen(request).read()
             local_file_name = file["name"]
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(id, file["name"]))
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
             blob_client.upload_blob(file_content, overwrite=True)
     finally:
         return
@@ -1618,7 +1618,7 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        get_project_files(id, headers)
+        get_project_files(id, headers, plan_name)
         
         
         
