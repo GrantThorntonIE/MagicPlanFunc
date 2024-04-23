@@ -2689,12 +2689,12 @@ def populate_template(json_val_dict):
 
     container_name = 'attachment'
     local_file_name = 'template.xlsx'
-    # local_path = str(json_val_dict['plan_name'])
-    # if not os.path.exists(local_path):
-        # os.mkdir(local_path)
+    local_path = "/tmp" # str(json_val_dict['plan_name'])
+    if not os.path.exists(local_path):
+        os.mkdir(local_path)
 
     # instance_file_path = os.path.join(local_path, 'export_' + aid + '.xlsx')
-    instance_file_path = json_val_dict['plan_name'] + '.xlsx'
+    instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
     container_client = blob_service_client.get_container_client(container= container_name) 
     print("\nDownloading blob to \n\t" + instance_file_path)
 
