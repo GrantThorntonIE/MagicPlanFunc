@@ -12,6 +12,7 @@ import defusedxml.ElementTree as dET
 
 # from loguru import logger as LOGGER
 import traceback
+import openpyxl
 
 MAX_REAL_FLOORS = 10
 
@@ -1175,25 +1176,124 @@ def qa(root):
 
 
 
+def get_project_files(id, headers):
+            
+    try:
+        # azure_upload(json_data)
+        # account_url = os.environ['AZ_STR_URL']
+        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+        default_credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        
+        # container_name = os.environ['AZ_CNTR_ST']
+        # container_name = "project-files"
+        # container_client = blob_service_client.get_container_client(container_name)
+        # if not container_client.exists():
+            # container_client = blob_service_client.create_container(container_name)
+        
+        # local_file_name = str(uuid.uuid4()) + '.json'
+        # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+        # blob_client.upload_blob(json_data)
+        # local_file_name = str(uuid.uuid4()) + ".txt"
+        # data = "Hello, World!"
+        # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+        # blob_client.upload_blob(data)
+        
+        
+        
+        container_name = "project-files"
+        container_client = blob_service_client.get_container_client(container_name)
+        if not container_client.exists():
+            container_client = blob_service_client.create_container(container_name)
 
+        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
+        request = urllib.request.Request(json_url, headers=headers)
+        JSON = urllib.request.urlopen(request).read()
+        JSON = json.loads(JSON)
+
+        for file in JSON["data"]["files"]:
+            if file["file_type"] == "pdf":
+                request = urllib.request.Request(file["url"], headers=headers)
+                file_content = urllib.request.urlopen(request).read()
+                local_file_name = file["name"]
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                blob_client.upload_blob(file_content, overwrite=True)
+        
+        for file in JSON["data"]["photos"]:
+            request = urllib.request.Request(file["url"], headers=headers)
+            file_content = urllib.request.urlopen(request).read()
+            local_file_name = file["name"]
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+            blob_client.upload_blob(file_content, overwrite=True)
+    finally:
+        return
 
 
 def survey(root):
     try:
+        json_val_dict = {}
         sfi = [] # a list to hold the numbers of roof (also wall?) types that are suitable for insulation
-        
+        id = root.get('id')
+        json_val_dict['Application ID'] = id
         plan_name = root.get('name')
-        json_val_dict = {'plan_name': plan_name} # specifically NOT JSON
+        # json_val_dict = {'plan_name': plan_name} # specifically NOT JSON
+        json_val_dict['plan_name'] = plan_name # specifically NOT JSON
+
+        json_val_dict['Client Address'] = ''
+        address_fields = ['street', 'city', 'province', 'country', 'postalCode']
+        for af in address_fields:
+            print(root.get(af))
+            f = root.get(af)
+            if f is not None:
+                json_val_dict['Client Address'] = (json_val_dict['Client Address'] + ', ' + str(f)) if json_val_dict['Client Address'] != '' else str(f)
+        json_val_dict['Eircode'] = root.get('postalCode')
         
-        # Values from root also need to be accessed outside this function, but it is here that they can be inserted into the HTML Output - in future consider separating out the two activities by returning the output_dict?
+        # print(json_val_dict['Client Address'])
+
+        
+        # 'Applicant Name': { 'Value': 'Joe Bloggs' , 'Tab': 'General' , 'Cell': 'C4'}
+        # , 'MPRN': { 'Value': 'xoxoxo' , 'Tab': 'General' , 'Cell': 'E6'}
+
+
+
+
+        print(id)
+        print(plan_name)
+        
+        # Values from root can be inserted into the HTML Output within this function
+        # Do they also need to be accessed outside it?
+        # could consider separating out the two activities by returning the output_dict?
         
         # date = root.find('values/value[@key="date"]').text
-        # assessor = root.find('values/value[@key="qf.34d66ce4q1"]').text
+        values = root.findall('values/value')
+        for value in values:
+            k = value.attrib["key"]
+            # print(k)
+            if k == "qf.34d66ce4q1":
+                json_val_dict['Surveyor'] = k.text
+                # print(json_val_dict['Surveyor'])
+                print('Surveyor', ':', json_val_dict['Surveyor'])
+        # json_val_dict['Surveyor'] = assessor
+        
         # rating_type = root.find('values/value[@key="qf.34d66ce4q3"]').text
         # rating_purpose = root.find('values/value[@key="qf.34d66ce4q4"]').text
         
+        json_val_dict['Surveyor'] = root.find('values/value[@key="author"]').text
+        print('Surveyor', ':', json_val_dict['Surveyor'])
+        
         date = root.find('values/value[@key="date"]').text
         json_val_dict['Survey Date *'] = date
+        
+
+
+        
+        
+        
+        
+        
+        
+        
+        
         
         ofl_pm = ['Internal Wall Insulation: Sloped or flat (horizontal) surface'
                 , 'Attic (Loft) Insulation 100 mm top-up'
@@ -1266,14 +1366,14 @@ def survey(root):
         # (if any value blank then 0)
         
         ofl_s = ["Adequate Access*"
-        , "Adequate Access Details"
-        , "Cherry Picker Required*"
-        , "Cherry Picker Details"
-        , "Mould/Mildew identified by surveyor; or reported by the applicant*"
-        , "Mould/Mildew Details"
-        , "As confirmed by homeowner; property is a protected structure*"
-        , "Protected Structure Details"
-        ]
+            , "Adequate Access Details"
+            , "Cherry Picker Required*"
+            , "Cherry Picker Details"
+            , "Mould/Mildew identified by surveyor; or reported by the applicant*"
+            , "Mould/Mildew Details"
+            , "As confirmed by homeowner; property is a protected structure*"
+            , "Protected Structure Details"
+            ]
         
         
         ofl_mr = ['Thermal Envelope - Heat loss walls, windows and doors' # all walls from floors 10 - 13 except Loadbearing/Party walls and internal walls)
@@ -1502,9 +1602,7 @@ def survey(root):
 
         
         
-        id = root.get('id')
-        print(id)
-        print(plan_name)
+
         
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
@@ -1513,55 +1611,7 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        
-        
-        # azure_upload(json_data)
-        # account_url = os.environ['AZ_STR_URL']
-        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
-        default_credential = DefaultAzureCredential()
-        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-        
-        # container_name = os.environ['AZ_CNTR_ST']
-        # container_name = "project-files"
-        # container_client = blob_service_client.get_container_client(container_name)
-        # if not container_client.exists():
-            # container_client = blob_service_client.create_container(container_name)
-        
-        # local_file_name = str(uuid.uuid4()) + '.json'
-        # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-        # blob_client.upload_blob(json_data)
-        # local_file_name = str(uuid.uuid4()) + ".txt"
-        # data = "Hello, World!"
-        # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-        # blob_client.upload_blob(data)
-        
-        
-        
-        container_name = "project-files"
-        container_client = blob_service_client.get_container_client(container_name)
-        if not container_client.exists():
-            container_client = blob_service_client.create_container(container_name)
-
-        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
-        request = urllib.request.Request(json_url, headers=headers)
-        JSON = urllib.request.urlopen(request).read()
-        JSON = json.loads(JSON)
-
-        for file in JSON["data"]["files"]:
-            # print(file["file_type"])
-            if file["file_type"] == "pdf":
-                request = urllib.request.Request(file["url"], headers=headers)
-                file_content = urllib.request.urlopen(request).read()
-                local_file_name = file["name"]
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-                blob_client.upload_blob(file_content)
-        
-        for file in JSON["data"]["photos"]:
-            request = urllib.request.Request(file["url"], headers=headers)
-            file_content = urllib.request.urlopen(request).read()
-            local_file_name = file["name"]
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-            blob_client.upload_blob(file_content)
+        # get_project_files(id, headers)
         
         
         
@@ -1794,29 +1844,12 @@ def survey(root):
                             if field['label'] == 'Service details':
                                 json_val_dict['Requires Service Details Secondary Heating *'] = field["value"]["value"]
                     
-                    
-
-                    
-                    
-                    
-                    
-                    
-
-                    # 'Working details'  (I have not witnessed anything to suggest that the appliance is not working)
-
-                    # 'Heating notes*'
         
         
-
         json_val_dict['Programmer / Timeclock *'] = 0
         json_val_dict['Room Thermostat Number *'] = 0
         json_val_dict['Rads Number *'] = 0
         json_val_dict['TRVs Number *'] = 0
-        
-
-
-
-
         
         
         json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
@@ -2061,23 +2094,9 @@ def survey(root):
         if 1 <= HSC_count <= 3:
             json_val_dict['Heating Systems Controls *'] = 'Partial Controls'
             json_val_dict["Partial Details *"] = 'No of Programmers: ' + str(json_val_dict['Programmer / Timeclock *']) + "<BR>" + 'No of Room Stats: ' + str(json_val_dict['Room Thermostat Number *']) + "<BR>" + '% of Radiators  with TRVs: ' + str(json_val_dict['TRVs Number *'] / json_val_dict['Rads Number *']) + "<BR>" + 'Cylinder Stat?: ' + str(cylinder_stat)
-            # If programmer present (Y/N)
-            # Number of Room Stats (whole number)
-            # % of Radiators  with TRVs (calculation)
-            # If cylinder stat present (Y/N)
         if HSC_count == 4:
             json_val_dict['Heating Systems Controls *'] = 'Full zone control to spec'
             
-            
-        # json_val_dict['Suitable for Heating Measures *'] = 'No'
-        # if json_val_dict['Qualifying Boiler'] == 'Yes':
-            # json_val_dict['Suitable for Heating Measures *'] = 'Yes'
-        # if json_val_dict["Suitable for Insulation *"] == True or json_val_dict["Is the property suitable for wall insulation? *"] == True:
-            # if Object 'Open Fire with Back Boiler' or 'Solid Fuel Range with Back Boiler' then "Yes"
-
-        # 'Open Fire with Back Boiler With Enclosure Door'
-        
-        
         
         
         
@@ -2251,9 +2270,7 @@ def survey(root):
             
         
         
-        
-        
-        
+        populate_template(json_val_dict)
         
         
         
@@ -2308,6 +2325,8 @@ def survey(root):
     return output
 
 
+
+
 def XML_old():
     # Go through the XML, referring to the JSON data whenever we need to - this is now disused but might need it again if there are any required values not included in the JSON (e.g. counts of objects)
     
@@ -2349,6 +2368,7 @@ def XML_old():
     
     # Count of floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
     output_dict['no_of_floors'] = len(floors)
+
 
 
 
@@ -2435,15 +2455,15 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
             blob_client.upload_blob(json_data)
             
-            # container_name = "project-files"
-            # container_client = blob_service_client.get_container_client(container_name)
-            # if not container_client.exists():
-                # container_client = blob_service_client.create_container(container_name)
+            container_name = "project-files"
+            container_client = blob_service_client.get_container_client(container_name)
+            if not container_client.exists():
+                container_client = blob_service_client.create_container(container_name)
 
-            # local_file_name = str(uuid.uuid4()) + ".txt"
-            # data = "Hello, World!"
-            # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-            # blob_client.upload_blob(data)
+            local_file_name = str(uuid.uuid4()) + '_post' + ".txt"
+            data = "Hello, World!"
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+            blob_client.upload_blob(data)
 
             # json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
             # request = urllib.request.Request(json_url, headers=headers)
@@ -2486,12 +2506,14 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
 
 
-def azure_upload(file_data):
-    account_url = os.environ['AZ_STR_URL']
+def azure_upload(file_data, container_name = 'attachment'):
+    # account_url = os.environ['AZ_STR_URL']
+    account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+    
     default_credential = DefaultAzureCredential()
     blob_service_client = BlobServiceClient(account_url, credential=default_credential)
     
-    container_name = os.environ['AZ_CNTR_ST']
+    # container_name = os.environ['AZ_CNTR_ST']
     container_client = blob_service_client.get_container_client(container_name)
     if not container_client.exists():
         container_client = blob_service_client.create_container(container_name)
@@ -2500,4 +2522,192 @@ def azure_upload(file_data):
     blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
     blob_client.upload_blob(file_data)
     
+    return
+
+
+
+def populate_template(json_val_dict):
+    v = {
+        'Applicant Name': { 'Value': 'Joe Bloggs' , 'Tab': 'General' , 'Cell': 'C4'}
+        , 'Application ID': { 'Value': '123456' , 'Tab': 'General' , 'Cell': 'E4'}
+        , 'Client Address': { 'Value': '123 Street, ABC' , 'Tab': 'General' , 'Cell': 'C6'}
+        , 'MPRN': { 'Value': 'xoxoxo' , 'Tab': 'General' , 'Cell': 'E6'}
+        , 'Surveyor': { 'Value': 'Michael Lennon' , 'Tab': 'General' , 'Cell': 'C8'}
+        , 'Survey Date *': { 'Value': '45390' , 'Tab': 'General' , 'Cell': 'E8'}
+        , 'Dwelling Type *': { 'Value': 'Semi-Detached House' , 'Tab': 'General' , 'Cell': 'C10'}
+        , 'Gross floor area (m2) *': { 'Value': '97.58' , 'Tab': 'General' , 'Cell': 'E10'}
+        , 'Dwelling Age *': { 'Value': '1967 - 1977' , 'Tab': 'General' , 'Cell': 'C12'}
+        , 'Number of Storeys *': { 'Value': '2' , 'Tab': 'General' , 'Cell': 'E12'}
+        , 'Age extension 1': { 'Value': '0' , 'Tab': 'General' , 'Cell': 'C14'}
+        , 'Room in roof *': { 'Value': 'No' , 'Tab': 'General' , 'Cell': 'E14'}
+        , 'Age extension 2': { 'Value': '0' , 'Tab': 'General' , 'Cell': 'C16'}
+        , 'No. Single Glazed Windows *': { 'Value': '1' , 'Tab': 'General' , 'Cell': 'E16'}
+        , 'Asbestos Suspected *': { 'Value': 'Yes' , 'Tab': 'General' , 'Cell': 'C18'}
+        , 'No. Double Glazed Windows *': { 'Value': '6' , 'Tab': 'General' , 'Cell': 'E18'}
+        , 'Asbestos Details *': { 'Value': 'Dwelling built pre 2000, asbestos may be present' , 'Tab': 'General' , 'Cell': 'C20'}
+        , 'Lot *': { 'Value': 'N/A' , 'Tab': 'General' , 'Cell': 'C22'}
+        , 'Property Height (m) *': { 'Value': '5.1' , 'Tab': 'General' , 'Cell': 'E22'}
+        , 'Eircode': { 'Value': 'X99X9X9' , 'Tab': 'General' , 'Cell': 'C24'}
+        , 'Internet Available *': { 'Value': 'Yes' , 'Tab': 'General' , 'Cell': 'E24'}
+
+
+        , 'Roof 1 Type *': { 'Value': 'Pitched' , 'Tab': 'Roof' , 'Cell': 'E25'}
+        , 'Sloped Ceiling 1*': { 'Value': 'No' , 'Tab': 'Roof' , 'Cell': 'H25'}
+        , 'Other Details Roof 1*': { 'Value': 'N/A' , 'Tab': 'Roof' , 'Cell': 'E27'}
+        , 'Roof 1 greater than 2/3 floor area*': { 'Value': 'N/A' , 'Tab': 'Roof' , 'Cell': 'H27'}
+        , 'Roof 1 Pitch (degrees)*': { 'Value': '23' , 'Tab': 'Roof' , 'Cell': 'H29'}
+        , 'Roof Type 1 Insulation Exists*': { 'Value': 'Yes' , 'Tab': 'Roof' , 'Cell': 'E33'}
+        , 'Can Roof Type 1 Insulation Thickness be Measured?*': { 'Value': 'Yes' , 'Tab': 'Roof' , 'Cell': 'E35'}
+        , 'Roof 1 Thickness (mm)*': { 'Value': '290' , 'Tab': 'Roof' , 'Cell': 'E37'}
+        , 'Roof 1 Insulation Type*': { 'Value': 'Fibre glass/mineral wool roof 1' , 'Tab': 'Roof' , 'Cell': 'H33'}
+        #N/A
+        , 'Required per standards (mm2) *': { 'Value': '0' , 'Tab': 'Roof' , 'Cell': 'E42'}
+        , 'Existing (mm2)*': { 'Value': '0' , 'Tab': 'Roof' , 'Cell': 'H42'}
+        , 'Area of Roof Type 1 with fixed flooring (m2)*': { 'Value': '12' , 'Tab': 'Roof' , 'Cell': 'E46'}
+        , 'Folding/stair ladder in Roof Type 1*': { 'Value': 'No' , 'Tab': 'Roof' , 'Cell': 'E48'}
+        , 'Fixed light in Roof Type 1*': { 'Value': 'No' , 'Tab': 'Roof' , 'Cell': 'E50'}
+        , 'Downlighters in Roof Type 1*': { 'Value': 'Yes' , 'Tab': 'Roof' , 'Cell': 'H46'}
+        , 'High power cable in Roof Type 1 (6sq/10sq or higher)*': { 'Value': 'Yes' , 'Tab': 'Roof' , 'Cell': 'H48'}
+        , 'Roof 2 Type': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E25'}
+        , 'Other Details Roof 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E27'}
+        , 'Sloped Ceiling Roof 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H25'}
+        , 'Roof 2 greater than 2/3 floor area*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H27'}
+        , 'Roof 2 Pitch (degrees)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H29'}
+        , 'Roof 2 Insulation Exists*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E33'}
+        , 'Can Roof Type 2 Insulation Thickness be Measured?*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E35'}
+        , 'Roof 2 Thickness (mm)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E37'}
+        , 'Roof 2 Insulation Type*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H33'}
+        #N/A
+        , 'Roof 2 Required per standards (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 2' , 'Cell': 'E42'}
+        , 'Roof 2 Existing (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 2' , 'Cell': 'H42'}
+        , 'Area of Roof Type 2 with fixed flooring (m2)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E46'}
+        , 'Folding/stair ladder in Roof Type 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E48'}
+        , 'Fixed light in Roof Type 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E50'}
+        , 'Downlighters in Roof Type 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H46'}
+        , 'High power cable in Roof Type 2 (6sq/10sq or higher)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H48'}
+        , 'Roof 3 Type': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E25'}
+        , 'Other Details Roof 3*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E27'}
+        , 'Sloped Ceiling Roof 3*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H25'}
+        , 'Roof 3 greater than 2/3 floor area*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H27'}
+        , 'Roof 3 Pitch (degrees)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H29'}
+        , 'Roof 3 Insulation Exists*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E33'}
+        , 'Can Roof Type 3 Insulation Thickness be Measured?': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E35'}
+        , 'Roof 3 Thickness (mm)': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E37'}
+        , 'Roof 3 Insulation Type': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H33'}
+        #N/A
+        , 'Roof 3 Required per standards (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 3' , 'Cell': 'E42'}
+        , 'Roof 3 Existing (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 3' , 'Cell': 'H42'}
+        , 'Area of Roof Type 3 with fixed flooring (m2)': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E46'}
+        , 'Folding/stair ladder in Roof Type 3': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E48'}
+        , 'Fixed light in Roof Type 3': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E50'}
+        , 'Downlighters in Roof Type 3': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H46'}
+        , 'High power cable in Roof Type 3 (6sq/10sq or higher)': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H48'}
+        , 'Roof 4 Type': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E25'}
+        , 'Other Details Roof 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E27'}
+        , 'Sloped Ceiling Roof 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H25'}
+        , 'Roof 4 greater than 2/3 floor area*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H27'}
+        , 'Roof 4 Pitch (degrees)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H29'}
+        , 'Roof 4 Insulation Exists*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E33'}
+        , 'Can Roof Type 4 Insulation Thickness be Measured?*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E35'}
+        , 'Roof 4 Thickness (mm)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E37'}
+        , 'Roof 4 Insulation Type*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H33'}
+        #N/A
+        , 'Roof 4 Required per standards (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 4' , 'Cell': 'E42'}
+        , 'Roof 4 Existing (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 4' , 'Cell': 'H42'}
+        , 'Area of Roof Type 4 with fixed flooring (m2)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E46'}
+        , 'Folding/stair ladder in Roof Type 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E48'}
+        , 'Fixed light in Roof Type 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E50'}
+        , 'Downlighters in Roof Type 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H46'}
+        , 'High power cable in Roof Type 4 (6sq/10sq or higher)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H48'}
+        , 'Suitable for Insulation *': { 'Value': 'No' , 'Tab': 'Roof' , 'Cell': 'E54'}
+        , 'Not suitable details*': { 'Value': '0' , 'Tab': 'Roof' , 'Cell': 'E56'}
+        , 'Notes (Roof)': { 'Value': 'Notes (Roof Type 1)*: Correct depth exists' , 'Tab': 'Roof' , 'Cell': 'E59'}
+
+        , 'Wall Type 1*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E27'}
+        , 'Wall 1 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E29'}
+        , 'Wall 1 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E33'}
+        , 'Wall 1 Insulation Type*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E35'}
+        , 'Wall 1 Fill Type*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E37'}
+        , 'Wall 1 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K37'}
+        , 'Can Wall type 1 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K33'}
+        , "If 'Yes' enter insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K35'}
+        , 'Wall Type 2': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E27'}
+        , 'Wall 2 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E29'}
+        , 'Wall 2 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E33'}
+        , 'Wall 2 Insulation Type*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E35'}
+        , 'Wall 2 Fill Type*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E37'}
+        , 'Wall 2 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'K37'}
+        , 'Can Wall type 2 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'K33'}
+        , "If 'Yes' enter Wall type 2 insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'K35'}
+        , 'Wall Type 3': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E27'}
+        , 'Wall 3 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E29'}
+        , 'Wall 3 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E33'}
+        , 'Wall 3 Insulation Type*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E35'}
+        , 'Wall 3 Fill Type*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E37'}
+        , 'Wall 3 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'K37'}
+        , 'Can Wall type 3 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'K33'}
+        , "If 'Yes' enter Wall type 3 insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'K35'}
+        , 'Wall Type 4': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E27'}
+        , 'Wall 4 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E29'}
+        , 'Wall 4 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E33'}
+        , 'Wall 4 Insulation Type*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E35'}
+        , 'Wall 4 Fill Type*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E37'}
+        , 'Wall 4 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'K37'}
+        , 'Can Wall type 4 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'K33'}
+        , "If 'Yes' enter Wall type 4 insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'K35'}
+        , 'Is the property suitable for wall insulation? *': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E41'}
+        , 'No wall insulation details *': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E43'}
+        , 'Notes (Walls)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E54'}
+        , 'Suitable for Draught Proofing': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E49'}
+        , 'Not suitable details Draughtproofing*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E51'}
+        , 'Draught Proofing (<= 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L68'}
+        , 'Draught Proofing (> 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L69'}
+
+        }
+    
+    for field in v:
+        if field in json_val_dict.keys():
+            v[field]['Value'] = json_val_dict[field]
+
+    # print(v)
+    aid = v['Application ID']['Value']
+
+    # url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net/attachment/template.xlsx"
+
+    account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+    default_credential = DefaultAzureCredential()
+
+    # Create the BlobServiceClient object
+    blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+
+    container_name = 'attachment'
+    local_file_name = 'template.xlsx'
+    local_path = "./temp"
+    if not os.path.exists(local_path):
+        os.mkdir(local_path)
+
+    instance_file_path = os.path.join(local_path, 'export_' + aid + '.xlsx')
+    container_client = blob_service_client.get_container_client(container= container_name) 
+    print("\nDownloading blob to \n\t" + instance_file_path)
+
+    with open(file=instance_file_path, mode="wb") as download_file:
+        download_file.write(container_client.download_blob("template.xlsx").readall())
+
+    xfile = openpyxl.load_workbook(instance_file_path)
+    
+    for field in v:
+        # print(field)
+        # print(v[field]['Value'])
+        # print(v[field]['Tab'])
+        # print(v[field]['Cell'])
+        sheet = xfile[v[field]['Tab']]
+        sheet[v[field]['Cell']] = v[field]['Value']
+
+
+    xfile.save(instance_file_path)
+
+    with open(file=instance_file_path, mode="rb") as upload_file:
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=instance_file_path)
+        blob_client.upload_blob(upload_file, overwrite=True)
+        
     return
