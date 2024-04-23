@@ -1249,7 +1249,7 @@ def survey(root):
         json_val_dict['Client Address'] = ''
         address_fields = ['street', 'city', 'province', 'country', 'postalCode']
         for af in address_fields:
-            print(root.get(af))
+            # print(root.get(af))
             f = root.get(af)
             if f is not None:
                 json_val_dict['Client Address'] = (json_val_dict['Client Address'] + ', ' + str(f)) if json_val_dict['Client Address'] != '' else str(f)
@@ -2690,14 +2690,12 @@ def populate_template(json_val_dict):
     blob_service_client = BlobServiceClient(account_url, credential=default_credential)
 
     container_name = 'attachment'
-    local_file_name = 'template.xlsx'
-    local_path = "tmp" # str(json_val_dict['plan_name'])
-    # if not os.path.exists(local_path):
-        # os.mkdir(local_path)
-
-    # instance_file_path = os.path.join(local_path, 'export_' + aid + '.xlsx')
-    instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
     container_client = blob_service_client.get_container_client(container= container_name) 
+    
+    template_file_name = 'template.xlsx'
+    local_path = "tmp" # str(json_val_dict['plan_name'])
+    instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
+
     print("\nDownloading blob to \n\t" + instance_file_path)
 
     with open(file=instance_file_path, mode="wb") as download_file:
@@ -2710,6 +2708,10 @@ def populate_template(json_val_dict):
         sheet[v[field]['Cell']] = v[field]['Value']
 
 
+    # local_path = "tmp" # str(json_val_dict['plan_name'])
+    # instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
+    # if not os.path.exists(local_path):
+        # os.mkdir(local_path)
     xfile.save(instance_file_path)
 
     with open(file=instance_file_path, mode="rb") as upload_file:
