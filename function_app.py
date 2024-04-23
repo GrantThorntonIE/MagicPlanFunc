@@ -2678,6 +2678,8 @@ def populate_template(json_val_dict):
 
     # print(v)
     aid = v['Application ID']['Value']
+    name = json_val_dict['plan_name']
+    print(name)
 
     # url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net/attachment/template.xlsx"
 
@@ -2689,7 +2691,7 @@ def populate_template(json_val_dict):
 
     container_name = 'attachment'
     local_file_name = 'template.xlsx'
-    local_path = "/tmp" # str(json_val_dict['plan_name'])
+    local_path = "tmp" # str(json_val_dict['plan_name'])
     if not os.path.exists(local_path):
         os.mkdir(local_path)
 
