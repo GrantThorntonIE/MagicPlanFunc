@@ -1210,20 +1210,27 @@ def get_project_files(id, headers):
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
-
+        
+        # local_path = str(json_val_dict['Application ID'])
+        # if not os.path.exists(local_path):
+            # os.mkdir(local_path)
+        
+        
+        
+        
         for file in JSON["data"]["files"]:
             if file["file_type"] == "pdf":
                 request = urllib.request.Request(file["url"], headers=headers)
                 file_content = urllib.request.urlopen(request).read()
                 local_file_name = file["name"]
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(id, file["name"]))
                 blob_client.upload_blob(file_content, overwrite=True)
         
         for file in JSON["data"]["photos"]:
             request = urllib.request.Request(file["url"], headers=headers)
             file_content = urllib.request.urlopen(request).read()
             local_file_name = file["name"]
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(id, file["name"]))
             blob_client.upload_blob(file_content, overwrite=True)
     finally:
         return
@@ -1611,7 +1618,7 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        # get_project_files(id, headers)
+        get_project_files(id, headers)
         
         
         
@@ -2682,11 +2689,12 @@ def populate_template(json_val_dict):
 
     container_name = 'attachment'
     local_file_name = 'template.xlsx'
-    local_path = "/tmp"
-    if not os.path.exists(local_path):
-        os.mkdir(local_path)
+    # local_path = str(json_val_dict['plan_name'])
+    # if not os.path.exists(local_path):
+        # os.mkdir(local_path)
 
-    instance_file_path = os.path.join(local_path, 'export_' + aid + '.xlsx')
+    # instance_file_path = os.path.join(local_path, 'export_' + aid + '.xlsx')
+    instance_file_path = json_val_dict['plan_name'] + '.xlsx'
     container_client = blob_service_client.get_container_client(container= container_name) 
     print("\nDownloading blob to \n\t" + instance_file_path)
 
@@ -2696,10 +2704,6 @@ def populate_template(json_val_dict):
     xfile = openpyxl.load_workbook(instance_file_path)
     
     for field in v:
-        # print(field)
-        # print(v[field]['Value'])
-        # print(v[field]['Tab'])
-        # print(v[field]['Cell'])
         sheet = xfile[v[field]['Tab']]
         sheet[v[field]['Cell']] = v[field]['Value']
 
