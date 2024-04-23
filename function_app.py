@@ -2694,7 +2694,7 @@ def populate_template(json_val_dict):
     
     template_file_name = 'template.xlsx'
 
-    local_path = "tmp" # str(json_val_dict['plan_name'])
+    local_path = "/tmp" # str(json_val_dict['plan_name'])
     if not os.path.exists(local_path):
         os.mkdir(local_path)
     instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
