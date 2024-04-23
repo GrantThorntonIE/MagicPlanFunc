@@ -2708,10 +2708,10 @@ def populate_template(json_val_dict):
         sheet[v[field]['Cell']] = v[field]['Value']
 
 
-    # local_path = "tmp" # str(json_val_dict['plan_name'])
-    # instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
-    # if not os.path.exists(local_path):
-        # os.mkdir(local_path)
+    local_path = "tmp" # str(json_val_dict['plan_name'])
+    instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
+    if not os.path.exists(local_path):
+        os.mkdir(local_path)
     xfile.save(instance_file_path)
 
     with open(file=instance_file_path, mode="rb") as upload_file:
