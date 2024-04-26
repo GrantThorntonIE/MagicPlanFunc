@@ -13,6 +13,10 @@ import defusedxml.ElementTree as dET
 # from loguru import logger as LOGGER
 import traceback
 import openpyxl
+import win32com.client
+
+
+
 
 MAX_REAL_FLOORS = 10
 
@@ -1225,6 +1229,7 @@ def get_project_files(id, headers, plan_name):
                 local_file_name = file["name"]
                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
                 blob_client.upload_blob(file_content, overwrite=True)
+
         
         for file in JSON["data"]["photos"]:
             request = urllib.request.Request(file["url"], headers=headers)
@@ -1257,12 +1262,6 @@ def survey(root):
         
         # print(json_val_dict['Client Address'])
 
-        
-        # 'Applicant Name': { 'Value': 'Joe Bloggs' , 'Tab': 'General' , 'Cell': 'C4'}
-        # , 'MPRN': { 'Value': 'xoxoxo' , 'Tab': 'General' , 'Cell': 'E6'}
-
-
-
 
         print(id)
         print(plan_name)
@@ -1285,8 +1284,8 @@ def survey(root):
         # rating_type = root.find('values/value[@key="qf.34d66ce4q3"]').text
         # rating_purpose = root.find('values/value[@key="qf.34d66ce4q4"]').text
         
-        json_val_dict['Surveyor'] = root.find('values/value[@key="author"]').text
-        print('Surveyor', ':', json_val_dict['Surveyor'])
+        # json_val_dict['Surveyor'] = root.find('values/value[@key="author"]').text
+        # print('Surveyor', ':', json_val_dict['Surveyor'])
         
         date = root.find('values/value[@key="date"]').text
         json_val_dict['Survey Date *'] = date
@@ -1563,7 +1562,7 @@ def survey(root):
                     , 'System Age *'
                     , 'Fully Working *'
                     , 'Requires Service *'
-                    , 'Other"Other Primary Heating Details *"'
+                    , "Other Primary Heating Details *"
                     , 'Not Working Details Primary Heating *'
                     , 'Requires Service (App?)*'
                     , 'Requires Service Details Primary Heating *'
@@ -1576,7 +1575,7 @@ def survey(root):
                     , 'Instantaneous Combi Boiler'
                     , 'Other'
                     , 'Other HW Details *'
-                    # , 'HWS'
+                    , 'HWS'
                     
                     , 'Hot Water Cylinder*'
                     , 'Insulation *'
@@ -1648,7 +1647,7 @@ def survey(root):
         cylinder_stat = False
         json_val_dict['Heating System *'] = 'N/A'
         json_val_dict['Secondary Heating System'] = 'N/A'
-        
+        json_val_dict['HWS'] = ''
         json_val_dict['HWC Controls *'] = 'None'
         single_glazed_windows = []
         programmers = []
@@ -1757,17 +1756,17 @@ def survey(root):
                             cylinder_stat = True
                         if field["label"] == "Is the cylinder heated from the primary heating system?":
                             if field["value"]["value"] == True:
-                                json_val_dict['HWS'] = 'From Primary heating system'
+                                json_val_dict['HWS'] += ('From Primary heating system' + '<BR>')
                                 json_val_dict['From Primary heating system'] = True
                         if field["label"] == "Is the cylinder heated from the secondary heating system?":
                             if field["value"]["value"] == True:
-                                json_val_dict['HWS'] = 'From Secondary heating system'
+                                json_val_dict['HWS'] += ('From Secondary heating system' + '<BR>')
                                 json_val_dict['From Secondary heating system'] = True
                         if field["label"] == "Is there an electric immersion?" and field["value"]["value"] == True:
-                            json_val_dict['HWS'] = 'Electric Immersion'
+                            json_val_dict['HWS'] += ('Electric Immersion' + '<BR>')
                             json_val_dict['Electric Immersion'] = True
                         if field["label"] == "How is the cylinder heated? (Do not include immersion)" and field["value"]["has_value"] == True:
-                            json_val_dict['HWS'] = 'Other'
+                            json_val_dict['HWS'] += ('Other' + '<BR>')
                             json_val_dict["Other HW Details *"] = field["value"]["value"]
                             
                         
@@ -1820,7 +1819,7 @@ def survey(root):
                             if 'require service?' in field['label']:
                                 json_val_dict['Requires Service *'] = field["value"]["value"]
                             if field['label'] == '':
-                                json_val_dict['Other"Other Primary Heating Details *"'] = field["value"]["value"]
+                                json_val_dict["Other Primary Heating Details *"] = field["value"]["value"]
                             if field['label'] == 'Not working details *':
                                 json_val_dict['Not Working Details Primary Heating *'] = field["value"]["value"]
                             # if field['label'] == 'Does the appliance require service?':
@@ -1843,7 +1842,7 @@ def survey(root):
                             if 'require service?' in field['label']:
                                 json_val_dict['Secondary System Requires Service *'] = field["value"]["value"]
                             if field['label'] == '':
-                                json_val_dict['Other"Other Primary Heating Details *"'] = field["value"]["value"]
+                                json_val_dict["Other Primary Heating Details *"] = field["value"]["value"]
                             if field['label'] == 'Not working details *':
                                 json_val_dict['Not Working Details Secondary Heating *'] = field["value"]["value"]
                             # if field['label'] == 'Does the appliance require service?':
@@ -2277,17 +2276,22 @@ def survey(root):
             
         
         
-        populate_template(json_val_dict)
+        xl_path = populate_template(json_val_dict)
         
         
-        
+        # xl_2_pdf(xl_path)
         
         
         
         # print(json_val_dict)
         output_dict = json_val_dict
         
-        
+        for field in output_dict:
+            value = output_dict[field]
+            if (type(value) == bool and value == True):
+                value = "Yes"
+            if (type(value) == bool and value == False):
+                value = "No"
         
         
         
@@ -2296,25 +2300,25 @@ def survey(root):
 
         styling = "border=\"1\""
         output = f"""\
-            <h1>Supplementary</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_s)} \
-            <h1>Heating Primary Measures</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_hpm)} \
-            <h1>Primary Measures</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
-            <h1>Mechanical Ventilation Systems, Air Tightness Testing & Energy</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mae)} \
-
-            <h1>Major Renovation</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
             <h1>General</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
+            <h1>Major Renovation</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
+            <h1>Primary Measures</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
             <h1>Roof</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)} \
             <h1>Walls</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_walls)} \
             <h1>Heating</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_heating)} \
+            <h1>Mechanical Ventilation Systems, Air Tightness Testing & Energy</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mae)} \
+            <h1>Supplementary</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_s)} \
+            <h1>Heating Primary Measures</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_hpm)} \
+
             </div>"""
 
     except Exception as ex:
@@ -2535,100 +2539,100 @@ def azure_upload(file_data, container_name = 'attachment'):
 
 def populate_template(json_val_dict):
     v = {
-        'Applicant Name': { 'Value': 'Joe Bloggs' , 'Tab': 'General' , 'Cell': 'C4'}
-        , 'Application ID': { 'Value': '123456' , 'Tab': 'General' , 'Cell': 'E4'}
-        , 'Client Address': { 'Value': '123 Street, ABC' , 'Tab': 'General' , 'Cell': 'C6'}
-        , 'MPRN': { 'Value': 'xoxoxo' , 'Tab': 'General' , 'Cell': 'E6'}
-        , 'Surveyor': { 'Value': 'Michael Lennon' , 'Tab': 'General' , 'Cell': 'C8'}
-        , 'Survey Date *': { 'Value': '45390' , 'Tab': 'General' , 'Cell': 'E8'}
-        , 'Dwelling Type *': { 'Value': 'Semi-Detached House' , 'Tab': 'General' , 'Cell': 'C10'}
-        , 'Gross floor area (m2) *': { 'Value': '97.58' , 'Tab': 'General' , 'Cell': 'E10'}
-        , 'Dwelling Age *': { 'Value': '1967 - 1977' , 'Tab': 'General' , 'Cell': 'C12'}
-        , 'Number of Storeys *': { 'Value': '2' , 'Tab': 'General' , 'Cell': 'E12'}
-        , 'Age extension 1': { 'Value': '0' , 'Tab': 'General' , 'Cell': 'C14'}
-        , 'Room in roof *': { 'Value': 'No' , 'Tab': 'General' , 'Cell': 'E14'}
-        , 'Age extension 2': { 'Value': '0' , 'Tab': 'General' , 'Cell': 'C16'}
-        , 'No. Single Glazed Windows *': { 'Value': '1' , 'Tab': 'General' , 'Cell': 'E16'}
-        , 'Asbestos Suspected *': { 'Value': 'Yes' , 'Tab': 'General' , 'Cell': 'C18'}
-        , 'No. Double Glazed Windows *': { 'Value': '6' , 'Tab': 'General' , 'Cell': 'E18'}
-        , 'Asbestos Details *': { 'Value': 'Dwelling built pre 2000, asbestos may be present' , 'Tab': 'General' , 'Cell': 'C20'}
-        , 'Lot *': { 'Value': 'N/A' , 'Tab': 'General' , 'Cell': 'C22'}
-        , 'Property Height (m) *': { 'Value': '5.1' , 'Tab': 'General' , 'Cell': 'E22'}
-        , 'Eircode': { 'Value': 'X99X9X9' , 'Tab': 'General' , 'Cell': 'C24'}
-        , 'Internet Available *': { 'Value': 'Yes' , 'Tab': 'General' , 'Cell': 'E24'}
+        'Applicant Name': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C4'}
+        , 'Application ID': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E4'}
+        , 'Client Address': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C6'}
+        , 'MPRN': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E6'}
+        , 'Surveyor': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C8'}
+        , 'Survey Date *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E8'}
+        , 'Dwelling Type *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C10'}
+        , 'Gross floor area (m2) *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E10'}
+        , 'Dwelling Age *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C12'}
+        , 'Number of Storeys *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E12'}
+        , 'Age extension 1': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C14'}
+        , 'Room in roof *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E14'}
+        , 'Age extension 2': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C16'}
+        , 'No. Single Glazed Windows *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E16'}
+        , 'Asbestos Suspected *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C18'}
+        , 'No. Double Glazed Windows *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E18'}
+        , 'Asbestos Details *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C20'}
+        , 'Lot *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C22'}
+        , 'Property Height (m) *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E22'}
+        , 'Eircode': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C24'}
+        , 'Internet Available *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E24'}
 
 
-        , 'Roof 1 Type *': { 'Value': 'Pitched' , 'Tab': 'Roof' , 'Cell': 'E25'}
-        , 'Sloped Ceiling 1*': { 'Value': 'No' , 'Tab': 'Roof' , 'Cell': 'H25'}
-        , 'Other Details Roof 1*': { 'Value': 'N/A' , 'Tab': 'Roof' , 'Cell': 'E27'}
-        , 'Roof 1 greater than 2/3 floor area*': { 'Value': 'N/A' , 'Tab': 'Roof' , 'Cell': 'H27'}
-        , 'Roof 1 Pitch (degrees)*': { 'Value': '23' , 'Tab': 'Roof' , 'Cell': 'H29'}
-        , 'Roof Type 1 Insulation Exists*': { 'Value': 'Yes' , 'Tab': 'Roof' , 'Cell': 'E33'}
-        , 'Can Roof Type 1 Insulation Thickness be Measured?*': { 'Value': 'Yes' , 'Tab': 'Roof' , 'Cell': 'E35'}
-        , 'Roof 1 Thickness (mm)*': { 'Value': '290' , 'Tab': 'Roof' , 'Cell': 'E37'}
-        , 'Roof 1 Insulation Type*': { 'Value': 'Fibre glass/mineral wool roof 1' , 'Tab': 'Roof' , 'Cell': 'H33'}
+        , 'Roof 1 Type *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E25'}
+        , 'Sloped Ceiling 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H25'}
+        , 'Other Details Roof 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E27'}
+        , 'Roof 1 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H27'}
+        , 'Roof 1 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H29'}
+        , 'Roof Type 1 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E33'}
+        , 'Can Roof Type 1 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E35'}
+        , 'Roof 1 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E37'}
+        , 'Roof 1 Insulation Type*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H33'}
         #N/A
-        , 'Required per standards (mm2) *': { 'Value': '0' , 'Tab': 'Roof' , 'Cell': 'E42'}
-        , 'Existing (mm2)*': { 'Value': '0' , 'Tab': 'Roof' , 'Cell': 'H42'}
-        , 'Area of Roof Type 1 with fixed flooring (m2)*': { 'Value': '12' , 'Tab': 'Roof' , 'Cell': 'E46'}
-        , 'Folding/stair ladder in Roof Type 1*': { 'Value': 'No' , 'Tab': 'Roof' , 'Cell': 'E48'}
-        , 'Fixed light in Roof Type 1*': { 'Value': 'No' , 'Tab': 'Roof' , 'Cell': 'E50'}
-        , 'Downlighters in Roof Type 1*': { 'Value': 'Yes' , 'Tab': 'Roof' , 'Cell': 'H46'}
-        , 'High power cable in Roof Type 1 (6sq/10sq or higher)*': { 'Value': 'Yes' , 'Tab': 'Roof' , 'Cell': 'H48'}
-        , 'Roof 2 Type': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E25'}
-        , 'Other Details Roof 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E27'}
-        , 'Sloped Ceiling Roof 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H25'}
-        , 'Roof 2 greater than 2/3 floor area*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H27'}
-        , 'Roof 2 Pitch (degrees)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H29'}
-        , 'Roof 2 Insulation Exists*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E33'}
-        , 'Can Roof Type 2 Insulation Thickness be Measured?*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E35'}
-        , 'Roof 2 Thickness (mm)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E37'}
-        , 'Roof 2 Insulation Type*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H33'}
+        , 'Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E42'}
+        , 'Existing (mm2)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H42'}
+        , 'Area of Roof Type 1 with fixed flooring (m2)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E46'}
+        , 'Folding/stair ladder in Roof Type 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E48'}
+        , 'Fixed light in Roof Type 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E50'}
+        , 'Downlighters in Roof Type 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H46'}
+        , 'High power cable in Roof Type 1 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H48'}
+        , 'Roof 2 Type': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E25'}
+        , 'Other Details Roof 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E27'}
+        , 'Sloped Ceiling Roof 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H25'}
+        , 'Roof 2 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H27'}
+        , 'Roof 2 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H29'}
+        , 'Roof 2 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E33'}
+        , 'Can Roof Type 2 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E35'}
+        , 'Roof 2 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E37'}
+        , 'Roof 2 Insulation Type*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H33'}
         #N/A
-        , 'Roof 2 Required per standards (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 2' , 'Cell': 'E42'}
-        , 'Roof 2 Existing (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 2' , 'Cell': 'H42'}
-        , 'Area of Roof Type 2 with fixed flooring (m2)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E46'}
-        , 'Folding/stair ladder in Roof Type 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E48'}
-        , 'Fixed light in Roof Type 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'E50'}
-        , 'Downlighters in Roof Type 2*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H46'}
-        , 'High power cable in Roof Type 2 (6sq/10sq or higher)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 2' , 'Cell': 'H48'}
-        , 'Roof 3 Type': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E25'}
-        , 'Other Details Roof 3*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E27'}
-        , 'Sloped Ceiling Roof 3*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H25'}
-        , 'Roof 3 greater than 2/3 floor area*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H27'}
-        , 'Roof 3 Pitch (degrees)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H29'}
-        , 'Roof 3 Insulation Exists*': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E33'}
-        , 'Can Roof Type 3 Insulation Thickness be Measured?': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E35'}
-        , 'Roof 3 Thickness (mm)': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E37'}
-        , 'Roof 3 Insulation Type': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H33'}
+        , 'Roof 2 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E42'}
+        , 'Roof 2 Existing (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H42'}
+        , 'Area of Roof Type 2 with fixed flooring (m2)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E46'}
+        , 'Folding/stair ladder in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E48'}
+        , 'Fixed light in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E50'}
+        , 'Downlighters in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H46'}
+        , 'High power cable in Roof Type 2 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H48'}
+        , 'Roof 3 Type': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E25'}
+        , 'Other Details Roof 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E27'}
+        , 'Sloped Ceiling Roof 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H25'}
+        , 'Roof 3 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H27'}
+        , 'Roof 3 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H29'}
+        , 'Roof 3 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E33'}
+        , 'Can Roof Type 3 Insulation Thickness be Measured?': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E35'}
+        , 'Roof 3 Thickness (mm)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E37'}
+        , 'Roof 3 Insulation Type': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H33'}
         #N/A
-        , 'Roof 3 Required per standards (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 3' , 'Cell': 'E42'}
-        , 'Roof 3 Existing (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 3' , 'Cell': 'H42'}
-        , 'Area of Roof Type 3 with fixed flooring (m2)': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E46'}
-        , 'Folding/stair ladder in Roof Type 3': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E48'}
-        , 'Fixed light in Roof Type 3': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'E50'}
-        , 'Downlighters in Roof Type 3': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H46'}
-        , 'High power cable in Roof Type 3 (6sq/10sq or higher)': { 'Value': 'N/A' , 'Tab': 'Roof Type 3' , 'Cell': 'H48'}
-        , 'Roof 4 Type': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E25'}
-        , 'Other Details Roof 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E27'}
-        , 'Sloped Ceiling Roof 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H25'}
-        , 'Roof 4 greater than 2/3 floor area*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H27'}
-        , 'Roof 4 Pitch (degrees)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H29'}
-        , 'Roof 4 Insulation Exists*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E33'}
-        , 'Can Roof Type 4 Insulation Thickness be Measured?*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E35'}
-        , 'Roof 4 Thickness (mm)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E37'}
-        , 'Roof 4 Insulation Type*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H33'}
+        , 'Roof 3 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E42'}
+        , 'Roof 3 Existing (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H42'}
+        , 'Area of Roof Type 3 with fixed flooring (m2)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E46'}
+        , 'Folding/stair ladder in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E48'}
+        , 'Fixed light in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E50'}
+        , 'Downlighters in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H46'}
+        , 'High power cable in Roof Type 3 (6sq/10sq or higher)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H48'}
+        , 'Roof 4 Type': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E25'}
+        , 'Other Details Roof 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E27'}
+        , 'Sloped Ceiling Roof 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H25'}
+        , 'Roof 4 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H27'}
+        , 'Roof 4 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H29'}
+        , 'Roof 4 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E33'}
+        , 'Can Roof Type 4 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E35'}
+        , 'Roof 4 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E37'}
+        , 'Roof 4 Insulation Type*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H33'}
         #N/A
-        , 'Roof 4 Required per standards (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 4' , 'Cell': 'E42'}
-        , 'Roof 4 Existing (mm2) *': { 'Value': '0' , 'Tab': 'Roof Type 4' , 'Cell': 'H42'}
-        , 'Area of Roof Type 4 with fixed flooring (m2)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E46'}
-        , 'Folding/stair ladder in Roof Type 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E48'}
-        , 'Fixed light in Roof Type 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'E50'}
-        , 'Downlighters in Roof Type 4*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H46'}
-        , 'High power cable in Roof Type 4 (6sq/10sq or higher)*': { 'Value': 'N/A' , 'Tab': 'Roof Type 4' , 'Cell': 'H48'}
-        , 'Suitable for Insulation *': { 'Value': 'No' , 'Tab': 'Roof' , 'Cell': 'E54'}
-        , 'Not suitable details*': { 'Value': '0' , 'Tab': 'Roof' , 'Cell': 'E56'}
-        , 'Notes (Roof)': { 'Value': 'Notes (Roof Type 1)*: Correct depth exists' , 'Tab': 'Roof' , 'Cell': 'E59'}
+        , 'Roof 4 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E42'}
+        , 'Roof 4 Existing (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H42'}
+        , 'Area of Roof Type 4 with fixed flooring (m2)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E46'}
+        , 'Folding/stair ladder in Roof Type 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E48'}
+        , 'Fixed light in Roof Type 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E50'}
+        , 'Downlighters in Roof Type 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H46'}
+        , 'High power cable in Roof Type 4 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H48'}
+        , 'Suitable for Insulation *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E54'}
+        , 'Not suitable details*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E56'}
+        , 'Notes (Roof)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E59'}
 
         , 'Wall Type 1*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E27'}
         , 'Wall 1 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E29'}
@@ -2669,12 +2673,84 @@ def populate_template(json_val_dict):
         , 'Not suitable details Draughtproofing*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E51'}
         , 'Draught Proofing (<= 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L68'}
         , 'Draught Proofing (> 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L69'}
+        , 'MEV 15l/s Bathroom': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L74'}
+        , 'MEV 30l/s Utility': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L75'}
+        , 'MEV 60l/s Kitchen': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L76'}
+        , 'New Permanent Vent': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L80'}
+        , 'New Background Vent': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L81'}
+        , 'Duct Cooker Hood': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L82'}
+        , 'Cavity Wall Insulation Bonded Bead': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F86'}
+        , 'Loose Fibre Extraction': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F87'}
+        , 'External Wall Insulation: Less than 60m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F88'}
+        , 'External Wall Insulation: 60m2 to 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F89'}
+        , 'External Wall Insulation: Greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F90'}
+        , 'ESB alteration': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F91'}
+        , 'GNI meter alteration': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F92'}
+        , 'New Gas Connection': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F93'}
+        , 'RGI Meter_No Heating': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F94'}
+        , 'Internal Wall Insulation: Vertical Surface': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F99'}
+        , 'External wall insulation and CWI: less than 60m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F104'}
+        , 'External wall insulation and CWI: 60m2 to 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F105'}
+        , 'External wall insulation and CWI: greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F106'}
+        , 'replace_window_area': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L113'}
+        , 'Notes (Windows and Doors)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E117'}
+        , 'Heating System *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E25'}
+        , 'Qualifying Boiler': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E27'}
+        , 'Major Renovation': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E29'}
+        , 'System Age *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E31'}
+        , 'Fully Working *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E33'}
+        , 'Requires Service *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E37'}
+        , '"Other Primary Heating Details *"': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I25'}
+        , 'Not Working Details Primary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I33'}
+        , 'Requires Service Details Primary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I37'}
+        , 'Hot Water System Exists *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E44'}
+        , 'HWS': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'G44'}
+        , 'Other HW Details *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I49'}
+        , 'Hot Water Cylinder*': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E55'}
+        , 'Insulation *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E57'}
+        , 'Condition of Lagging Jacket *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H55'}
+        , 'HWC Controls *': { 'Value': 'Cylinder Thermostat Controls *' , 'Tab': 'Heating' , 'Cell': 'H57'}
+        , 'Heating Systems Controls *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E62'}
+        , 'Partial Details *': { 'Value': 'Partial Controls' , 'Tab': 'Heating' , 'Cell': 'E64'}
+        , 'Programmer / Timeclock *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H62'}
+        , 'Room Thermostat Number *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H64'}
+        , 'Rads Number *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K62'}
+        , 'TRVs Number *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K64'}
+        , 'Suitable for Heating Measures *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E68'}
+        , 'Not suitable details*': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E70'}
+        , 'Notes (Heating)': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E74'}
+        , 'Secondary Heating System': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E25'}
+        , 'Secondary System Age *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E27'}
+        , 'Secondary System Fully Working *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E29'}
+        , 'Secondary System Requires Service *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E33'}
+        , 'Not Working Details Secondary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I29'}
+        , 'Requires Service Details Secondary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I33'}
+
+        , 'Number of habitable rooms in the property': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D55'}
+        , 'Number of wet rooms in the property': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D57'}
+        , 'No. of habitable/wet rooms w/ open flued appliance': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D59'}
+        , 'LED Bulbs: supply only (4 no.)': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E31'}
+        , 'Air-tightness test recommended?': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E27'}
+
+        , 'Adequate Access*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D25'}
+        , 'Adequate Access Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I25'}
+        , 'Cherry Picker Required*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D27'}
+        , 'Cherry Picker Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I27'}
+        , 'Mould/Mildew identified by surveyor; or reported by the applicant*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D29'}
+        , 'Mould/Mildew Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I29'}
+        , 'As confirmed by homeowner; property is a protected structure*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D31'}
+        , 'Protected Structure Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I31'}
+
+        , 'Surveyor Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D27'}
+        , 'Surveyor Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L27'}
+        , 'Customer Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D29'}
+        , 'Customer Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L29'}
 
         }
     
     for field in v:
         if field in json_val_dict.keys():
-            v[field]['Value'] = json_val_dict[field]
+            v[field]['Value'] = json_val_dict[field].replace('<BR>', '\n')
 
     # print(v)
     aid = v['Application ID']['Value']
@@ -2717,4 +2793,8 @@ def populate_template(json_val_dict):
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=instance_file_path)
         blob_client.upload_blob(upload_file, overwrite=True)
         
-    return
+    return instance_file_path
+
+
+
+
