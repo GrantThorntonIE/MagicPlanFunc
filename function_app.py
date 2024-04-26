@@ -13,7 +13,7 @@ import defusedxml.ElementTree as dET
 # from loguru import logger as LOGGER
 import traceback
 import openpyxl
-import win32com.client
+# import win32com.client
 
 
 
@@ -2293,7 +2293,8 @@ def survey(root):
             if (type(value) == bool and value == False):
                 value = "No"
         
-        xl_path = populate_template(output_dict)
+        # xl_path = 
+        populate_template(output_dict)
         
         
 
@@ -2755,6 +2756,7 @@ def populate_template(json_val_dict):
                 v[field]['Value'] = json_val_dict[field]
                 if type(v[field]['Value']) == str and '<BR>' in v[field]['Value']:
                     v[field]['Value'] = v[field]['Value'].replace('<BR>', '\n')
+                print(field, ':', v[field]['Value'])
 
         # print(v)
         aid = v['Application ID']['Value']
