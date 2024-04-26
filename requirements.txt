@@ -8,4 +8,4 @@ azure-identity
 pandas
 defusedxml
 openpyxl
-win32com.client
+win32com
