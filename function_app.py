@@ -13,7 +13,7 @@ import defusedxml.ElementTree as dET
 # from loguru import logger as LOGGER
 import traceback
 import openpyxl
-
+# import win32com.client
 
 
 
@@ -2472,10 +2472,13 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             if not container_client.exists():
                 container_client = blob_service_client.create_container(container_name)
 
+
             local_file_name = str(uuid.uuid4()) + '_post' + ".txt"
             data = "Hello, World!"
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
             blob_client.upload_blob(data)
+
+
 
             # json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
             # request = urllib.request.Request(json_url, headers=headers)
@@ -2548,25 +2551,25 @@ def populate_template(json_val_dict):
             , 'MPRN': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E6'}
             , 'Surveyor': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C8'}
             , 'Survey Date *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E8'}
-            , 'Dwelling Type *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C10'}
+            , 'Dwelling Type*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C10'}
             , 'Gross floor area (m2) *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E10'}
-            , 'Dwelling Age *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C12'}
+            , 'Dwelling Age*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C12'}
             , 'Number of Storeys *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E12'}
             , 'Age extension 1': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C14'}
-            , 'Room in roof *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E14'}
-            , 'Age extension 2': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C16'}
+            , 'Room in Roof': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E14'}
+            , 'Age Extension 2': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C16'}
             , 'No. Single Glazed Windows *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E16'}
-            , 'Asbestos Suspected *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C18'}
+            , 'Asbestos Suspected': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C18'}
             , 'No. Double Glazed Windows *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E18'}
-            , 'Asbestos Details *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C20'}
+            , 'Asbestos Details': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C20'}
             , 'Lot *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C22'}
-            , 'Property Height (m) *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E22'}
+            , 'Property Height (m)*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E22'}
             , 'Eircode': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C24'}
-            , 'Internet Available *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E24'}
+            , 'Internet Available': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E24'}
 
 
             , 'Roof 1 Type *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E25'}
-            , 'Sloped Ceiling 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H25'}
+            , 'Sloped Ceiling Roof 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H25'}
             , 'Other Details Roof 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E27'}
             , 'Roof 1 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H27'}
             , 'Roof 1 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H29'}
@@ -2703,7 +2706,7 @@ def populate_template(json_val_dict):
             , 'System Age *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E31'}
             , 'Fully Working *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E33'}
             , 'Requires Service *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E37'}
-            , '"Other Primary Heating Details *"': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I25'}
+            , 'Other Primary Heating Details *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I25'}
             , 'Not Working Details Primary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I33'}
             , 'Requires Service Details Primary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I37'}
             , 'Hot Water System Exists *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E44'}
