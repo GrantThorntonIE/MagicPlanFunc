@@ -14,8 +14,9 @@ import defusedxml.ElementTree as dET
 import traceback
 import openpyxl
 # import win32com.client
-
-
+import matplotlib.pyplot as plt
+import numpy as np
+from shapely.geometry import Point, MultiPoint
 
 
 MAX_REAL_FLOORS = 10
@@ -2091,15 +2092,23 @@ def survey(root):
         if json_val_dict['Room Thermostat Number *'] > 0:
             HSC_count += 1
         # % of Radiators/Rads with TRVs >=50%
-        if json_val_dict['Rads Number *'] > 0:
-            if json_val_dict['TRVs Number *'] / json_val_dict['Rads Number *'] >= 0.5:
-                HSC_count += 1
+        if json_val_dict['TRVs Number *'] > 0:
+            if json_val_dict['Rads Number *'] > 0: # should be redundant due to preceeding condition...
+                r = json_val_dict['TRVs Number *'] / json_val_dict['Rads Number *']
+                if r >= 0.5:
+                    HSC_count += 1
+        else:
+            r = 0
+        # print('json_val_dict["TRVs Number *"]', ':', json_val_dict['TRVs Number *'])
+        # print('json_val_dict["Rads Number *"]', ':', json_val_dict['Rads Number *'])
+        # print('r', ':', str(r))
+        # print('HSC_count', ':', str(HSC_count))
         
         if HSC_count == 0:
             json_val_dict['Heating Systems Controls *'] = 'No Controls'
         if 1 <= HSC_count <= 3:
             json_val_dict['Heating Systems Controls *'] = 'Partial Controls'
-            json_val_dict["Partial Details *"] = 'No of Programmers: ' + str(json_val_dict['Programmer / Timeclock *']) + "<BR>" + 'No of Room Stats: ' + str(json_val_dict['Room Thermostat Number *']) + "<BR>" + '% of Radiators  with TRVs: ' + str(json_val_dict['TRVs Number *'] / json_val_dict['Rads Number *']) + "<BR>" + 'Cylinder Stat?: ' + str(cylinder_stat)
+            json_val_dict["Partial Details *"] = 'No of Programmers: ' + str(json_val_dict['Programmer / Timeclock *']) + "<BR>" + 'No of Room Stats: ' + str(json_val_dict['Room Thermostat Number *']) + "<BR>" + '% of Radiators  with TRVs: ' + str(r) + "<BR>" + 'Cylinder Stat?: ' + str(cylinder_stat)
         if HSC_count == 4:
             json_val_dict['Heating Systems Controls *'] = 'Full zone control to spec'
             
@@ -2336,7 +2345,74 @@ def survey(root):
         return output
     return output
 
-
+def plot(root):
+    plan_name = root.get('name')
+    interiorWallWidth = root.get('interiorWallWidth') # always available?
+    
+    exteriorWallWidth = root.get('exteriorWallWidth') # always available?
+    print('interiorWallWidth', ':', interiorWallWidth)
+    print('exteriorWallWidth', ':', exteriorWallWidth)
+    
+    
+    floors = root.findall('floor')
+    print('len(floors)', ':', len(floors))
+    for floor in floors:
+        all_coordinates = []
+        rooms = floor.findall('floorRoom')
+        print('len(rooms)', ':', len(rooms))
+        for room in rooms:
+            xpoints = np.array([])
+            ypoints = np.array([])
+            rx = float(room.get('x'))
+            # print('rx', ':', rx)
+            ry = float(room.get('y'))
+            points = room.findall('point')
+            print('len(points)', ':', len(points))
+            for point in points:
+                x = float(point.get('snappedX'))
+                # print('x', ':', x)
+                x = rx + x
+                # print('x', ':', x)
+                y = -ry - float(point.get('snappedY'))
+                h = point.get('height')
+                uid = point.get('uid')
+                
+                xpoints = np.append(xpoints, [x])
+                ypoints = np.append(ypoints, [y])
+            xpoints = np.append(xpoints, xpoints[0])
+            ypoints = np.append(ypoints, ypoints[0])
+            
+            # print(xpoints)
+            # print(ypoints)
+            plt.plot(xpoints, ypoints)
+            
+            for i, x in enumerate(xpoints):
+                all_coordinates.append([x, ypoints[i-1]])
+            # print(all_coordinates)
+        
+        point_coordinates = [Point(z[0], z[1]) for z in all_coordinates]
+        # print(point_coordinates)
+        multi_point = MultiPoint(point_coordinates)
+        convex_hull = multi_point.convex_hull
+        print('convex_hull.exterior.coords.xy', ':', convex_hull.exterior.coords.xy)
+        # mark = [vals.index(i) for i in convex_hull[0]]
+        # print(mark)
+        
+        bounding_box = multi_point.bounds
+        print('bounding_box', ':', bounding_box) 
+        
+        
+        
+        
+        
+        
+        plt.axis('equal')
+        plt.show()
+    # print(xpoints)
+    # print(ypoints)
+    # plt.plot(xpoints, ypoints)
+    # plt.show()
+    return
 
 
 def XML_old():
