@@ -13,10 +13,7 @@ import defusedxml.ElementTree as dET
 # from loguru import logger as LOGGER
 import traceback
 import openpyxl
-# import win32com.client
-import matplotlib.pyplot as plt
-import numpy as np
-from shapely.geometry import Point, MultiPoint
+
 
 
 MAX_REAL_FLOORS = 10
@@ -1251,6 +1248,7 @@ def survey(root):
         plan_name = root.get('name')
         # json_val_dict = {'plan_name': plan_name} # specifically NOT JSON
         json_val_dict['plan_name'] = plan_name # specifically NOT JSON
+        populate_template(json_val_dict)
 
         json_val_dict['Client Address'] = ''
         address_fields = ['street', 'city', 'province', 'country', 'postalCode']
@@ -2345,75 +2343,6 @@ def survey(root):
         return output
     return output
 
-def plot(root):
-    plan_name = root.get('name')
-    interiorWallWidth = root.get('interiorWallWidth') # always available?
-    
-    exteriorWallWidth = root.get('exteriorWallWidth') # always available?
-    print('interiorWallWidth', ':', interiorWallWidth)
-    print('exteriorWallWidth', ':', exteriorWallWidth)
-    
-    
-    floors = root.findall('floor')
-    print('len(floors)', ':', len(floors))
-    for floor in floors:
-        all_coordinates = []
-        rooms = floor.findall('floorRoom')
-        print('len(rooms)', ':', len(rooms))
-        for room in rooms:
-            xpoints = np.array([])
-            ypoints = np.array([])
-            rx = float(room.get('x'))
-            # print('rx', ':', rx)
-            ry = float(room.get('y'))
-            points = room.findall('point')
-            print('len(points)', ':', len(points))
-            for point in points:
-                x = float(point.get('snappedX'))
-                # print('x', ':', x)
-                x = rx + x
-                # print('x', ':', x)
-                y = -ry - float(point.get('snappedY'))
-                h = point.get('height')
-                uid = point.get('uid')
-                
-                xpoints = np.append(xpoints, [x])
-                ypoints = np.append(ypoints, [y])
-            xpoints = np.append(xpoints, xpoints[0])
-            ypoints = np.append(ypoints, ypoints[0])
-            
-            # print(xpoints)
-            # print(ypoints)
-            plt.plot(xpoints, ypoints)
-            
-            for i, x in enumerate(xpoints):
-                all_coordinates.append([x, ypoints[i-1]])
-            # print(all_coordinates)
-        
-        point_coordinates = [Point(z[0], z[1]) for z in all_coordinates]
-        # print(point_coordinates)
-        multi_point = MultiPoint(point_coordinates)
-        convex_hull = multi_point.convex_hull
-        print('convex_hull.exterior.coords.xy', ':', convex_hull.exterior.coords.xy)
-        # mark = [vals.index(i) for i in convex_hull[0]]
-        # print(mark)
-        
-        bounding_box = multi_point.bounds
-        print('bounding_box', ':', bounding_box) 
-        
-        
-        
-        
-        
-        
-        plt.axis('equal')
-        plt.show()
-    # print(xpoints)
-    # print(ypoints)
-    # plt.plot(xpoints, ypoints)
-    # plt.show()
-    return
-
 
 def XML_old():
     # Go through the XML, referring to the JSON data whenever we need to - this is now disused but might need it again if there are any required values not included in the JSON (e.g. counts of objects)
@@ -2873,6 +2802,8 @@ def populate_template(json_val_dict):
 
 
         xfile.save(instance_file_path)
+
+
 
         with open(file=instance_file_path, mode="rb") as upload_file:
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=instance_file_path)
