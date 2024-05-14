@@ -1366,8 +1366,8 @@ def survey(root):
         
         
         
-        print('nwa_dict:')
-        print(nwa_dict['10'])
+        # print('nwa_dict:')
+        # print(nwa_dict['10'])
         
         
         
@@ -2895,6 +2895,7 @@ def populate_template(json_val_dict):
 
 
 def exterior_walls(root):
+    wall_area_gross = 0
     plan_name = root.get('name')
     interior_wall_width = root.get('interiorWallWidth') # always available?
     exteriorWallWidth = float(root.get('exteriorWallWidth')) # always available?
