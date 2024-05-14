@@ -389,9 +389,13 @@ def XML_2_dict(root, t = "floor"):
                     x[w_index]['x1'] = float(point.get('snappedX')) + float(room_x)
                     x[w_index]['y1'] = -float(point.get('snappedY')) - float(room_y)
                     x[w_index]['h'] = point.get('height')
+                    for value in point.findall('values/value'):
+                        if value.get('key') == "loadBearingWall":
+                            print("loadBearingWall", ':', value.text)
+                            x[w_index]['loadBearingWall'] = value.text
                 # print('ft', ':', ft)
                 # print('rt', ':', rt)
-                # print('x', ':', x)
+                print('x', ':', x)
                 # print('len(x)', ':', len(x))
                 
                         
@@ -421,6 +425,10 @@ def XML_2_dict(root, t = "floor"):
                     y[uid]['h'] = x[wall]['h']
                     y[uid]['l'] = x[wall]['l']
                     y[uid]['a'] = x[wall]['a']
+                    # print(list(x[wall].keys()))
+                    if 'loadBearingWall' in list(x[wall].keys()):
+                        y[uid]['loadBearingWall'] = x[wall]['loadBearingWall']
+                        
                 
                 # print('len(y)', ':', len(y))
                 # print('y', ':', y)
@@ -501,6 +509,8 @@ def XML_2_dict(root, t = "floor"):
                     w[w_index]['uid'] = point.get('uid')
                     w[w_index]['x3'] = float(point.get('snappedX')) + float(room_x)
                     w[w_index]['y3'] = -float(point.get('snappedY')) - float(room_y)
+
+                            
                 
                 w_index = 0
                 for wall in w: # get (x4, y4)
@@ -522,7 +532,10 @@ def XML_2_dict(root, t = "floor"):
                 w_index = 0
                 for wall in y:
                     w_index += 1
-                    # print(wall)
+                    print('wall', ':', wall)
+                    
+                    
+                    
                     y[wall]['windows'] = []
                     y[wall]['net_a'] = y[wall]['a']
                     y[wall]['total_window_a'] = 0
@@ -1282,7 +1295,7 @@ def survey(root):
             k = value.attrib["key"]
             # print(k)
             if k == "qf.34d66ce4q1":
-                json_val_dict['Surveyor'] = k.text
+                # json_val_dict['Surveyor'] = k.text
                 # print(json_val_dict['Surveyor'])
                 print('Surveyor', ':', json_val_dict['Surveyor'])
         # json_val_dict['Surveyor'] = assessor
@@ -1364,6 +1377,7 @@ def survey(root):
         wt_dict['gross'] = 0
         wt_dict['total'] = 0
         wt_dict['total_window_a'] = 0
+        wt_dict['total_party_a'] = 0
         nwa_temp_dict = {}
         for floor in nwa_dict.keys():
             for room in nwa_dict[floor]:
@@ -1371,8 +1385,12 @@ def survey(root):
                     if int(floor) == 10:
                         print(nwa_dict[floor][room][wall]['total_window_a'])
                         wt_dict['total_window_a'] += nwa_dict[floor][room][wall]['total_window_a']
+                        if 'loadBearingWall' in list(nwa_dict[floor][room][wall].keys()):
+                            if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
+                                wt_dict['total_party_a'] += nwa_dict[floor][room][wall]['a']
+                        wt_dict['total_party_a'] += nwa_dict[floor][room][wall]['total_window_a']
                     if 10 <= int(floor) <= 13:
-                        if 'type' in list(nwa_dict[floor][room][wall].keys()):
+                        if 'type' in list(nwa_dict[floor][room][wall].keys()): # indicates wall recommended for insulation
                             # print("nwa_dict[floor][room][wall]['a']", ':', nwa_dict[floor][room][wall]['a'])
                             wt_dict['gross'] += float(nwa_dict[floor][room][wall]['a'])
                     for key in nwa_dict[floor][room][wall]:
@@ -1386,6 +1404,7 @@ def survey(root):
                             wt_dict['total'] += nwa_dict[floor][room][wall]['net_a']
         
         # print(nwa_temp_dict)
+        wt_dict['ext_wall_area_net'] = wt_dict['ext_wall_area_gross'] - wt_dict['total_party_a']
         print(wt_dict)
         
         # (if any value blank then 0)
@@ -2174,7 +2193,7 @@ def survey(root):
         
         
         # (if any value blank then 0)
-        json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = round(wt_dict['ext_wall_area_gross'], 2)
+        json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = round(wt_dict['ext_wall_area_net'], 2)
         json_val_dict['Thermal Envelope - Heat loss floor area'] = round(json_val_dict['Thermal Envelope - Heat loss floor area'], 2)
         json_val_dict['Thermal Envelope - Heat loss roof area'] = json_val_dict['Thermal Envelope - Heat loss floor area']
         json_val_dict['Heat loss Wall Area recommended for EWI and IWI'] = round(wt_dict['total'], 2)
@@ -2297,21 +2316,24 @@ def survey(root):
                 else:
                     json_val_dict['Oil boiler and controls (Basic & controls pack)'] = True
             
-        
-        
+        # json_val_dict["Is a Major Renovation calculation necessary?*"] = True
+        # json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = 0
+        # json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
+        # json_val_dict["Reason Major Renovation calculation is not necessary?*"] = "The proportions of EWI/IWI or significantly greater than 25%"
+        # json_val_dict['Qualifying Boiler'] = 'N/A'
         
         warnings = 'WARNINGS:'
         print("Is a Major Renovation calculation necessary?*", ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
-        if json_val_dict["Is a Major Renovation calculation necessary?*"] == "Yes":
+        if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
             for q in ['Thermal Envelope - Heat loss walls, windows and doors', 'Thermal Envelope - Heat loss floor area', 'Heat loss Wall Area recommended for EWI and IWI']:
                 if json_val_dict[q] == 0:
                     warnings = warnings + "<BR>" + "Setting 'EWI/IWI > 25% *' to 'No', since Major Renovation calculation has been confirmed as necessary but zero value provided for '" + q + "'"
                     json_val_dict["EWI/IWI > 25% *"] = "No"
             
-        if json_val_dict["Is a Major Renovation calculation necessary?*"] == "No":
-            if json_val_dict["Reason Major Renovation calculation is not necessary?*"] == "EWI/IWI":
+        if json_val_dict["Is a Major Renovation calculation necessary?*"] == False:
+            if json_val_dict["Reason Major Renovation calculation is not necessary?*"] == "The proportions of EWI/IWI or significantly greater than 25%":
                 if json_val_dict['Qualifying Boiler'] == 'N/A':
-                    warnings = warnings + "<BR>" + "Qualifying Boiler question must be set to Yes/No"
+                    warnings = warnings + "<BR>" + "Qualifying Boiler question must be answered Yes/No"
                     
         
         if warnings == 'WARNINGS:':
@@ -2357,6 +2379,15 @@ def survey(root):
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_hpm)} \
 
             </div>"""
+
+
+        if warnings != '':
+            output = f"""\
+                <h1>Warnings</h1> \
+                {warnings} \
+                </div>""" + output
+
+        # print(output)
 
     except Exception as ex:
         # exc_type, exc_obj, exc_tb = sys.exc_info()
