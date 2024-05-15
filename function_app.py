@@ -400,21 +400,26 @@ def XML_2_dict(root, t = "floor"):
                 # else:
                     # xml_ref_dict['include_rooms'].append(room.get('uid'))
                     # xml_ref_dict['include_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                
+                # print('exclude_rooms', ':', xml_ref_dict['exclude_rooms'])
+                
                 for value in room.findall('values/value'):
                     key = value.get('key')
                     # print(key)
                     if key == "qcustomfield.2979903aq1":
                         # print(room.get('type'))
                         floor_area_include = value.text
-                        # print(floor_area_include)
+                        # print('floor_area_include', ':', floor_area_include)
                         # if floor_area_include == '0':
                             # xml_ref_dict['exclude_rooms'].append(room.get('uid'))
                         if floor_area_include == '1':
-                            xml_ref_dict['exclude_rooms'].remove(room.get('uid'))
-                            xml_ref_dict['exclude_rooms'].remove('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
-                            # print(xml_ref_dict['exclude_rooms'])
-                            # print(room.get('type'))
+                            if room.get('uid') in xml_ref_dict['exclude_rooms']:
+                                xml_ref_dict['exclude_rooms'].remove(room.get('uid'))
+                                xml_ref_dict['exclude_rooms'].remove('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                                # print(xml_ref_dict['exclude_rooms'])
+                                # print(room.get('type'))
                 
+                # print('exclude_rooms', ':', xml_ref_dict['exclude_rooms'])
                 
                 rt = room.get('type') + ' (' + room.get('uid') + ')'
                 x = {}
@@ -556,8 +561,6 @@ def XML_2_dict(root, t = "floor"):
                     w[w_index]['x3'] = float(point.get('snappedX')) + float(room_x)
                     w[w_index]['y3'] = -float(point.get('snappedY')) - float(room_y)
 
-                            
-                
                 w_index = 0
                 for wall in w: # get (x4, y4)
                     w_index += 1
@@ -1956,7 +1959,7 @@ def survey(root):
         
         json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
         json_val_dict['replace_window_area'] = 0
-        # print(xml_ref_dict)
+        print(xml_ref_dict)
         # print('replace_windows', ':', replace_windows)
         for floor in df.floors:
             if int(xml_ref_dict[floor["uid"]]) == 20:
