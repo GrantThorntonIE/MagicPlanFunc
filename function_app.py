@@ -307,19 +307,65 @@ def linear_subset(x1, y1, x2, y2, a1, b1, a2, b2):
 
 def XML_2_dict(root, t = "floor"):
     try:
-        d = {}
+        # d = {}
+        xml_ref_dict = {}
         nwa_dict = {}
         obj_dict = {}
+        xml_val_dict = {}
+        
+        id = root.get('id')
+        plan_name = root.get('name')
+        print(id)
+        print(plan_name)
+        xml_val_dict['Application ID'] = id
+        xml_val_dict['plan_name'] = plan_name
+        
+        xml_val_dict['Client Address'] = ''
+        address_fields = ['street', 'city', 'province', 'country', 'postalCode']
+        for af in address_fields:
+            f = root.get(af)
+            if f is not None:
+                xml_val_dict['Client Address'] = (xml_val_dict['Client Address'] + ', ' + str(f)) if xml_val_dict['Client Address'] != '' else str(f)
+        xml_val_dict['Eircode'] = root.get('postalCode')
+        
+        
+        date = root.find('values/value[@key="date"]').text
+        xml_val_dict['Survey Date *'] = date
+        
+        
+        
+        
+        values = root.findall('values/value')
+        for value in values:
+            k = value.attrib["key"]
+            # print(k)
+            if k == "qf.34d66ce4q1":
+                xml_val_dict['Surveyor'] = value.text
+                # print(xml_val_dict['Surveyor'])
+                # print('Surveyor', ':', xml_val_dict['Surveyor'])
+        # xml_val_dict['Surveyor'] = assessor
+        
+        # rating_type = root.find('values/value[@key="qf.34d66ce4q3"]').text
+        # rating_purpose = root.find('values/value[@key="qf.34d66ce4q4"]').text
+        
+        # xml_val_dict['Surveyor'] = root.find('values/value[@key="author"]').text
+        # print('Surveyor', ':', xml_val_dict['Surveyor'])
+        
+
+        
+        
+        
+        
         # w = {}
         wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108', '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74', '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f', '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e', '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57', '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789', '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111', '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a', '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c', '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f', '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a', '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49', '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e', '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592', 'arcdoor', 'doorbypass', 'doorbypassglass', 'doordoublefolding', 'doordoublehinged', 'doordoublesliding', 'doorfolding', 'doorfrench', 'doorgarage', 'doorglass', 'doorhinged', 'doorpocket', 'doorsliding', 'doorslidingglass', 'doorswing', 'doorwithwindow', 'windowarched', 'windowawning', 'windowbay', 'windowbow', 'windowcasement', 'windowfixed', 'windowfrench', 'windowhopper', 'windowhung', 'windowsliding', 'windowtrapezoid', 'windowtriangle', 'windowtskylight1', 'windowtskylight2', 'windowtskylight3']
-        d['habitable_rooms'] = []
-        d['wet_rooms'] = []
-        d['exclude_rooms'] = []
-        # d['include_rooms'] = []
-        d['exclude_room_types'] = ['Attic', 'Balcony', 'Storage', 'Patio', 'Deck', 'Porch', 'Cellar', 'Garage', 'Furnace Room', 'Outbuilding', 'Unfinished Basement', 'Workshop']
+        xml_ref_dict['habitable_rooms'] = []
+        xml_ref_dict['wet_rooms'] = []
+        xml_ref_dict['exclude_rooms'] = []
+        # xml_ref_dict['include_rooms'] = []
+        xml_ref_dict['exclude_room_types'] = ['Attic', 'Balcony', 'Storage', 'Patio', 'Deck', 'Porch', 'Cellar', 'Garage', 'Furnace Room', 'Outbuilding', 'Unfinished Basement', 'Workshop']
         
-        d['habitable_room_types'] = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
-        d['wet_room_types'] = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
+        xml_ref_dict['habitable_room_types'] = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
+        xml_ref_dict['wet_room_types'] = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
 
         
         
@@ -330,30 +376,30 @@ def XML_2_dict(root, t = "floor"):
         floors = root.findall('interiorRoomPoints/floor')
         for floor in floors:
             ft = floor.get('floorType')
-            d[floor.get('floorType')] = floor.get('uid')
-            d[floor.get('uid')] = floor.get('floorType')
+            xml_ref_dict[floor.get('floorType')] = floor.get('uid')
+            xml_ref_dict[floor.get('uid')] = floor.get('floorType')
             nwa_dict[ft] = {}
             
             for room in floor.findall('floorRoom'):
-                if room.get('type') not in d.keys():
-                    d[room.get('type')] = []
-                d[room.get('type')].append(room.get('uid'))
-                d[room.get('uid')] = room.get('type')
+                if room.get('type') not in xml_ref_dict.keys():
+                    xml_ref_dict[room.get('type')] = []
+                xml_ref_dict[room.get('type')].append(room.get('uid'))
+                xml_ref_dict[room.get('uid')] = room.get('type')
                 # print(room.get('type'))
-                if room.get('type') in d['habitable_room_types']:
-                    d['habitable_rooms'].append(room.get('uid'))
-                    d['habitable_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid'))
+                if room.get('type') in xml_ref_dict['habitable_room_types']:
+                    xml_ref_dict['habitable_rooms'].append(room.get('uid'))
+                    xml_ref_dict['habitable_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid'))
                 
-                if room.get('type') in d['wet_room_types']:
-                    d['wet_rooms'].append(room.get('uid'))
-                    d['wet_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid'))
+                if room.get('type') in xml_ref_dict['wet_room_types']:
+                    xml_ref_dict['wet_rooms'].append(room.get('uid'))
+                    xml_ref_dict['wet_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid'))
                 
-                if room.get('type') in d['exclude_room_types']:
-                    d['exclude_rooms'].append(room.get('uid'))
-                    d['exclude_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                if room.get('type') in xml_ref_dict['exclude_room_types']:
+                    xml_ref_dict['exclude_rooms'].append(room.get('uid'))
+                    xml_ref_dict['exclude_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
                 # else:
-                    # d['include_rooms'].append(room.get('uid'))
-                    # d['include_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                    # xml_ref_dict['include_rooms'].append(room.get('uid'))
+                    # xml_ref_dict['include_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
                 for value in room.findall('values/value'):
                     key = value.get('key')
                     # print(key)
@@ -362,11 +408,11 @@ def XML_2_dict(root, t = "floor"):
                         floor_area_include = value.text
                         # print(floor_area_include)
                         # if floor_area_include == '0':
-                            # d['exclude_rooms'].append(room.get('uid'))
+                            # xml_ref_dict['exclude_rooms'].append(room.get('uid'))
                         if floor_area_include == '1':
-                            d['exclude_rooms'].remove(room.get('uid'))
-                            d['exclude_rooms'].remove('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
-                            # print(d['exclude_rooms'])
+                            xml_ref_dict['exclude_rooms'].remove(room.get('uid'))
+                            xml_ref_dict['exclude_rooms'].remove('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                            # print(xml_ref_dict['exclude_rooms'])
                             # print(room.get('type'))
                 
                 
@@ -395,7 +441,7 @@ def XML_2_dict(root, t = "floor"):
                             x[w_index]['loadBearingWall'] = value.text
                 # print('ft', ':', ft)
                 # print('rt', ':', rt)
-                print('x', ':', x)
+                # print('x', ':', x)
                 # print('len(x)', ':', len(x))
                 
                         
@@ -436,8 +482,8 @@ def XML_2_dict(root, t = "floor"):
                 nwa_dict[ft][rt] = y
         # print('nwa_dict', ':', nwa_dict)
         
-        # print("d['exclude_rooms']", ':', str(d['exclude_rooms']))
-        # print("d['include_rooms']", ':', str(d['include_rooms']))
+        # print("xml_ref_dict['exclude_rooms']", ':', str(xml_ref_dict['exclude_rooms']))
+        # print("xml_ref_dict['include_rooms']", ':', str(xml_ref_dict['include_rooms']))
         
         
         
@@ -532,7 +578,7 @@ def XML_2_dict(root, t = "floor"):
                 w_index = 0
                 for wall in y:
                     w_index += 1
-                    print('wall', ':', wall)
+                    # print('wall', ':', wall)
                     
                     
                     
@@ -562,7 +608,7 @@ def XML_2_dict(root, t = "floor"):
         print(output)
     
     finally:
-        return d, nwa_dict
+        return xml_ref_dict, nwa_dict, xml_val_dict
 
 
 def ber_old(root):
@@ -1224,7 +1270,7 @@ def get_project_files(id, headers, plan_name):
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
 
-        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
+        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(xml_val_dict['Application ID']) + "/files?include_photos=true"
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
@@ -1259,58 +1305,31 @@ def get_project_files(id, headers, plan_name):
 
 def survey(root):
     try:
-        # ext_wall_area_gross = exterior_walls(root)
-        # print(ext_wall_area_gross)
-        json_val_dict = {}
+        xml_ref_dict, nwa_dict, xml_val_dict = XML_2_dict(root)
+        id = xml_val_dict['Application ID'] # take this out once all erroneous references have been updated
+        plan_name = xml_val_dict['plan_name'] # take this out once all erroneous references have been updated
+        
+        
+        print('xml_val_dict', ':', xml_val_dict)
+        
+        # json_val_dict = {}
+        populate_template(xml_val_dict) # adds an empty copy of the template to avoid potential Logic App error if file not found
+        
+        json_val_dict = xml_val_dict # take this out once all erroneous references have been updated
+        
+        
+        
         sfi = [] # a list to hold the numbers of roof (also wall?) types that are suitable for insulation
-        id = root.get('id')
-        json_val_dict['Application ID'] = id
-        plan_name = root.get('name')
-        # json_val_dict = {'plan_name': plan_name} # specifically NOT JSON
-        json_val_dict['plan_name'] = plan_name # specifically NOT JSON
-        populate_template(json_val_dict)
-
-        json_val_dict['Client Address'] = ''
-        address_fields = ['street', 'city', 'province', 'country', 'postalCode']
-        for af in address_fields:
-            # print(root.get(af))
-            f = root.get(af)
-            if f is not None:
-                json_val_dict['Client Address'] = (json_val_dict['Client Address'] + ', ' + str(f)) if json_val_dict['Client Address'] != '' else str(f)
-        json_val_dict['Eircode'] = root.get('postalCode')
         
-        # print(json_val_dict['Client Address'])
-
-
-        print(id)
-        print(plan_name)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
+            , "customer": "63b5a4ae69c91"
+            , "accept": "application/json"
+            }
         
-        # Values from root can be inserted into the HTML Output within this function
-        # Do they also need to be accessed outside it?
-        # could consider separating out the two activities by returning the output_dict?
+        # get_project_files(id, headers, plan_name)
         
-        # date = root.find('values/value[@key="date"]').text
-        values = root.findall('values/value')
-        for value in values:
-            k = value.attrib["key"]
-            # print(k)
-            if k == "qf.34d66ce4q1":
-                # json_val_dict['Surveyor'] = k.text
-                # print(json_val_dict['Surveyor'])
-                print('Surveyor', ':', json_val_dict['Surveyor'])
-        # json_val_dict['Surveyor'] = assessor
-        
-        # rating_type = root.find('values/value[@key="qf.34d66ce4q3"]').text
-        # rating_purpose = root.find('values/value[@key="qf.34d66ce4q4"]').text
-        
-        # json_val_dict['Surveyor'] = root.find('values/value[@key="author"]').text
-        # print('Surveyor', ':', json_val_dict['Surveyor'])
-        
-        date = root.find('values/value[@key="date"]').text
-        json_val_dict['Survey Date *'] = date
-        
-
-
         
         
         
@@ -1359,7 +1378,7 @@ def survey(root):
         
         json_val_dict["No. of habitable/wet rooms w/ open flued appliance"] = 0
         
-        xml_ref_dict, nwa_dict = XML_2_dict(root)
+        # xml_ref_dict, nwa_dict = XML_2_dict(root)
         
         # print("exclude_rooms", ':', xml_ref_dict["exclude_rooms"])
         # print("include_rooms", ':', xml_ref_dict["include_rooms"])
@@ -1648,19 +1667,9 @@ def survey(root):
         
 
         
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
-            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
-            , "customer": "63b5a4ae69c91"
-            , "accept": "application/json"
-            }
-        
-        get_project_files(id, headers, plan_name)
         
         
-        
-        
-        json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(id)
+        json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(xml_val_dict['Application ID'])
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
@@ -1896,7 +1905,7 @@ def survey(root):
         json_val_dict['TRVs Number *'] = 0
         
         
-        json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(id)
+        json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(xml_val_dict['Application ID'])
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
@@ -2545,7 +2554,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
 
 
 
-            # json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
+            # json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(xml_val_dict['Application ID']) + "/files?include_photos=true"
             # request = urllib.request.Request(json_url, headers=headers)
             # JSON = urllib.request.urlopen(request).read()
             # JSON = json.loads(JSON)
@@ -2906,7 +2915,7 @@ def exterior_walls(root):
     print('len(floors)', ':', len(floors))
     for floor in floors:
         floor_type = floor.get('floorType')
-        if floor_type != '10':
+        if floor_type not in ['10', '11', '12', '13']:
             continue
         wall_area_gross = 0
         extern_perim = 0
@@ -2923,7 +2932,18 @@ def exterior_walls(root):
                 y1 = float(p1.get('y'))
                 y2 = float(p2.get('y'))
                 length = cart_distance((x1, y1), (x2, y2)) - (0.25 * exteriorWallWidth)
-                wall_height = (float(p1.get('height')) + float(p2.get('height'))) / 2
+                # wall_height = (float(p1.get('height')) + float(p2.get('height'))) / 2
+                if floor_type == '10':
+                    wall_height = 2.4
+                if floor_type == '11':
+                    wall_height = 2.7
+                if floor_type in ['12', '13']:
+                    wall_height = 2
+                    
+                area = wall_height * length
+                print('length ' + str(i) , ':', length)
+                print('wall_height ' + str(i) , ':', wall_height)
+                print('area ' + str(i) , ':', area)
                 wall_area_gross += wall_height * length
                 extern_perim += length
                 # print(w_type, x1, y1, x2, y2, wall_height)
