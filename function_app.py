@@ -1273,7 +1273,7 @@ def get_project_files(id, headers, plan_name):
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
 
-        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(xml_val_dict['Application ID']) + "/files?include_photos=true"
+        json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
@@ -1331,7 +1331,9 @@ def survey(root):
             , "accept": "application/json"
             }
         
+        print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
         get_project_files(id, headers, plan_name)
+        print('finished getting project files')
         
         
         
