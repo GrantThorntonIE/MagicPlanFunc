@@ -442,7 +442,7 @@ def XML_2_dict(root, t = "floor"):
                     x[w_index]['h'] = point.get('height')
                     for value in point.findall('values/value'):
                         if value.get('key') == "loadBearingWall":
-                            print("loadBearingWall", ':', value.text)
+                            # print("loadBearingWall", ':', value.text)
                             x[w_index]['loadBearingWall'] = value.text
                 # print('ft', ':', ft)
                 # print('rt', ':', rt)
@@ -1336,14 +1336,6 @@ def survey(root):
         print('finished getting project files')
         
         
-        
-        
-        
-        
-        
-        
-        
-        
         ofl_pm = ['Internal Wall Insulation: Sloped or flat (horizontal) surface'
                 , 'Attic (Loft) Insulation 100 mm top-up'
                 , 'Attic (Loft) Insulation 150 mm top-up'
@@ -1360,8 +1352,7 @@ def survey(root):
                 , 'External wall insulation and CWI: 60m2 to 85m2'
                 , 'External wall insulation and CWI: greater than 85m2'
                 ]
-                
-                
+        
         ofl_hpm = ['Basic gas heating system'
                 , 'Basic oil heating system'
                 , 'Full gas heating system installation'
@@ -1370,68 +1361,6 @@ def survey(root):
                 , 'Oil boiler and controls (Basic & controls pack)'
                 , 'Hot Water Cylinder Jacket'
                 ]
-                
-        
-        json_val_dict["Electric Storage Heater age (years)*"] = ''
-        json_val_dict["Warm Air System age (years)*"] = ''
-        json_val_dict["Is there Mains Gas in the area?"] = ''
-        
-        habitable_room_types = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
-        wet_room_types = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
-        json_val_dict["Number of habitable rooms in the property"] = 0
-        json_val_dict["Number of wet rooms in the property"] = 0
-        
-        json_val_dict["No. of habitable/wet rooms w/ open flued appliance"] = 0
-        
-        # xml_ref_dict, nwa_dict = XML_2_dict(root)
-        
-        # print("exclude_rooms", ':', xml_ref_dict["exclude_rooms"])
-        # print("include_rooms", ':', xml_ref_dict["include_rooms"])
-        
-        
-        
-        # print('nwa_dict:')
-        # print(nwa_dict['10'])
-        
-        
-        
-        wt_dict = {}
-        wt_dict['ext_wall_area_gross'] = exterior_walls(root)
-        print("wt_dict['ext_wall_area_gross']", ':', wt_dict['ext_wall_area_gross'])
-        wt_dict['gross'] = 0
-        wt_dict['total'] = 0
-        wt_dict['total_window_a'] = 0
-        wt_dict['total_party_a'] = 0
-        nwa_temp_dict = {}
-        for floor in nwa_dict.keys():
-            for room in nwa_dict[floor]:
-                for wall in nwa_dict[floor][room]:
-                    if int(floor) == 10:
-                        print(nwa_dict[floor][room][wall]['total_window_a'])
-                        wt_dict['total_window_a'] += nwa_dict[floor][room][wall]['total_window_a']
-                        if 'loadBearingWall' in list(nwa_dict[floor][room][wall].keys()):
-                            if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
-                                wt_dict['total_party_a'] += nwa_dict[floor][room][wall]['a']
-                        wt_dict['total_party_a'] += nwa_dict[floor][room][wall]['total_window_a']
-                    if 10 <= int(floor) <= 13:
-                        if 'type' in list(nwa_dict[floor][room][wall].keys()): # indicates wall recommended for insulation
-                            # print("nwa_dict[floor][room][wall]['a']", ':', nwa_dict[floor][room][wall]['a'])
-                            wt_dict['gross'] += float(nwa_dict[floor][room][wall]['a'])
-                    for key in nwa_dict[floor][room][wall]:
-                        name = 'floor ' + floor + '_' + room + '_wall ' + str(wall) + '_' + key
-                        nwa_temp_dict[name] = nwa_dict[floor][room][wall][key]
-                        if key == 'type':
-                            if nwa_dict[floor][room][wall][key] in wt_dict.keys():
-                                wt_dict[nwa_dict[floor][room][wall][key]] += nwa_dict[floor][room][wall]['net_a']
-                            else:
-                                wt_dict[nwa_dict[floor][room][wall][key]] = nwa_dict[floor][room][wall]['net_a']
-                            wt_dict['total'] += nwa_dict[floor][room][wall]['net_a']
-        
-        # print(nwa_temp_dict)
-        wt_dict['ext_wall_area_net'] = wt_dict['ext_wall_area_gross'] - wt_dict['total_party_a']
-        print(wt_dict)
-        
-        # (if any value blank then 0)
         
         ofl_s = ["Adequate Access*"
             , "Adequate Access Details"
@@ -1442,7 +1371,6 @@ def survey(root):
             , "As confirmed by homeowner; property is a protected structure*"
             , "Protected Structure Details"
             ]
-        
         
         ofl_mr = ['Thermal Envelope - Heat loss walls, windows and doors' # all walls from floors 10 - 13 except Loadbearing/Party walls and internal walls)
                     , 'Thermal Envelope - Heat loss floor area' # surface area of floor 10 (excluding rooms as per attribute)
@@ -1462,7 +1390,6 @@ def survey(root):
                     , "Air-tightness test recommended?"
                     ]
         
-        
         ofl_general = ['Dwelling Type*'
                         , 'Dwelling Age*'
                         , 'Age Extension 1'
@@ -1479,6 +1406,7 @@ def survey(root):
                         , 'Property Height (m)*'
                         , 'Internet Available'
                         ]
+        
         ofl_roof = ['sloped_surface_area'
                 , 'ins_100_area'
                 , 'ins_150_area'
@@ -1555,6 +1483,7 @@ def survey(root):
                 , 'Suitable for Insulation *'
                 , 'Not suitable details*'
                 , 'Notes (Roof)']
+        
         ofl_walls = ['Wall Type 1*'
                     , 'Wall 1 wall thickness (mm)*'
                     , 'Wall 1 Insulation Present?*'
@@ -1619,6 +1548,7 @@ def survey(root):
                     , 'replace_window_area'
                     , 'Notes (Windows and Doors)'
                     ]
+        
         ofl_heating = ['Heating System *'
                     , 'Qualifying Boiler'
                     , 'System Age *'
@@ -1669,6 +1599,78 @@ def survey(root):
                     ]
 
         
+        
+        
+        
+        
+        
+        
+        
+        
+        habitable_room_types = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
+        wet_room_types = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
+        
+        
+        
+        
+        
+        json_val_dict["Electric Storage Heater age (years)*"] = ''
+        json_val_dict["Warm Air System age (years)*"] = ''
+        json_val_dict["Is there Mains Gas in the area?"] = ''
+        json_val_dict["Number of habitable rooms in the property"] = 0
+        json_val_dict["Number of wet rooms in the property"] = 0
+        json_val_dict["No. of habitable/wet rooms w/ open flued appliance"] = 0
+        
+        # xml_ref_dict, nwa_dict = XML_2_dict(root)
+        
+        # print("exclude_rooms", ':', xml_ref_dict["exclude_rooms"])
+        # print("include_rooms", ':', xml_ref_dict["include_rooms"])
+        
+        
+        
+        # print('nwa_dict:')
+        # print(nwa_dict['10'])
+        
+        
+        
+        wt_dict = {}
+        wt_dict['ext_wall_area_gross'] = exterior_walls(root)
+        print("wt_dict['ext_wall_area_gross']", ':', wt_dict['ext_wall_area_gross'])
+        wt_dict['gross'] = 0
+        wt_dict['total'] = 0
+        wt_dict['total_window_a'] = 0
+        wt_dict['total_party_a'] = 0
+        nwa_temp_dict = {}
+        for floor in nwa_dict.keys():
+            for room in nwa_dict[floor]:
+                for wall in nwa_dict[floor][room]:
+                    if 10 <= int(floor) <= 13:
+                        print(nwa_dict[floor][room][wall]['total_window_a'])
+                        wt_dict['total_window_a'] += nwa_dict[floor][room][wall]['total_window_a']
+                        if 'loadBearingWall' in list(nwa_dict[floor][room][wall].keys()):
+                            if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
+                                wt_dict['total_party_a'] += nwa_dict[floor][room][wall]['a']
+                        # wt_dict['total_party_a'] += nwa_dict[floor][room][wall]['total_window_a']
+                    if 10 <= int(floor) <= 13:
+                        if 'type' in list(nwa_dict[floor][room][wall].keys()): # indicates wall recommended for insulation
+                            # print("nwa_dict[floor][room][wall]['a']", ':', nwa_dict[floor][room][wall]['a'])
+                            wt_dict['gross'] += float(nwa_dict[floor][room][wall]['a'])
+                    for key in nwa_dict[floor][room][wall]:
+                        name = 'floor ' + floor + '_' + room + '_wall ' + str(wall) + '_' + key
+                        nwa_temp_dict[name] = nwa_dict[floor][room][wall][key]
+                        if key == 'type':
+                            if nwa_dict[floor][room][wall][key] in wt_dict.keys():
+                                wt_dict[nwa_dict[floor][room][wall][key]] += nwa_dict[floor][room][wall]['net_a']
+                            else:
+                                wt_dict[nwa_dict[floor][room][wall][key]] = nwa_dict[floor][room][wall]['net_a']
+                            wt_dict['total'] += nwa_dict[floor][room][wall]['net_a']
+        
+        # print(nwa_temp_dict)
+        wt_dict['ext_wall_area_net'] = wt_dict['ext_wall_area_gross'] - wt_dict['total_party_a']
+        print(wt_dict)
+        
+        # (if any value blank then 0)
+
         
 
         
@@ -2346,6 +2348,7 @@ def survey(root):
             
         if json_val_dict["Is a Major Renovation calculation necessary?*"] == False:
             if json_val_dict["Reason Major Renovation calculation is not necessary?*"] == "The proportions of EWI/IWI or significantly greater than 25%":
+                json_val_dict["EWI/IWI > 25% *"] = "Yes"
                 if json_val_dict['Qualifying Boiler'] == 'N/A':
                     warnings = warnings + "<BR>" + "Qualifying Boiler question must be answered Yes/No"
                     
