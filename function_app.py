@@ -1329,9 +1329,9 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        # print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
-        # get_project_files(id, headers, plan_name)
-        # print('finished getting project files')
+        print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
+        get_project_files(id, headers, plan_name)
+        print('finished getting project files')
         
         
         ofl_pm = ['Internal Wall Insulation: Sloped or flat (horizontal) surface'
