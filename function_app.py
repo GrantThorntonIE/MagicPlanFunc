@@ -1656,6 +1656,7 @@ def survey(root):
         wt_dict['total'] = 0
         wt_dict['total_window_a'] = 0
         wt_dict['total_party_a'] = 0
+        wt_dict['External.Wall.not.recieving.EWI.or.IWI'] = 0
         nwa_temp_dict = {}
         for floor in nwa_dict.keys():
             for room in nwa_dict[floor]:
