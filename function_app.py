@@ -14,8 +14,12 @@ import defusedxml.ElementTree as dET
 import traceback
 import openpyxl
 
-# import socket
-# print(socket.gethostname())
+
+
+import socket
+print(socket.gethostname())
+
+
 
 MAX_REAL_FLOORS = 10
 
@@ -212,7 +216,7 @@ def roof_general(json_val_dict):
             if json_val_dict[f"Roof {n} Type"] == "Dormer / room in roof":
                 json_val_dict["Room in Roof"] = True
     
-    
+
 
 
 def walls_general(json_val_dict):
@@ -316,6 +320,8 @@ def XML_2_dict(root, t = "floor"):
         
         id = root.get('id')
         plan_name = root.get('name')
+        if plan_name[-1] == ' ':
+            plan_name = plan_name[:-1]
         print(id)
         print(plan_name)
         xml_val_dict['Application ID'] = id
@@ -640,6 +646,8 @@ def ber_old(root):
     extern_width_offset = internal_width * 4
 
     plan_name = root.get('name')
+    if plan_name[-1] == ' ':
+        plan_name = plan_name[:-1]
     walls_area_net = []
     walls_area_gross = []
     floors_heights = []
@@ -1338,12 +1346,13 @@ def survey(root):
             }
         
         # if (socket.gethostname()) != "PC1VXW6X":
-        print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
+        # print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
         get_project_files(id, headers, plan_name)
-        print('finished getting project files')
-    
+        # print('finished getting project files')
         # json_val_dict = {}
+        # print('about to create attachment file for ' + plan_name + " (id: " + str(id) + ")")
         populate_template(xml_val_dict) # adds an empty copy of the template to avoid potential Logic App error if file not found
+        # print('finished creating attachment file')
         
 
         
@@ -1783,7 +1792,13 @@ def survey(root):
         
         
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + str(xml_val_dict['Application ID'])
-        request = urllib.request.Request(json_url, headers=headers)
+        try:
+            request = urllib.request.Request(json_url, headers=headers)
+        except:
+            output = traceback.format_exc()
+            print(output)
+        # finally:
+            
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
         print('len(JSON["data"]): ', len(JSON["data"]))
@@ -1791,7 +1806,7 @@ def survey(root):
         
         
             
-        json_val_dict['Qualifying Boiler'] = True
+
         
         json_val_dict["Existing (mm2)*"] = int(0)
         json_val_dict['No. Single Glazed Windows *'] = 0
@@ -1800,7 +1815,7 @@ def survey(root):
         
 
 
-        
+
         replace_windows = []
 
 
@@ -1828,6 +1843,7 @@ def survey(root):
         
         condensing = False
         linked_stove_bb = False
+        other_heating_notes = ''
         
         json_val_dict["Duct Cooker Hood"] = 0
         
@@ -1929,7 +1945,10 @@ def survey(root):
                             json_val_dict['HWS'] += ('Other' + '<BR>')
                             json_val_dict["Other HW Details *"] = field["value"]["value"]
                             
-                        
+                        if field['label'] == "Heating notes*":
+                            if datum["symbol_name"] not in [json_val_dict['Heating System *'], json_val_dict['Secondary Heating System']]:
+                                n = 'Other System: ' + field["value"]["value"] + '<BR>'
+                                other_heating_notes += n
 
 
 
@@ -1966,6 +1985,11 @@ def survey(root):
                                 slope_dict[datum["symbol_instance_id"]] = pitch
         # print('balanced_flues', ':', str(balanced_flues))
 
+
+
+
+
+        json_val_dict['Notes (Heating)'] = ''
         # Go through Forms again to get values for Primary & Secondary Heating Systems
         for datum in JSON["data"]:
             if datum["symbol_name"] == json_val_dict['Heating System *']:
@@ -1990,6 +2014,9 @@ def survey(root):
                                 condensing = True
                             if field['label'] == "Interlinked with?" and field["value"]["value"] == "Stove + Back Boiler":
                                 linked_stove_bb = True
+                            if field['label'] == "Heating notes*":
+                                n = 'Primary System: ' + field["value"]["value"] + '<BR>'
+                                json_val_dict['Notes (Heating)'] += n
 
             if datum["symbol_name"] == json_val_dict['Secondary Heating System']:
                 for form in datum["forms"]:
@@ -2009,6 +2036,9 @@ def survey(root):
                                 # json_val_dict['Secondary System Requires Service (App?)*'] = field["value"]["value"]
                             if field['label'] == 'Service details':
                                 json_val_dict['Requires Service Details Secondary Heating *'] = field["value"]["value"]
+                            if field['label'] == "Heating notes*":
+                                n = 'Secondary System: ' + field["value"]["value"] + '<BR>'
+                                json_val_dict['Notes (Heating)'] += n
                     
         
         
@@ -2016,6 +2046,11 @@ def survey(root):
         json_val_dict['Room Thermostat Number *'] = 0
         json_val_dict['Rads Number *'] = 0
         json_val_dict['TRVs Number *'] = 0
+        
+        if other_heating_notes != '':
+            json_val_dict['Notes (Heating)'] = json_val_dict['Notes (Heating)'] + other_heating_notes
+        
+
         
         
         json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(xml_val_dict['Application ID'])
@@ -2327,18 +2362,7 @@ def survey(root):
                     
         json_val_dict['EWI/IWI > 25% *'] = json_val_dict['Is Major Renovation?']
         
-        if json_val_dict['EWI/IWI > 25% *'] == 'No':
-            json_val_dict['Qualifying Boiler'] = 'N/A'
-        else:
-            if condensing == True:
-                json_val_dict['Qualifying Boiler'] = False
-            if condensing == False and linked_stove_bb == True:
-                json_val_dict['Qualifying Boiler'] = False
-            
-            
-        json_val_dict['Suitable for Heating Measures *'] = False
-        if json_val_dict['Qualifying Boiler'] == True:
-            json_val_dict['Suitable for Heating Measures *'] = True
+
         
         
         json_val_dict["ESB alteration"] = json_val_dict["ESB alteration"] if json_val_dict["ESB alteration"] != 0 else ''
@@ -2415,7 +2439,68 @@ def survey(root):
         
         
 
+
+            
+        # json_val_dict["Is a Major Renovation calculation necessary?*"] = True
+        # json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = 0
+        # json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
+        # json_val_dict["Reason Major Renovation calculation is not necessary?*"] = "The proportions of EWI/IWI or significantly greater than 25%"
+        # json_val_dict['Qualifying Boiler'] = 'N/A'
         
+        warnings = 'WARNINGS:'
+        print("Is a Major Renovation calculation necessary?*", ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
+        if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
+            for q in ['Thermal Envelope - Heat loss walls, windows and doors', 'Thermal Envelope - Heat loss floor area', 'Heat loss Wall Area recommended for EWI and IWI']:
+                if json_val_dict[q] == 0:
+                    warnings = warnings + "<BR>" + "Setting 'EWI/IWI > 25% *' to 'No', since Major Renovation calculation has been confirmed as necessary but zero value provided for '" + q + "'"
+                    json_val_dict["EWI/IWI > 25% *"] = "No"
+            
+        if json_val_dict["Is a Major Renovation calculation necessary?*"] == False:
+            print(json_val_dict["Reason Major Renovation calculation is not necessary?*"])
+            if json_val_dict["Reason Major Renovation calculation is not necessary?*"] == "The proportions of EWI/IWI are significantly greater than 25%":
+                json_val_dict["EWI/IWI > 25% *"] = "Yes"
+                # if json_val_dict['Qualifying Boiler'] == 'N/A':
+                    # warnings = warnings + "<BR>" + "Qualifying Boiler question must be answered Yes/No"
+                    
+        
+        if warnings == 'WARNINGS:':
+            warnings = ''
+        
+        
+        # json_val_dict['Qualifying Boiler'] = ''
+        
+        # if json_val_dict['EWI/IWI > 25% *'] == 'No':
+            # json_val_dict['Qualifying Boiler'] = 'N/A'
+        # else:
+            # if condensing == True:
+                # json_val_dict['Qualifying Boiler'] = False
+            # if condensing == False and linked_stove_bb == True:
+                # json_val_dict['Qualifying Boiler'] = False
+        
+
+        
+        json_val_dict['Qualifying Boiler'] = False
+        
+        if json_val_dict['EWI/IWI > 25% *'] == 'No':
+            json_val_dict['Qualifying Boiler'] = 'N/A'
+        else:
+            if condensing == False:
+                json_val_dict['Qualifying Boiler'] = True
+                if linked_stove_bb == True:
+                    json_val_dict['Qualifying Boiler'] = False
+        
+        
+        
+        
+        
+        json_val_dict['Suitable for Heating Measures *'] = False
+        if json_val_dict['Qualifying Boiler'] == True:
+            json_val_dict['Suitable for Heating Measures *'] = True
+        
+        print(json_val_dict['Suitable for Heating Measures *'])
+        
+        if json_val_dict['Suitable for Heating Measures *'] == False:
+            json_val_dict['Not suitable details*'] = json_val_dict['Notes (Heating)']
         
         
         if json_val_dict['Qualifying Boiler'] == True:
@@ -2437,30 +2522,13 @@ def survey(root):
                     json_val_dict['Gas boiler and controls (Basic & controls pack)'] = True
                 else:
                     json_val_dict['Oil boiler and controls (Basic & controls pack)'] = True
-            
-        # json_val_dict["Is a Major Renovation calculation necessary?*"] = True
-        # json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = 0
-        # json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
-        # json_val_dict["Reason Major Renovation calculation is not necessary?*"] = "The proportions of EWI/IWI or significantly greater than 25%"
-        # json_val_dict['Qualifying Boiler'] = 'N/A'
         
-        warnings = 'WARNINGS:'
-        print("Is a Major Renovation calculation necessary?*", ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
-        if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
-            for q in ['Thermal Envelope - Heat loss walls, windows and doors', 'Thermal Envelope - Heat loss floor area', 'Heat loss Wall Area recommended for EWI and IWI']:
-                if json_val_dict[q] == 0:
-                    warnings = warnings + "<BR>" + "Setting 'EWI/IWI > 25% *' to 'No', since Major Renovation calculation has been confirmed as necessary but zero value provided for '" + q + "'"
-                    json_val_dict["EWI/IWI > 25% *"] = "No"
-            
-        if json_val_dict["Is a Major Renovation calculation necessary?*"] == False:
-            if json_val_dict["Reason Major Renovation calculation is not necessary?*"] == "The proportions of EWI/IWI or significantly greater than 25%":
-                json_val_dict["EWI/IWI > 25% *"] = "Yes"
-                if json_val_dict['Qualifying Boiler'] == 'N/A':
-                    warnings = warnings + "<BR>" + "Qualifying Boiler question must be answered Yes/No"
-                    
         
-        if warnings == 'WARNINGS:':
-            warnings = ''
+        
+        
+        
+        
+        
         
         
         # xl_2_pdf(xl_path)
