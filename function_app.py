@@ -14,8 +14,8 @@ import defusedxml.ElementTree as dET
 import traceback
 import openpyxl
 
-import socket
-print(socket.gethostname())
+# import socket
+# print(socket.gethostname())
 
 MAX_REAL_FLOORS = 10
 
@@ -1337,13 +1337,13 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        if (socket.gethostname()) != "PC1VXW6X":
-            print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
-            get_project_files(id, headers, plan_name)
-            print('finished getting project files')
-        
-            # json_val_dict = {}
-            populate_template(xml_val_dict) # adds an empty copy of the template to avoid potential Logic App error if file not found
+        # if (socket.gethostname()) != "PC1VXW6X":
+        print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
+        get_project_files(id, headers, plan_name)
+        print('finished getting project files')
+    
+        # json_val_dict = {}
+        populate_template(xml_val_dict) # adds an empty copy of the template to avoid potential Logic App error if file not found
         
 
         
