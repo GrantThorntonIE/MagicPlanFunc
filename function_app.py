@@ -1708,15 +1708,15 @@ def survey(root):
         nwa_dict
         )
         j = r"d:\USERS\gshortall\Documents\Shortcut\investigate_A.json"
-        with open(j, "w") as investigate_file:
-            investigate_file.write(json_data)
+        # with open(j, "w") as investigate_file:
+            # investigate_file.write(json_data)
         
         json_data = json.dumps(
         exploded_wall_dict
         )
         j = r"d:\USERS\gshortall\Documents\Shortcut\investigate_B.json"
-        with open(j, "w") as investigate_file:
-            investigate_file.write(json_data)
+        # with open(j, "w") as investigate_file:
+            # investigate_file.write(json_data)
         
         print(nwa_dict.keys())
         for floor in list(nwa_dict.keys()):
