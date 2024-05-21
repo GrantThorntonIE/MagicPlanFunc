@@ -16,8 +16,8 @@ import openpyxl
 
 
 
-# import socket
-# print(socket.gethostname())
+import socket
+print(socket.gethostname())
 
 
 
@@ -2010,7 +2010,7 @@ def survey(root):
                                 # json_val_dict['Requires Service (App?)*'] = field["value"]["value"]
                             if field['label'] == 'Service details':
                                 json_val_dict['Requires Service Details Primary Heating *'] = field["value"]["value"]
-                            if field['label'] == "Is the boiler Condensing?" and field["value"]["value"] == True:
+                            if field['label'] == "Is the boiler Condensing?*" and field["value"]["value"] == True:
                                 condensing = True
                             if field['label'] == "Interlinked with?" and field["value"]["value"] == "Stove + Back Boiler":
                                 linked_stove_bb = True
@@ -2478,6 +2478,12 @@ def survey(root):
                 # json_val_dict['Qualifying Boiler'] = False
         
 
+        
+        
+        print('EWI/IWI > 25% *', ':', json_val_dict['EWI/IWI > 25% *'])
+        print('EWI/IWI > 25% *', ':', json_val_dict['EWI/IWI > 25% *'])
+        print('condensing', ':', condensing)
+        
         
         json_val_dict['Qualifying Boiler'] = False
         
