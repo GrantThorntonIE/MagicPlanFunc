@@ -8,5 +8,5 @@ azure-identity
 pandas
 defusedxml
 openpyxl
-socket
+
 
