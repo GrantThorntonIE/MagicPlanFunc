@@ -16,8 +16,8 @@ import openpyxl
 
 
 
-import socket
-print(socket.gethostname())
+# import socket
+# print(socket.gethostname())
 
 
 
@@ -2523,8 +2523,9 @@ def survey(root):
                 else:
                     json_val_dict['Oil boiler and controls (Basic & controls pack)'] = True
         
-        
-        
+        for field in ofl_hpm:
+            if json_val_dict[field] != '':
+                json_val_dict['Hot Water Cylinder Jacket'] = ''
         
         
         
