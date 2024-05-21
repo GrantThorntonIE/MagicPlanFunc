@@ -14,7 +14,8 @@ import defusedxml.ElementTree as dET
 import traceback
 import openpyxl
 
-
+import socket
+print(socket.gethostname())
 
 MAX_REAL_FLOORS = 10
 
@@ -420,7 +421,7 @@ def XML_2_dict(root, t = "floor"):
                     # uid = point.get('uid')
                     x[w_index] = {}
                     for value in point.findall('values/value'):
-                        if value.get('key') in ['qf.c52807ebq1', 'qf.bdbaf056q1']:
+                        if value.get('key') in ['qf.c52807ebq1', 'qf.bdbaf056q1', 'qf.c52807ebq1']:
                             x[w_index]['type'] = value.text
                     # if 'type' not in list(x[w_index].keys()):
                         # x.pop(w_index)
@@ -433,9 +434,9 @@ def XML_2_dict(root, t = "floor"):
                         if value.get('key') == "loadBearingWall":
                             # print("loadBearingWall", ':', value.text)
                             x[w_index]['loadBearingWall'] = value.text
-                print('ft', ':', ft)
-                print('rt', ':', rt)
-                print('x', ':', x)
+                # print('ft', ':', ft)
+                # print('rt', ':', rt)
+                # print('x', ':', x)
                 # print('len(x)', ':', len(x))
                 
                         
@@ -471,9 +472,10 @@ def XML_2_dict(root, t = "floor"):
                         
                 
                 # print('len(y)', ':', len(y))
-                print('y', ':', y)
+                # print('y', ':', y)
                 # print('adding wall dict y for room ' + rt + ' to nwa_dict')
                 nwa_dict[ft][rt] = y
+                
         # print('nwa_dict', ':', nwa_dict)
         
         # print("xml_ref_dict['exclude_rooms']", ':', str(xml_ref_dict['exclude_rooms']))
@@ -563,9 +565,9 @@ def XML_2_dict(root, t = "floor"):
                         w[w_index]['x4'] = w[1]['x3']
                         w[w_index]['y4'] = w[1]['y3']
                 
-                print('ft', ':', ft)
-                print('rt', ':', '"' + rt + '"')
-                print('w', ':', w)
+                # print('ft', ':', ft)
+                # print('rt', ':', '"' + rt + '"')
+                # print('w', ':', w)
                 
                 for wall in w: # transfer values to nwa_dict (where wall key is "uid" instead of numbered index)
                     uid = w[wall]['uid']
@@ -997,7 +999,7 @@ def ber_old(root):
                     area : float
                     if net_area_key not in wall_types:
                         # LOGGER.info('net_area_key not in wall_types: ' + str(wall_types))
-                        print(wall_types[gross_area_key])
+                        # print(wall_types[gross_area_key])
                         wall_types[net_area_key] = wall_types[gross_area_key].copy()
                     
 
@@ -1271,6 +1273,8 @@ def get_project_files(id, headers, plan_name):
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
 
+        
+        
         json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(id) + "/files?include_photos=true"
         request = urllib.request.Request(json_url, headers=headers)
         JSON = urllib.request.urlopen(request).read()
@@ -1300,6 +1304,15 @@ def get_project_files(id, headers, plan_name):
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
             print('getting file: ' + file["name"])
             blob_client.upload_blob(file_content, overwrite=True)
+    
+    except Exception as ex:
+        # exc_type, exc_obj, exc_tb = sys.exc_info()
+        # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
+        
+        # output = str(ex)
+        output = traceback.format_exc()
+        print(output)
+        
     finally:
         return
 
@@ -1311,13 +1324,8 @@ def survey(root):
         plan_name = xml_val_dict['plan_name'] # take this out once all erroneous references have been updated
         
         
-        print('xml_val_dict', ':', xml_val_dict)
-        
-        # json_val_dict = {}
-        populate_template(xml_val_dict) # adds an empty copy of the template to avoid potential Logic App error if file not found
-        
+        # print('xml_val_dict', ':', xml_val_dict)
         json_val_dict = xml_val_dict # take this out once all erroneous references have been updated
-        
         
         
         sfi = [] # a list to hold the numbers of roof (also wall?) types that are suitable for insulation
@@ -1329,9 +1337,19 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
-        get_project_files(id, headers, plan_name)
-        print('finished getting project files')
+        if (socket.gethostname()) != "PC1VXW6X":
+            print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
+            get_project_files(id, headers, plan_name)
+            print('finished getting project files')
+        
+            # json_val_dict = {}
+            populate_template(xml_val_dict) # adds an empty copy of the template to avoid potential Logic App error if file not found
+        
+
+        
+        
+        
+        
         
         
         ofl_pm = ['Internal Wall Insulation: Sloped or flat (horizontal) surface'
@@ -1632,7 +1650,7 @@ def survey(root):
         
         
         wt_dict = {}
-        wt_dict['ext_wall_area_gross'] = exterior_walls(root)
+        wt_dict['ext_wall_area_gross'], exploded_wall_dict = exterior_walls(root)
         print("wt_dict['ext_wall_area_gross']", ':', wt_dict['ext_wall_area_gross'])
         wt_dict['gross'] = 0
         wt_dict['total'] = 0
@@ -1657,11 +1675,16 @@ def survey(root):
                         name = 'floor ' + floor + '_' + room + '_wall ' + str(wall) + '_' + key
                         nwa_temp_dict[name] = nwa_dict[floor][room][wall][key]
                         if key == 'type':
-                            if nwa_dict[floor][room][wall][key] in wt_dict.keys():
-                                wt_dict[nwa_dict[floor][room][wall][key]] += nwa_dict[floor][room][wall]['net_a']
+                            if nwa_dict[floor][room][wall][key] == 'External.Wall.not.recieving.EWI.or.IWI':
+                                req_area = nwa_dict[floor][room][wall]['a']
                             else:
-                                wt_dict[nwa_dict[floor][room][wall][key]] = nwa_dict[floor][room][wall]['net_a']
-                            wt_dict['total'] += nwa_dict[floor][room][wall]['net_a']
+                                req_area = nwa_dict[floor][room][wall]['net_a']
+                            print(name, 'req_area', ':', str(req_area))
+                            if nwa_dict[floor][room][wall][key] in wt_dict.keys():
+                                wt_dict[nwa_dict[floor][room][wall][key]] += req_area
+                            else:
+                                wt_dict[nwa_dict[floor][room][wall][key]] = req_area
+                            wt_dict['total'] += req_area
         
         # print(nwa_temp_dict)
         
@@ -1673,6 +1696,86 @@ def survey(root):
         
         # (if any value blank then 0)
 
+        
+        
+        # print('nwa_dict[10]:')
+        # print(nwa_dict['10'])
+        # print('exploded_wall_dict:')
+        # print(exploded_wall_dict)
+        
+        
+        json_data = json.dumps(
+        nwa_dict
+        )
+        j = r"d:\USERS\gshortall\Documents\Shortcut\investigate_A.json"
+        with open(j, "w") as investigate_file:
+            investigate_file.write(json_data)
+        
+        json_data = json.dumps(
+        exploded_wall_dict
+        )
+        j = r"d:\USERS\gshortall\Documents\Shortcut\investigate_B.json"
+        with open(j, "w") as investigate_file:
+            investigate_file.write(json_data)
+        
+        print(nwa_dict.keys())
+        for floor in list(nwa_dict.keys()):
+            if floor != "10":
+                continue
+            print(floor)
+            for room in nwa_dict[floor].keys():
+                for wall in nwa_dict[floor][room].keys():
+                    x1 = nwa_dict[floor][room][wall]["x1"]
+                    y1 = nwa_dict[floor][room][wall]["y1"]
+                    x2 = nwa_dict[floor][room][wall]["x2"]
+                    y2 = nwa_dict[floor][room][wall]["y2"]
+                    x3 = nwa_dict[floor][room][wall]["x3"]
+                    y3 = nwa_dict[floor][room][wall]["y3"]
+                    x4 = nwa_dict[floor][room][wall]["x4"]
+                    y4 = nwa_dict[floor][room][wall]["y4"]
+                    
+                    # print(str(x1), str(y1))
+                    # print(room, str(x1), str(y1), str(x3), str(y3))
+                    # print(room, str(x2), str(y2), str(x4), str(y4))
+                    print(room, str(x3), str(y3))
+                    print(room, str(x4), str(y4))
+
+        # else:
+            # print('WARNING: No floor 10')
+        
+                    # for floor in exploded_wall_dict:
+                    print(floor)
+                    d_min = 1
+                    w_candidates = []
+                    for wall in exploded_wall_dict[floor].keys():
+                        # print(exploded_wall_dict[floor][wall])
+                        x5 = exploded_wall_dict[floor][wall]["x1"]
+                        y5 = exploded_wall_dict[floor][wall]["y1"]
+                        x6 = exploded_wall_dict[floor][wall]["x2"]
+                        y6 = exploded_wall_dict[floor][wall]["y2"]
+                        w_type = exploded_wall_dict[floor][wall]["type"]
+                        print(wall, str(x5), str(y5))
+                        print(wall, str(x6), str(y6))
+                        
+                        d = cart_distance((x3, y3), (x5, y5))
+                        if d == d_min:
+                            w_candidates.append(wall)
+                        if d < d_min:
+                            d_min = d
+                            w_candidates.append(wall)
+                        d = cart_distance((x3, y3), (x6, y6))
+                        if d == d_min:
+                            w_candidates.append(wall)
+                        if d < d_min:
+                            d_min = d
+                            w_candidates.append(wall)
+                            
+                    print('d_min', ':', d_min)
+                    print('w_candidates', ':', w_candidates)
+
+        
+        
+        
         
 
         
@@ -1965,7 +2068,7 @@ def survey(root):
         
         json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
         json_val_dict['replace_window_area'] = 0
-        print(xml_ref_dict)
+        # print(xml_ref_dict)
         # print('replace_windows', ':', replace_windows)
         for floor in df.floors:
             if int(xml_ref_dict[floor["uid"]]) == 20:
@@ -2208,16 +2311,16 @@ def survey(root):
         json_val_dict['Roof 4 Existing (mm2) *'] = 0
         
         
-        
+        wt_dict['EWI/IWI'] = round(wt_dict['total'] - wt_dict['External.Wall.not.recieving.EWI.or.IWI'])
         
         # (if any value blank then 0)
-        json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = round(wt_dict['ext_wall_area_net'], 2)
+        json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = round(wt_dict['gross'], 2) # round(wt_dict['ext_wall_area_net'], 2)
         json_val_dict['Thermal Envelope - Heat loss floor area'] = round(json_val_dict['Thermal Envelope - Heat loss floor area'], 2)
         json_val_dict['Thermal Envelope - Heat loss roof area'] = json_val_dict['Thermal Envelope - Heat loss floor area']
-        json_val_dict['Heat loss Wall Area recommended for EWI and IWI'] = round(wt_dict['total'], 2)
+        json_val_dict['Heat loss Wall Area recommended for EWI and IWI'] = round(wt_dict['EWI/IWI'], 2) # round(wt_dict['total'], 2)
         json_val_dict['New Windows being recommended for replacement'] = round(json_val_dict['replace_window_area'], 2)
         json_val_dict['Total Surface Area (m2)'] = round(json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] + (2 * json_val_dict['Thermal Envelope - Heat loss floor area']), 2)
-        json_val_dict['Total Surface Area receiving EWWR (m2)'] = round(float(wt_dict['total']) + float(json_val_dict['replace_window_area']), 2)
+        json_val_dict['Total Surface Area receiving EWWR (m2)'] = round(float(wt_dict['EWI/IWI']) + float(json_val_dict['replace_window_area']), 2)
         json_val_dict['Result %'] = round(100 * (json_val_dict['Total Surface Area receiving EWWR (m2)'] / json_val_dict['Total Surface Area (m2)']), 2) if json_val_dict['Total Surface Area (m2)'] > 0 else 0
         json_val_dict['Is Major Renovation?'] = 'Yes' if json_val_dict['Result %'] >= 23 else 'No'
                     
@@ -2497,6 +2600,10 @@ def distributor_function(form):
     # output = ber_old(root)
 
     output = output + '<h2>' + xml + '</h2></div>'
+    
+    
+    if plan_name[-1] == ' ':
+        plan_name = plan_name[:-1]
 
     json_data = json.dumps({
         'email' : email,
@@ -2914,53 +3021,65 @@ def populate_template(json_val_dict):
 
 
 def exterior_walls(root):
-    wall_area_gross = 0
+    ext_wall_area_gross = 0
     plan_name = root.get('name')
     interior_wall_width = root.get('interiorWallWidth') # always available?
     exteriorWallWidth = float(root.get('exteriorWallWidth')) # always available?
     extern_width_offset = interior_wall_width * 4
-    wall_area_gross = 0
     extern_perim = 0
+    exploded_wall_dict = {}
     
     floors = root.findall('interiorRoomPoints/floor')
     # floors = root.findall('floor')
     print('len(floors)', ':', len(floors))
     for floor in floors:
         floor_type = floor.get('floorType')
+        ft = floor_type
         if floor_type not in ['10', '11', '12', '13']:
             continue
         exterior_walls = [] # {} 
         print('floor_type', ':', floor_type)
         walls = floor.findall('exploded/wall')
+        exploded_wall_dict[ft] = {}
         for i, wall in enumerate(walls):
+            exploded_wall_dict[ft][i] = {}
             w_type = wall.find('type').text
+            points = wall.findall('point') 
+            p1, p2, *rest = points
+            x1 = float(p1.get('x'))
+            y1 = -float(p1.get('y'))
+            x2 = float(p2.get('x'))
+            y2 = -float(p2.get('y'))
+            length = cart_distance((x1, y1), (x2, y2)) - (0.25 * exteriorWallWidth)
+            # print(length)
+            # wall_height = (float(p1.get('height')) + float(p2.get('height'))) / 2
+            if floor_type == '10':
+                wall_height = 2.4
+            if floor_type == '11':
+                wall_height = 2.7
+            if floor_type in ['12', '13']:
+                wall_height = 2
+                
+            area = wall_height * length
+            print('length ' + str(i) , ':', length)
+            print('wall_height ' + str(i) , ':', wall_height)
+            print('area ' + str(i) , ':', area)
+            
+            (x1, y1), (x2, y2)
+            
+            
+            exploded_wall_dict[ft][i]['x1'] = x1
+            exploded_wall_dict[ft][i]['y1'] = y1
+            exploded_wall_dict[ft][i]['x2'] = x2
+            exploded_wall_dict[ft][i]['y2'] = y2
+            exploded_wall_dict[ft][i]['type'] = w_type
+            
             if w_type == 'exterior':
-                points = wall.findall('point') 
-                p1, p2, *rest = points
-                x1 = float(p1.get('x'))
-                x2 = float(p2.get('x'))
-                y1 = float(p1.get('y'))
-                y2 = float(p2.get('y'))
-                length = cart_distance((x1, y1), (x2, y2)) - (0.25 * exteriorWallWidth)
-                # print(length)
-                # wall_height = (float(p1.get('height')) + float(p2.get('height'))) / 2
-                if floor_type == '10':
-                    wall_height = 2.4
-                if floor_type == '11':
-                    wall_height = 2.7
-                if floor_type in ['12', '13']:
-                    wall_height = 2
-                    
-                area = wall_height * length
-                print('length ' + str(i) , ':', length)
-                print('wall_height ' + str(i) , ':', wall_height)
-                print('area ' + str(i) , ':', area)
-                wall_area_gross += wall_height * length
+                ext_wall_area_gross += wall_height * length
                 extern_perim += length
                 # print(w_type, x1, y1, x2, y2, wall_height)
-                ew = [(x1, y1), (x2, y2)]
-                # print(ew)
-                exterior_walls.append(ew)
+                # print(w)
+                # exterior_walls.append(w)
         # print(exterior_walls)
         
     
@@ -2971,13 +3090,13 @@ def exterior_walls(root):
             # floors_heights.append(wall_height)
             
 
-            # wall_area_gross -= wall_types['Party Wall Area'][floor_index_adj] if 'Party Wall Area' in wall_types else 0
-            # wall_area_gross -= wall_types['Internal Wall Area'][floor_index_adj] if 'Internal Wall Area' in wall_types else 0
+            # ext_wall_area_gross -= wall_types['Party Wall Area'][floor_index_adj] if 'Party Wall Area' in wall_types else 0
+            # ext_wall_area_gross -= wall_types['Internal Wall Area'][floor_index_adj] if 'Internal Wall Area' in wall_types else 0
 
             # walls_area_gross.append(wall_area_gross)
-        print('wall_area_gross', ':', str(wall_area_gross))
+        print('ext_wall_area_gross', ':', str(ext_wall_area_gross))
         # print('extern_perim', ':', str(extern_perim))
-    return wall_area_gross
+    return ext_wall_area_gross, exploded_wall_dict
 
 
 
