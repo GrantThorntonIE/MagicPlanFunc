@@ -16,8 +16,8 @@ import openpyxl
 
 
 
-# import socket
-# print(socket.gethostname())
+import socket
+print(socket.gethostname())
 
 
 
@@ -1345,14 +1345,16 @@ def survey(root):
             , "accept": "application/json"
             }
         
-        # if (socket.gethostname()) != "PC1VXW6X":
-        # print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
-        get_project_files(id, headers, plan_name)
-        # print('finished getting project files')
-        # json_val_dict = {}
-        # print('about to create attachment file for ' + plan_name + " (id: " + str(id) + ")")
-        populate_template(xml_val_dict) # adds an empty copy of the template to avoid potential Logic App error if file not found
-        # print('finished creating attachment file')
+        if (socket.gethostname()) != "PC1VXW6X":
+            # print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
+            get_project_files(id, headers, plan_name)
+            # print('finished getting project files')
+            # json_val_dict = {}
+            
+       
+        print('about to create (almost) empty attachment file for ' + plan_name + " (id: " + str(id) + ")")
+        populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
+        print('finished creating attachment file')
         
 
         
@@ -1386,6 +1388,8 @@ def survey(root):
                 , 'Oil boiler and controls (Basic & controls pack)'
                 , 'Hot Water Cylinder Jacket'
                 ]
+        
+        json_val_dict['Hot Water Cylinder Jacket'] = ''
         
         ofl_s = ["Adequate Access*"
             , "Adequate Access Details"
@@ -2100,7 +2104,7 @@ def survey(root):
         
         rooms_with_balanced_flues = []
         req_lagging_jacket_count = 0
-        json_val_dict['Hot Water Cylinder Jacket'] = ''
+        
         
         json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
         json_val_dict['replace_window_area'] = 0
@@ -2591,6 +2595,8 @@ def survey(root):
         # exc_type, exc_obj, exc_tb = sys.exc_info()
         # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
         
+        populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
+        
         # output = str(ex)
         output = traceback.format_exc()
         # LOGGER.info('Exception : ' + str(traceback.format_exc()))
@@ -3014,10 +3020,10 @@ def populate_template(json_val_dict):
             , 'As confirmed by homeowner; property is a protected structure*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D31'}
             , 'Protected Structure Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I31'}
 
-            , 'Surveyor Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D27'}
-            , 'Surveyor Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L27'}
-            , 'Customer Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D29'}
-            , 'Customer Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L29'}
+            # , 'Surveyor Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D27'}
+            # , 'Surveyor Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L27'}
+            # , 'Customer Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D29'}
+            # , 'Customer Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L29'}
 
             }
         
