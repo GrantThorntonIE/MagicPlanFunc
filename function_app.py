@@ -16,8 +16,8 @@ import openpyxl
 
 
 
-import socket
-print(socket.gethostname())
+# import socket
+# print(socket.gethostname())
 
 
 
@@ -111,7 +111,7 @@ def create_table_text(dict, headers : list,
 def roof_general(json_val_dict):
     json_val_dict["Room in Roof"] = False
     json_val_dict["Suitable for Insulation *"] = False
-    json_val_dict["Not suitable details*"] = ''
+    json_val_dict["Roof not suitable details*"] = ''
     json_val_dict["Notes (Roof)"] = ''
     
     if "sfi" not in json_val_dict.keys():
@@ -169,7 +169,7 @@ def roof_general(json_val_dict):
         # value: Area - add to appropriate dict entry
         # print(f"roof_{n}_area", ": ", json_val_dict[f"roof_{n}_area"])
         for t in [100, 150, 200, 250, 300]:
-            if e + t >= 300:
+            if int(e) + int(t) >= 300:
                 # print(f"need to add roof_{n}_area to dict entry {t}")
                 key = str(t)
                 if key not in json_val_dict["sfi_dict"].keys():
@@ -183,17 +183,17 @@ def roof_general(json_val_dict):
         if json_val_dict["Suitable for Insulation *"] == False:
             if f"Roof Type {n} Not Suitable Details" in json_val_dict.keys():
                 # print('n', ':', n, json_val_dict[f"Roof Type {n} Not Suitable Details"])
-                json_val_dict["Not suitable details*"] += f"Roof Type {n} Not Suitable Details: "
-                json_val_dict["Not suitable details*"] += json_val_dict[f"Roof Type {n} Not Suitable Details"]
-                json_val_dict["Not suitable details*"] += "<BR>"
+                json_val_dict["Roof not suitable details*"] += f"Roof Type {n} Not Suitable Details: "
+                json_val_dict["Roof not suitable details*"] += json_val_dict[f"Roof Type {n} Not Suitable Details"]
+                json_val_dict["Roof not suitable details*"] += "<BR>"
             if f"Roof Type {n} Sloping Ceiling Not Suitable Details*" in json_val_dict.keys():
                 # print('n', ':', n, json_val_dict[f"Roof Type {n} Sloping Ceiling Not Suitable Details*"])
-                json_val_dict["Not suitable details*"] += f"Roof Type {n} Sloping Ceiling Not Suitable Details: "
-                json_val_dict["Not suitable details*"] += json_val_dict[f"Roof Type {n} Sloping Ceiling Not Suitable Details*"]
-                json_val_dict["Not suitable details*"] += "<BR>"
+                json_val_dict["Roof not suitable details*"] += f"Roof Type {n} Sloping Ceiling Not Suitable Details: "
+                json_val_dict["Roof not suitable details*"] += json_val_dict[f"Roof Type {n} Sloping Ceiling Not Suitable Details*"]
+                json_val_dict["Roof not suitable details*"] += "<BR>"
         else:
-            json_val_dict["Not suitable details*"] = 'N/A'
-    # print('json_val_dict["Not suitable details*"]: ', json_val_dict["Not suitable details*"])
+            json_val_dict["Roof not suitable details*"] = 'N/A'
+    # print('json_val_dict["Roof not suitable details*"]: ', json_val_dict["Roof not suitable details*"])
     
     for n in range(1, 5):
         if f"Notes (Roof Type {n})" in json_val_dict.keys():
@@ -1506,7 +1506,7 @@ def survey(root):
                 , 'Downlighters in Roof Type 4*'
                 , 'High power cable in Roof Type 4 (6sq/10sq or higher)*'
                 , 'Suitable for Insulation *'
-                , 'Not suitable details*'
+                , 'Roof not suitable details*'
                 , 'Notes (Roof)']
         
         ofl_walls = ['Wall Type 1*'
@@ -2100,7 +2100,7 @@ def survey(root):
         
         rooms_with_balanced_flues = []
         req_lagging_jacket_count = 0
-        # json_val_dict['Hot Water Cylinder Jacket'] = 0
+        json_val_dict['Hot Water Cylinder Jacket'] = ''
         
         json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
         json_val_dict['replace_window_area'] = 0
@@ -2904,7 +2904,7 @@ def populate_template(json_val_dict):
             , 'Downlighters in Roof Type 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H46'}
             , 'High power cable in Roof Type 4 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H48'}
             , 'Suitable for Insulation *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E54'}
-            , 'Not suitable details*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E56'}
+            , 'Roof not suitable details*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E56'}
             , 'Notes (Roof)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E59'}
 
             , 'Wall Type 1*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E27'}
