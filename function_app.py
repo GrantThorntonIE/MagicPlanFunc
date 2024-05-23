@@ -2032,22 +2032,43 @@ def survey(root):
         # populate_template(output_dict)
         
         
-        missing = ['Thermal Envelope - Heat loss walls, windows and doors'
+        # Below all N/A unless type = other
+        
+        missing = ['Other Details Roof 1 *'
+                , 'Other Details Roof 2 *'
+                , 'Other Details Roof 3 *'
+                , 'Other Details Roof 4 *'
+                , 'Other W1 Details *'
+                , 'Other W2 Details *'
+                , 'Other W3 Details *'
+                , 'Other W4 Details *'
+        
+        
+        
+        
+        
+                , 'Thermal Envelope - Heat loss walls, windows and doors'
                 , 'Internal Wall Insulation: Sloped or flat (horizontal) surface'
                 , 'Attic (Loft) Insulation 100 mm top-up'
                 , 'Attic (Loft) Insulation 150 mm top-up'
                 , 'Attic (Loft) Insulation 200 mm top-up'
                 , 'Attic (Loft) Insulation 250 mm top up'
                 , 'Attic (Loft) Insulation 300 mm'
-                , 'Attic Storage (5m2)'
-                , 'Replacement of CWST/F&E tank'
-                , 'Additional Roof Ventilation (High Level)'
-                , 'Additional Roof Ventilation (Low Level)'
-                , 'Roof 2 Insulation Type'
+                
+                , 'Attic Storage (5m2)' # "1" if any of the 5 above (not sloped) is non-zero
+                
+                , 'Additional Roof Ventilation (High Level)' # high_roof_vent_area
+                , 'Additional Roof Ventilation (Low Level)' # 'Required per standards (mm2) *' - 'Existing (mm2)*'
+                
+                # , 'Roof 2 Insulation Type'
                 , 'Wall 1 Residual Cavity Width (mm)*'
-                , 'EWI/IWI > 25% *'
-                
-                
+                , 'Wall 2 Residual Cavity Width (mm)*'
+                , 'Wall 3 Residual Cavity Width (mm)*'
+                , 'Wall 4 Residual Cavity Width (mm)*'
+
+                # , 'Insulation *'
+                # , 'Condition of Lagging Jacket *'
+                , 'Partial Details *'
                 
                 ]
         
@@ -2552,7 +2573,7 @@ def populate_template_new(json_val_dict, template):
                 , 'Condition of Lagging Jacket *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H55'}
                 , 'HWC Controls *': { 'Value': 'Cylinder Thermostat Controls *' , 'Tab': 'Heating' , 'Cell': 'H57'}
                 , 'Heating Systems Controls *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E62'}
-                , 'Partial Details *': { 'Value': 'Partial Controls' , 'Tab': 'Heating' , 'Cell': 'E64'}
+                , 'Partial Details *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E64'}
                 , 'Programmer / Timeclock *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H62'}
                 , 'Room Thermostat Number *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H64'}
                 , 'Rads Number *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K62'}
@@ -2560,12 +2581,13 @@ def populate_template_new(json_val_dict, template):
                 , 'Suitable for Heating Measures *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E68'}
                 , 'Not suitable details*': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E70'}
                 , 'Notes (Heating)': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E74'}
-                , 'Secondary Heating System': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E25'}
-                , 'Secondary System Age *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E27'}
-                , 'Secondary System Fully Working *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E29'}
-                , 'Secondary System Requires Service *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E33'}
-                , 'Not Working Details Secondary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I29'}
-                , 'Requires Service Details Secondary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I33'}
+                
+                , 'Secondary Heating System': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'E25'}
+                , 'Secondary System Age *': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'E27'}
+                , 'Secondary System Fully Working *': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'E29'}
+                , 'Secondary System Requires Service *': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'E33'}
+                , 'Not Working Details Secondary Heating *': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'I29'}
+                , 'Requires Service Details Secondary Heating *': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'I33'}
 
                 , 'Number of habitable rooms in the property': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D55'}
                 , 'Number of wet rooms in the property': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D57'}
