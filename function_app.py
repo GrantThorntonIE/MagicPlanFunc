@@ -77,7 +77,7 @@ def create_table_text(dict, headers : list,
         if len(order_list) != 0:
             for item in order_list:
                 output += f'<tr><td>{item}</td>'
-                value = dict[item] if item in dict.keys() else 'N/A'
+                value = dict[item] if item in dict.keys() else ''
                 if (type(value) == bool and value == True):
                     value = "Yes"
                 if (type(value) == bool and value == False):
@@ -735,18 +735,111 @@ def survey(root):
             # json_val_dict = {}
             
        
-        print('about to create (almost) empty attachment files for ' + plan_name + " (id: " + str(id) + ")")
-        # populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
-        populate_template_new(xml_val_dict, 'template') # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
-        populate_template_new(xml_val_dict, 'template_mrc')
-        print('finished creating attachment files')
+            print('about to create (almost) empty attachment files for ' + plan_name + " (id: " + str(id) + ")")
+            # populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
+            populate_template_new(xml_val_dict, 'template') # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
+            populate_template_new(xml_val_dict, 'template_mrc')
+            print('finished creating attachment files')
         
 
         
         
         
         
+        ofl_wos = ['Internal Wall Insulation: Sloped or flat (horizontal) surface (M2)'
+                , 'Attic (Loft) Insulation 100 mm top-up (M2)'
+                , 'Attic (Loft) Insulation 150 mm top-up (M2)'
+                , 'Attic (Loft) Insulation 200 mm top-up (M2)'
+                , 'Attic (Loft) Insulation 250 mm top up (M2)'
+                , 'Attic (Loft) Insulation 300 mm (M2)'
+                , 'Attic Storage (5m2) (Nr)'
+                , 'Installation of new attic hatch (Nr)'
+                , 'Additional Roof Ventilation (High Level) (mm2)'
+                , 'Additional Roof Ventilation (Low Level) (mm2)'
+                , 'Walls'
+                , 'Draught Proofing (<= 20m installed) (Nr)'
+                , 'Draught Proofing (> 20m installed) (Nr)'
+                , 'MEV 15l/s Bathroom (Nr)'
+                , 'MEV 30l/s Utility (Nr)'
+                , 'MEV 60l/s Kitchen (Nr)'
+                , 'Permanent ventilation wall vent (Certified Proprietary Integrated System) (Nr)'
+                , 'Background ventilation wall vent (Certified Proprietary Integrated System) (Nr)'
+                , 'Ducting existing cooker hood to exterior (Nr)'
+                , 'Cavity Wall Insulation Bonded Bead (M2)'
+                , 'Loose Fibre Extraction (M2)'
+                , 'External Wall Insulation: Less than 60m2 (Nr)'
+                , 'External Wall Insulation: 60m2 to 85m2 (Nr)'
+                , 'External Wall Insulation: Greater than 85m2 (Nr)'
+                , 'ESB alteration (Nr)'
+                , 'GNI meter alteration (Nr)'
+                , 'GNI new connection (M)'
+                , 'RGI Meter_No Heating (M2)'
+                , 'Internal Wall Insulation: Vertical Surface (Nr)'
+                , 'External wall insulation and CWI: less than 60m2 (Nr)'
+                , 'External wall insulation and CWI: 60m2 to 85m2 (M2)'
+                , 'External wall insulation and CWI: greater than 85m2 (M2)'
+                , 'Window (same m2 rate will apply to windows with certified trickle vents) (M2)'
+                , 'Heating'
+                , 'Basic gas heating system (Nr)'
+                , 'Basic oil heating system (Nr)'
+                , 'Full gas heating system installation (Nr)'
+                , 'Full oil heating system installation (Nr)'
+                , 'Gas boiler and controls (Basic & controls pack) (Nr)'
+                , 'Oil boiler and controls (Basic & controls pack) (Nr)'
+                , 'Hot Water Cylinder Jacket (Nr)'
+                , 'Mechanical Ventilation Systems and Air Tightness Testing & Energy'
+                , 'Air Tightness Testing (Nr)'
+                , 'LED Bulbs: supply only (4 no.) (Nr)'
+                ]
+                
         
+        ofl_wos = ['Attic Insulation'
+                , 'Internal Wall Insulation: Sloped or flat (horizontal) surface'
+                , 'Attic (Loft) Insulation 100 mm top-up'
+                , 'Attic (Loft) Insulation 150 mm top-up'
+                , 'Attic (Loft) Insulation 200 mm top-up'
+                , 'Attic (Loft) Insulation 250 mm top up'
+                , 'Attic (Loft) Insulation 300 mm'
+                , 'Attic Storage (5m2)'
+                , 'Installation of new attic hatch'
+                , 'Additional Roof Ventilation (High Level)'
+                , 'Additional Roof Ventilation (Low Level)'
+                , 'Walls'
+                , 'Draught Proofing (<= 20m installed)'
+                , 'Draught Proofing (> 20m installed)'
+                , 'MEV 15l/s Bathroom'
+                , 'MEV 30l/s Utility'
+                , 'MEV 60l/s Kitchen'
+                , 'Permanent ventilation wall vent (Certified Proprietary Integrated System)'
+                , 'Background ventilation wall vent (Certified Proprietary Integrated System)'
+                , 'Ducting existing cooker hood to exterior'
+                , 'Cavity Wall Insulation Bonded Bead'
+                , 'Loose Fibre Extraction'
+                , 'External Wall Insulation: Less than 60m2'
+                , 'External Wall Insulation: 60m2 to 85m2'
+                , 'External Wall Insulation: Greater than 85m2'
+                , 'ESB alteration'
+                , 'GNI meter alteration'
+                , 'GNI new connection'
+                , 'RGI Meter_No Heating'
+                , 'Internal Wall Insulation: Vertical Surface'
+                , 'External wall insulation and CWI: less than 60m2'
+                , 'External wall insulation and CWI: 60m2 to 85m2'
+                , 'External wall insulation and CWI: greater than 85m2'
+                , 'Window (same m2 rate will apply to windows with certified trickle vents)'
+                , 'Heating'
+                , 'Basic gas heating system'
+                , 'Basic oil heating system'
+                , 'Full gas heating system installation'
+                , 'Full oil heating system installation'
+                , 'Gas boiler and controls (Basic & controls pack)'
+                , 'Oil boiler and controls (Basic & controls pack)'
+                , 'Hot Water Cylinder Jacket'
+                , 'Mechanical Ventilation Systems and Air Tightness Testing & Energy'
+                , 'Air Tightness Testing'
+                , 'LED Bulbs: supply only (4 no.)'
+
+                ]
         
         ofl_pm = ['Internal Wall Insulation: Sloped or flat (horizontal) surface'
                 , 'Attic (Loft) Insulation 100 mm top-up'
@@ -1694,7 +1787,7 @@ def survey(root):
         # Work Order Recommendation (Roof):
         json_val_dict['sloped_surface_area'] = round(slope_roof_area_sum) if round(slope_roof_area_sum) != 0 else 'N/A'
         
-        # print('sfi_dict', ':', json_val_dict["sfi_dict"])
+        print('sfi_dict', ':', json_val_dict["sfi_dict"])
         json_val_dict['storage'] = 0
         for t in [100, 150, 200, 250, 300]:
             if str(t) in json_val_dict["sfi_dict"].keys():
@@ -1742,7 +1835,7 @@ def survey(root):
         json_val_dict['EWI/IWI > 25% *'] = json_val_dict['Is Major Renovation?']
         
 
-        
+        print('Thermal Envelope - Heat loss walls, windows and doors', ':', json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
         
         json_val_dict["ESB alteration"] = json_val_dict["ESB alteration"] if json_val_dict["ESB alteration"] != 0 else ''
         json_val_dict["GNI meter alteration"] = json_val_dict["GNI meter alteration"] if json_val_dict["GNI meter alteration"] != 0 else ''
@@ -1761,6 +1854,9 @@ def survey(root):
                 json_val_dict[pm] = ''
             # print('json_val_dict[pm]', ':', json_val_dict[pm])
         
+        
+        # print('ins_200_area', ':', ins_200_area)
+        # print("json_val_dict['ins_200_area']", ':', json_val_dict['ins_200_area'])
         
         json_val_dict['Internal Wall Insulation: Sloped or flat (horizontal) surface'] = json_val_dict['sloped_surface_area']
         if 'ins_100_area' in json_val_dict.keys():
@@ -1930,14 +2026,32 @@ def survey(root):
         
         # xl_path = 
         # populate_template(output_dict)
+        
+        print('Thermal Envelope - Heat loss walls, windows and doors', ':', json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
+        
         populate_template_new(xml_val_dict, 'template')
         populate_template_new(output_dict, 'template_mrc')
+        
+        
+        
+        for f in ofl_wos:
+            print('f', ':', f)
+            if f in json_val_dict.keys():
+                print(f, ':', json_val_dict[f])
+                if json_val_dict[f] in ['', 'N/A', None]:
+                    ofl_wos.remove(f)
+                    print('removed')
+            else:
+                ofl_wos.remove(f)
+                print('removed')
         
         
 
 
         styling = "border=\"1\""
         output = f"""\
+            <h1>Work Order Summary</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_wos)} \
             <h1>General</h1> \
             {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
             <h1>Major Renovation</h1> \
