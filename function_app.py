@@ -337,18 +337,22 @@ def XML_2_dict(root, t = "floor"):
         xml_val_dict['Eircode'] = root.get('postalCode')
         
         
-        date = root.find('values/value[@key="date"]').text
-        xml_val_dict['Survey Date *'] = date
+        # date = root.find('values/value[@key="date"]').text
+        # xml_val_dict['Survey Date *'] = date
         
         
-        MagicPlan_dict = {"qf.34d66ce4q1": "Surveyor", "qf.34d66ce4q3": "rating_type", "qf.34d66ce4q4": "rating_purpose", "author": "author"}
+        MagicPlan_2_SEAI_dict = {"date": "Survey Date *", "qf.34d66ce4q3": "rating_type", "qf.34d66ce4q4": "rating_purpose", "author": "Surveyor"}
+        
+        # note MagicPlan also has a separate "Surveyor" field ("qf.34d66ce4q1") but "author" is the one used for SEAI survey purposes
+        
         
         values = root.findall('values/value')
         for value in values:
             k = value.attrib["key"]
-            # print(k)
-            if k == "qf.34d66ce4q1":
-                xml_val_dict['Surveyor'] = value.text
+            for mpk in MagicPlan_2_SEAI_dict:
+                if k == mpk:
+                    xml_val_dict[MagicPlan_2_SEAI_dict[mpk]] = value.text
+                    print(MagicPlan_2_SEAI_dict[mpk], ':', xml_val_dict[MagicPlan_2_SEAI_dict[mpk]])
         
         
         
@@ -870,13 +874,13 @@ def survey(root):
 
         
         ofl_s = ["Adequate Access*"
-            , "Adequate Access Details"
+            , "No Access Details*"
             , "Cherry Picker Required*"
-            , "Cherry Picker Details"
+            , "Cherry Picker Required Details*"
             , "Mould/Mildew identified by surveyor; or reported by the applicant*"
-            , "Mould/Mildew Details"
+            , "Mould/Mildew Details*"
             , "As confirmed by homeowner; property is a protected structure*"
-            , "Protected Structure Details"
+            , "Protected Structure Details*"
             ]
         
         ofl_mr = ['Thermal Envelope - Heat loss walls, windows and doors' # all walls from floors 10 - 13 except Loadbearing/Party walls and internal walls)
@@ -945,40 +949,40 @@ def survey(root):
                 , 'Roof 2 greater than 2/3 floor area*'
                 , 'Roof 2 Pitch (degrees)*'
                 , 'Roof 2 Insulation Exists*'
-                , 'Can Roof Type 2 Insulation Thickness be Measured?*'
-                , 'Roof 2 Thickness (mm)*'
-                , 'Roof 2 Insulation Type*'
+                , 'Can Roof Type 2 Insulation Thickness be Measured?'
+                , 'Roof 2 Thickness (mm)'
+                , 'Roof 2 Insulation Type'
                 , 'Roof 2 Required per standards (mm2) *'
                 , 'Roof 2 Existing (mm2) *'
-                , 'Area of Roof Type 2 with fixed flooring (m2)*'
-                , 'Folding/stair ladder in Roof Type 2*'
-                , 'Fixed light in Roof Type 2*'
-                , 'Downlighters in Roof Type 2*'
-                , 'High power cable in Roof Type 2 (6sq/10sq or higher)*'
+                , 'Area of Roof Type 2 with fixed flooring (m2)'
+                , 'Folding/stair ladder in Roof Type 2'
+                , 'Fixed light in Roof Type 2'
+                , 'Downlighters in Roof Type 2'
+                , 'High power cable in Roof Type 2 (6sq/10sq or higher)'
                 , 'Roof 3 Type'
                 , 'Other Details Roof 3*'
                 , 'Sloped Ceiling Roof 3*'
                 , 'Roof 3 greater than 2/3 floor area*'
                 , 'Roof 3 Pitch (degrees)*'
                 , 'Roof 3 Insulation Exists*'
-                , 'Can Roof Type 3 Insulation Thickness be Measured?'
-                , 'Roof 3 Thickness (mm)'
-                , 'Roof 3 Insulation Type'
+                , 'Can Roof Type 3 Insulation Thickness be Measured?*'
+                , 'Roof 3 Thickness (mm)*'
+                , 'Roof 3 Insulation Type*'
                 , 'Roof 3 Required per standards (mm2) *'
                 , 'Roof 3 Existing (mm2) *'
-                , 'Area of Roof Type 3 with fixed flooring (m2)'
-                , 'Folding/stair ladder in Roof Type 3'
-                , 'Fixed light in Roof Type 3'
-                , 'Downlighters in Roof Type 3'
-                , 'High power cable in Roof Type 3 (6sq/10sq or higher)'
+                , 'Area of Roof Type 3 with fixed flooring (m2)*'
+                , 'Folding/stair ladder in Roof Type 3*'
+                , 'Fixed light in Roof Type 3*'
+                , 'Downlighters in Roof Type 3*'
+                , 'High power cable in Roof Type 3 (6sq/10sq or higher)*'
                 , 'Roof 4 Type'
                 , 'Other Details Roof 4*'
                 , 'Sloped Ceiling Roof 4*'
-                , 'Roof 4 greater than 2/3 floor area*'
+                , 'Roof 4 greater than 2/3 floor area'
                 , 'Roof 4 Pitch (degrees)*'
-                , 'Roof 4 Insulation Exists*'
+                , 'Roof Type 4 Insulation Exists*'
                 , 'Can Roof Type 4 Insulation Thickness be Measured?*'
-                , 'Roof 4 Thickness (mm)*'
+                , 'Roof 4 Thickness (mm)'
                 , 'Roof 4 Insulation Type*'
                 , 'Roof 4 Required per standards (mm2) *'
                 , 'Roof 4 Existing (mm2) *'
@@ -998,7 +1002,7 @@ def survey(root):
                     , "Wall 1 Fill Type*"
                     , 'Wall 1 Residual Cavity Width (mm)*'
                     , 'Can Wall type 1 Insulation Thickness be Measured?*'
-                    , "If 'Yes' enter insulation thickness (mm)*"
+                    , "If 'Yes' enter Wall type 1 insulation thickness (mm)*"
                     , 'Wall Type 2'
                     , 'Wall 2 wall thickness (mm)*'
                     , 'Wall 2 Insulation Present?*'
@@ -1457,7 +1461,7 @@ def survey(root):
                                 slope_dict[datum["symbol_instance_id"]] = pitch
         # print('balanced_flues', ':', str(balanced_flues))
 
-
+        print("Other Details Roof 1", ':', json_val_dict["Age Extension 1"])
 
 
 
@@ -1835,7 +1839,7 @@ def survey(root):
         json_val_dict['EWI/IWI > 25% *'] = json_val_dict['Is Major Renovation?']
         
 
-        print('Thermal Envelope - Heat loss walls, windows and doors', ':', json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
+
         
         json_val_dict["ESB alteration"] = json_val_dict["ESB alteration"] if json_val_dict["ESB alteration"] != 0 else ''
         json_val_dict["GNI meter alteration"] = json_val_dict["GNI meter alteration"] if json_val_dict["GNI meter alteration"] != 0 else ''
@@ -2027,7 +2031,36 @@ def survey(root):
         # xl_path = 
         # populate_template(output_dict)
         
-        print('Thermal Envelope - Heat loss walls, windows and doors', ':', json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
+        
+        missing = ['Thermal Envelope - Heat loss walls, windows and doors'
+                , 'Internal Wall Insulation: Sloped or flat (horizontal) surface'
+                , 'Attic (Loft) Insulation 100 mm top-up'
+                , 'Attic (Loft) Insulation 150 mm top-up'
+                , 'Attic (Loft) Insulation 200 mm top-up'
+                , 'Attic (Loft) Insulation 250 mm top up'
+                , 'Attic (Loft) Insulation 300 mm'
+                , 'Attic Storage (5m2)'
+                , 'Replacement of CWST/F&E tank'
+                , 'Additional Roof Ventilation (High Level)'
+                , 'Additional Roof Ventilation (Low Level)'
+                , 'Roof 2 Insulation Type'
+                , 'Wall 1 Residual Cavity Width (mm)*'
+                , 'EWI/IWI > 25% *'
+                
+                
+                
+                ]
+        
+        for m in missing:
+            if m not in json_val_dict.keys():
+                print(m, 'not in json_val_dict.keys')
+            else:
+                print(m, ':', json_val_dict[m])
+        
+        
+        
+        
+        
         
         populate_template_new(xml_val_dict, 'template')
         populate_template_new(output_dict, 'template_mrc')
@@ -2324,7 +2357,7 @@ def populate_template_new(json_val_dict, template):
                 , 'Gross floor area (m2) *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E10'}
                 , 'Dwelling Age*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C12'}
                 , 'Number of Storeys *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E12'}
-                , 'Age extension 1': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C14'}
+                , 'Age Extension 1': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C14'}
                 , 'Room in Roof': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E14'}
                 , 'Age Extension 2': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C16'}
                 , 'No. Single Glazed Windows *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E16'}
@@ -2337,7 +2370,7 @@ def populate_template_new(json_val_dict, template):
                 , 'Internet Available': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E24'}
 
 
-                , 'Roof 1 Type *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E25'}
+                , 'Roof 1 Type*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E25'}
                 , 'Sloped Ceiling Roof 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H25'}
                 , 'Other Details Roof 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E27'}
                 , 'Roof 1 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H27'}
@@ -2360,42 +2393,42 @@ def populate_template_new(json_val_dict, template):
                 , 'Roof 2 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H27'}
                 , 'Roof 2 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H29'}
                 , 'Roof 2 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E33'}
-                , 'Can Roof Type 2 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E35'}
-                , 'Roof 2 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E37'}
-                , 'Roof 2 Insulation Type*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H33'}
+                , 'Can Roof Type 2 Insulation Thickness be Measured?': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E35'}
+                , 'Roof 2 Thickness (mm)': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E37'}
+                , 'Roof 2 Insulation Type': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H33'}
                 #N/A
                 , 'Roof 2 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E42'}
                 , 'Roof 2 Existing (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H42'}
-                , 'Area of Roof Type 2 with fixed flooring (m2)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E46'}
-                , 'Folding/stair ladder in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E48'}
-                , 'Fixed light in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E50'}
-                , 'Downlighters in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H46'}
-                , 'High power cable in Roof Type 2 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H48'}
+                , 'Area of Roof Type 2 with fixed flooring (m2)': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E46'}
+                , 'Folding/stair ladder in Roof Type 2': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E48'}
+                , 'Fixed light in Roof Type 2': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E50'}
+                , 'Downlighters in Roof Type 2': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H46'}
+                , 'High power cable in Roof Type 2 (6sq/10sq or higher)': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H48'}
                 , 'Roof 3 Type': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E25'}
                 , 'Other Details Roof 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E27'}
                 , 'Sloped Ceiling Roof 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H25'}
                 , 'Roof 3 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H27'}
                 , 'Roof 3 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H29'}
                 , 'Roof 3 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E33'}
-                , 'Can Roof Type 3 Insulation Thickness be Measured?': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E35'}
-                , 'Roof 3 Thickness (mm)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E37'}
-                , 'Roof 3 Insulation Type': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H33'}
+                , 'Can Roof Type 3 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E35'}
+                , 'Roof 3 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E37'}
+                , 'Roof 3 Insulation Type*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H33'}
                 #N/A
                 , 'Roof 3 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E42'}
                 , 'Roof 3 Existing (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H42'}
-                , 'Area of Roof Type 3 with fixed flooring (m2)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E46'}
-                , 'Folding/stair ladder in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E48'}
-                , 'Fixed light in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E50'}
-                , 'Downlighters in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H46'}
-                , 'High power cable in Roof Type 3 (6sq/10sq or higher)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H48'}
+                , 'Area of Roof Type 3 with fixed flooring (m2)*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E46'}
+                , 'Folding/stair ladder in Roof Type 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E48'}
+                , 'Fixed light in Roof Type 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E50'}
+                , 'Downlighters in Roof Type 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H46'}
+                , 'High power cable in Roof Type 3 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H48'}
                 , 'Roof 4 Type': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E25'}
                 , 'Other Details Roof 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E27'}
                 , 'Sloped Ceiling Roof 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H25'}
-                , 'Roof 4 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H27'}
+                , 'Roof 4 greater than 2/3 floor area': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H27'}
                 , 'Roof 4 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H29'}
-                , 'Roof 4 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E33'}
+                , 'Roof Type 4 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E33'}
                 , 'Can Roof Type 4 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E35'}
-                , 'Roof 4 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E37'}
+                , 'Roof 4 Thickness (mm)': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E37'}
                 , 'Roof 4 Insulation Type*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H33'}
                 #N/A
                 , 'Roof 4 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E42'}
@@ -2408,6 +2441,35 @@ def populate_template_new(json_val_dict, template):
                 , 'Suitable for Insulation *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E54'}
                 , 'Roof not suitable details*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E56'}
                 , 'Notes (Roof)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E59'}
+                , 'Internal Wall Insulation: Sloped or flat (horizontal) surface': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I67'}
+                , 'Attic (Loft) Insulation 100 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I68'}
+                , 'Attic (Loft) Insulation 150 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I69'}
+                , 'Attic (Loft) Insulation 200 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I70'}
+                , 'Attic (Loft) Insulation 250 mm top up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I71'}
+                , 'Attic (Loft) Insulation 300 mm': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I72'}
+                
+                , 'Attic Storage (5m2)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I76'}
+                , 'Replacement of CWST/F&E tank': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I78'}
+                , 'Additional Roof Ventilation (High Level)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I84'}
+                , 'Additional Roof Ventilation (Low Level)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I85'}
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
 
                 , 'Wall Type 1*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E27'}
                 , 'Wall 1 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E29'}
@@ -2416,7 +2478,7 @@ def populate_template_new(json_val_dict, template):
                 , 'Wall 1 Fill Type*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E37'}
                 , 'Wall 1 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K37'}
                 , 'Can Wall type 1 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K33'}
-                , "If 'Yes' enter insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K35'}
+                , "If 'Yes' enter Wall type 1 insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K35'}
                 , 'Wall Type 2': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E27'}
                 , 'Wall 2 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E29'}
                 , 'Wall 2 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E33'}
@@ -2444,6 +2506,7 @@ def populate_template_new(json_val_dict, template):
                 , 'Is the property suitable for wall insulation? *': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E41'}
                 , 'No wall insulation details *': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E43'}
                 , 'Notes (Walls)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E54'}
+                , 'EWI/IWI > 25% *': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E47'}
                 , 'Suitable for Draught Proofing': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E49'}
                 , 'Not suitable details Draughtproofing*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E51'}
                 , 'Draught Proofing (<= 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L68'}
@@ -2469,6 +2532,9 @@ def populate_template_new(json_val_dict, template):
                 , 'External wall insulation and CWI: greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F106'}
                 , 'replace_window_area': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L113'}
                 , 'Notes (Windows and Doors)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E117'}
+                
+                
+                
                 , 'Heating System *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E25'}
                 , 'Qualifying Boiler': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E27'}
                 , 'Major Renovation': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E29'}
@@ -2508,13 +2574,13 @@ def populate_template_new(json_val_dict, template):
                 , 'Air-tightness test recommended?': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E27'}
 
                 , 'Adequate Access*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D25'}
-                , 'Adequate Access Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I25'}
+                , 'No Access Details*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I25'}
                 , 'Cherry Picker Required*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D27'}
-                , 'Cherry Picker Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I27'}
+                , 'Cherry Picker Required Details*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I27'}
                 , 'Mould/Mildew identified by surveyor; or reported by the applicant*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D29'}
-                , 'Mould/Mildew Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I29'}
+                , 'Mould/Mildew Details*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I29'}
                 , 'As confirmed by homeowner; property is a protected structure*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D31'}
-                , 'Protected Structure Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I31'}
+                , 'Protected Structure Details*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I31'}
 
                 # , 'Surveyor Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D27'}
                 # , 'Surveyor Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L27'}
@@ -2535,8 +2601,10 @@ def populate_template_new(json_val_dict, template):
                 }
         
         for field in v:
+            # print('field', ':', field)
             if field in json_val_dict.keys():
                 v[field]['Value'] = json_val_dict[field]
+                # print("v[field]['Value']", ':', v[field]['Value'])
                 if type(v[field]['Value']) == str and '<BR>' in v[field]['Value']:
                     v[field]['Value'] = v[field]['Value'].replace('<BR>', '\n')
                 # print(field, ':', v[field]['Value'])
@@ -2606,291 +2674,6 @@ def populate_template_new(json_val_dict, template):
         return instance_file_path
 
 
-
-
-def populate_template(json_val_dict):
-    try:
-    
-        v = {
-            'Applicant Name': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C4'}
-            , 'Application ID': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E4'}
-            , 'Client Address': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C6'}
-            , 'MPRN': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E6'}
-            , 'Surveyor': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C8'}
-            , 'Survey Date *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E8'}
-            , 'Dwelling Type*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C10'}
-            , 'Gross floor area (m2) *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E10'}
-            , 'Dwelling Age*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C12'}
-            , 'Number of Storeys *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E12'}
-            , 'Age extension 1': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C14'}
-            , 'Room in Roof': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E14'}
-            , 'Age Extension 2': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C16'}
-            , 'No. Single Glazed Windows *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E16'}
-            , 'Asbestos Suspected': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C18'}
-            , 'No. Double Glazed Windows *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E18'}
-            , 'Asbestos Details': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C20'}
-            , 'Lot *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C22'}
-            , 'Property Height (m)*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E22'}
-            , 'Eircode': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C24'}
-            , 'Internet Available': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E24'}
-
-
-            , 'Roof 1 Type *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E25'}
-            , 'Sloped Ceiling Roof 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H25'}
-            , 'Other Details Roof 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E27'}
-            , 'Roof 1 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H27'}
-            , 'Roof 1 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H29'}
-            , 'Roof Type 1 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E33'}
-            , 'Can Roof Type 1 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E35'}
-            , 'Roof 1 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E37'}
-            , 'Roof 1 Insulation Type*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H33'}
-            #N/A
-            , 'Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E42'}
-            , 'Existing (mm2)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H42'}
-            , 'Area of Roof Type 1 with fixed flooring (m2)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E46'}
-            , 'Folding/stair ladder in Roof Type 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E48'}
-            , 'Fixed light in Roof Type 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E50'}
-            , 'Downlighters in Roof Type 1*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H46'}
-            , 'High power cable in Roof Type 1 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'H48'}
-            , 'Roof 2 Type': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E25'}
-            , 'Other Details Roof 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E27'}
-            , 'Sloped Ceiling Roof 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H25'}
-            , 'Roof 2 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H27'}
-            , 'Roof 2 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H29'}
-            , 'Roof 2 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E33'}
-            , 'Can Roof Type 2 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E35'}
-            , 'Roof 2 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E37'}
-            , 'Roof 2 Insulation Type*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H33'}
-            #N/A
-            , 'Roof 2 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E42'}
-            , 'Roof 2 Existing (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H42'}
-            , 'Area of Roof Type 2 with fixed flooring (m2)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E46'}
-            , 'Folding/stair ladder in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E48'}
-            , 'Fixed light in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'E50'}
-            , 'Downlighters in Roof Type 2*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H46'}
-            , 'High power cable in Roof Type 2 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof Type 2' , 'Cell': 'H48'}
-            , 'Roof 3 Type': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E25'}
-            , 'Other Details Roof 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E27'}
-            , 'Sloped Ceiling Roof 3*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H25'}
-            , 'Roof 3 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H27'}
-            , 'Roof 3 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H29'}
-            , 'Roof 3 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E33'}
-            , 'Can Roof Type 3 Insulation Thickness be Measured?': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E35'}
-            , 'Roof 3 Thickness (mm)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E37'}
-            , 'Roof 3 Insulation Type': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H33'}
-            #N/A
-            , 'Roof 3 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E42'}
-            , 'Roof 3 Existing (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H42'}
-            , 'Area of Roof Type 3 with fixed flooring (m2)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E46'}
-            , 'Folding/stair ladder in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E48'}
-            , 'Fixed light in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'E50'}
-            , 'Downlighters in Roof Type 3': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H46'}
-            , 'High power cable in Roof Type 3 (6sq/10sq or higher)': { 'Value': '' , 'Tab': 'Roof Type 3' , 'Cell': 'H48'}
-            , 'Roof 4 Type': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E25'}
-            , 'Other Details Roof 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E27'}
-            , 'Sloped Ceiling Roof 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H25'}
-            , 'Roof 4 greater than 2/3 floor area*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H27'}
-            , 'Roof 4 Pitch (degrees)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H29'}
-            , 'Roof 4 Insulation Exists*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E33'}
-            , 'Can Roof Type 4 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E35'}
-            , 'Roof 4 Thickness (mm)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E37'}
-            , 'Roof 4 Insulation Type*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H33'}
-            #N/A
-            , 'Roof 4 Required per standards (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E42'}
-            , 'Roof 4 Existing (mm2) *': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H42'}
-            , 'Area of Roof Type 4 with fixed flooring (m2)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E46'}
-            , 'Folding/stair ladder in Roof Type 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E48'}
-            , 'Fixed light in Roof Type 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'E50'}
-            , 'Downlighters in Roof Type 4*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H46'}
-            , 'High power cable in Roof Type 4 (6sq/10sq or higher)*': { 'Value': '' , 'Tab': 'Roof Type 4' , 'Cell': 'H48'}
-            , 'Suitable for Insulation *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E54'}
-            , 'Roof not suitable details*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E56'}
-            , 'Notes (Roof)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E59'}
-
-            , 'Wall Type 1*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E27'}
-            , 'Wall 1 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E29'}
-            , 'Wall 1 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E33'}
-            , 'Wall 1 Insulation Type*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E35'}
-            , 'Wall 1 Fill Type*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E37'}
-            , 'Wall 1 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K37'}
-            , 'Can Wall type 1 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K33'}
-            , "If 'Yes' enter insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'K35'}
-            , 'Wall Type 2': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E27'}
-            , 'Wall 2 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E29'}
-            , 'Wall 2 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E33'}
-            , 'Wall 2 Insulation Type*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E35'}
-            , 'Wall 2 Fill Type*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'E37'}
-            , 'Wall 2 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'K37'}
-            , 'Can Wall type 2 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'K33'}
-            , "If 'Yes' enter Wall type 2 insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall Type 2' , 'Cell': 'K35'}
-            , 'Wall Type 3': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E27'}
-            , 'Wall 3 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E29'}
-            , 'Wall 3 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E33'}
-            , 'Wall 3 Insulation Type*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E35'}
-            , 'Wall 3 Fill Type*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'E37'}
-            , 'Wall 3 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'K37'}
-            , 'Can Wall type 3 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'K33'}
-            , "If 'Yes' enter Wall type 3 insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall Type 3' , 'Cell': 'K35'}
-            , 'Wall Type 4': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E27'}
-            , 'Wall 4 wall thickness (mm)*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E29'}
-            , 'Wall 4 Insulation Present?*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E33'}
-            , 'Wall 4 Insulation Type*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E35'}
-            , 'Wall 4 Fill Type*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'E37'}
-            , 'Wall 4 Residual Cavity Width (mm)*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'K37'}
-            , 'Can Wall type 4 Insulation Thickness be Measured?*': { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'K33'}
-            , "If 'Yes' enter Wall type 4 insulation thickness (mm)*": { 'Value': '' , 'Tab': 'Wall Type 4' , 'Cell': 'K35'}
-            , 'Is the property suitable for wall insulation? *': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E41'}
-            , 'No wall insulation details *': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E43'}
-            , 'Notes (Walls)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E54'}
-            , 'Suitable for Draught Proofing': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E49'}
-            , 'Not suitable details Draughtproofing*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E51'}
-            , 'Draught Proofing (<= 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L68'}
-            , 'Draught Proofing (> 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L69'}
-            , 'MEV 15l/s Bathroom': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L74'}
-            , 'MEV 30l/s Utility': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L75'}
-            , 'MEV 60l/s Kitchen': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L76'}
-            , 'New Permanent Vent': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L80'}
-            , 'New Background Vent': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L81'}
-            , 'Duct Cooker Hood': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L82'}
-            , 'Cavity Wall Insulation Bonded Bead': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F86'}
-            , 'Loose Fibre Extraction': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F87'}
-            , 'External Wall Insulation: Less than 60m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F88'}
-            , 'External Wall Insulation: 60m2 to 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F89'}
-            , 'External Wall Insulation: Greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F90'}
-            , 'ESB alteration': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F91'}
-            , 'GNI meter alteration': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F92'}
-            , 'New Gas Connection': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F93'}
-            , 'RGI Meter_No Heating': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F94'}
-            , 'Internal Wall Insulation: Vertical Surface': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F99'}
-            , 'External wall insulation and CWI: less than 60m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F104'}
-            , 'External wall insulation and CWI: 60m2 to 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F105'}
-            , 'External wall insulation and CWI: greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F106'}
-            , 'replace_window_area': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L113'}
-            , 'Notes (Windows and Doors)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E117'}
-            , 'Heating System *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E25'}
-            , 'Qualifying Boiler': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E27'}
-            , 'Major Renovation': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E29'}
-            , 'System Age *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E31'}
-            , 'Fully Working *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E33'}
-            , 'Requires Service *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E37'}
-            , 'Other Primary Heating Details *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I25'}
-            , 'Not Working Details Primary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I33'}
-            , 'Requires Service Details Primary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I37'}
-            , 'Hot Water System Exists *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E44'}
-            , 'HWS': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'G44'}
-            , 'Other HW Details *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I49'}
-            , 'Hot Water Cylinder*': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E55'}
-            , 'Insulation *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E57'}
-            , 'Condition of Lagging Jacket *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H55'}
-            , 'HWC Controls *': { 'Value': 'Cylinder Thermostat Controls *' , 'Tab': 'Heating' , 'Cell': 'H57'}
-            , 'Heating Systems Controls *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E62'}
-            , 'Partial Details *': { 'Value': 'Partial Controls' , 'Tab': 'Heating' , 'Cell': 'E64'}
-            , 'Programmer / Timeclock *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H62'}
-            , 'Room Thermostat Number *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'H64'}
-            , 'Rads Number *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K62'}
-            , 'TRVs Number *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K64'}
-            , 'Suitable for Heating Measures *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E68'}
-            , 'Not suitable details*': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E70'}
-            , 'Notes (Heating)': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E74'}
-            , 'Secondary Heating System': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E25'}
-            , 'Secondary System Age *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E27'}
-            , 'Secondary System Fully Working *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E29'}
-            , 'Secondary System Requires Service *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E33'}
-            , 'Not Working Details Secondary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I29'}
-            , 'Requires Service Details Secondary Heating *': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'I33'}
-
-            , 'Number of habitable rooms in the property': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D55'}
-            , 'Number of wet rooms in the property': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D57'}
-            , 'No. of habitable/wet rooms w/ open flued appliance': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D59'}
-            , 'LED Bulbs: supply only (4 no.)': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E31'}
-            , 'Air-tightness test recommended?': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E27'}
-
-            , 'Adequate Access*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D25'}
-            , 'Adequate Access Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I25'}
-            , 'Cherry Picker Required*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D27'}
-            , 'Cherry Picker Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I27'}
-            , 'Mould/Mildew identified by surveyor; or reported by the applicant*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D29'}
-            , 'Mould/Mildew Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I29'}
-            , 'As confirmed by homeowner; property is a protected structure*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D31'}
-            , 'Protected Structure Details': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I31'}
-
-            # , 'Surveyor Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D27'}
-            # , 'Surveyor Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L27'}
-            # , 'Customer Signature': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'D29'}
-            # , 'Customer Signature Date': { 'Value': '' , 'Tab': 'Declarations' , 'Cell': 'L29'}
-
-            }
-        
-        for field in v:
-            if field in json_val_dict.keys():
-                v[field]['Value'] = json_val_dict[field]
-                if type(v[field]['Value']) == str and '<BR>' in v[field]['Value']:
-                    v[field]['Value'] = v[field]['Value'].replace('<BR>', '\n')
-                # print(field, ':', v[field]['Value'])
-
-        # print(v)
-        # aid = v['Application ID']['Value']
-        # name = json_val_dict['plan_name']
-        # print(name)
-
-        # url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net/attachment/template.xlsx"
-
-        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
-        default_credential = DefaultAzureCredential()
-
-        # Create the BlobServiceClient object
-        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-
-        container_name = 'attachment'
-        container_client = blob_service_client.get_container_client(container= container_name) 
-        
-        template_file_name = 'template.xlsx'
-
-        local_path = "/tmp" # str(json_val_dict['plan_name'])
-        if not os.path.exists(local_path):
-            os.mkdir(local_path)
-        instance_file_path = os.path.join(local_path, json_val_dict['plan_name'] + '.xlsx')
-        print("\nDownloading blob to \n\t" + instance_file_path)
-
-        with open(file=instance_file_path, mode="wb") as download_file:
-            download_file.write(container_client.download_blob("template.xlsx").readall())
-
-        xfile = openpyxl.load_workbook(instance_file_path)
-        
-        for field in v:
-            sheet = xfile[v[field]['Tab']]
-            sheet[v[field]['Cell']] = v[field]['Value']
-
-
-
-        xfile.save(instance_file_path)
-
-
-
-        with open(file=instance_file_path, mode="rb") as upload_file:
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=instance_file_path)
-            blob_client.upload_blob(upload_file, overwrite=True)
-    
-
-
-
-
-
-
-    except Exception as ex:
-        # exc_type, exc_obj, exc_tb = sys.exc_info()
-        # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
-        
-        # output = str(ex)
-        output = traceback.format_exc()
-        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
-        
-        # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        # print(exc_type, fname, exc_tb.tb_lineno)
-        print(output)
-    
-    finally:
-        return instance_file_path
 
 
 
