@@ -2133,7 +2133,7 @@ def survey(root):
         
         populate_template_new(xml_val_dict, 'template')
         
-        json_val_dict["Is a Major Renovation calculation necessary?*"] = True
+        # json_val_dict["Is a Major Renovation calculation necessary?*"] = True
         print('json_val_dict["Is a Major Renovation calculation necessary?*"]', ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
         if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
             print('generating template_mrc')
