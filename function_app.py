@@ -2156,38 +2156,38 @@ def survey(root):
         
         
         # print('Attic (Loft) Insulation 200 mm top-up', ':', json_val_dict['Attic (Loft) Insulation 200 mm top-up'])
-        if output != '':
-            styling = "border=\"1\""
+
+        styling = "border=\"1\""
+        output = f"""\
+            <h1>Work Order Summary</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_wos)} \
+            <h1>General</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
+            <h1>Major Renovation</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
+            <h1>Primary Measures</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
+            <h1>Roof</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)} \
+            <h1>Walls</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_walls)} \
+            <h1>Heating</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_heating)} \
+            <h1>Mechanical Ventilation Systems, Air Tightness Testing & Energy</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mae)} \
+            <h1>Supplementary</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_s)} \
+            <h1>Heating Primary Measures</h1> \
+            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_hpm)} \
+
+            </div>"""
+
+
+        if warnings != '':
             output = f"""\
-                <h1>Work Order Summary</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_wos)} \
-                <h1>General</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
-                <h1>Major Renovation</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
-                <h1>Primary Measures</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
-                <h1>Roof</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)} \
-                <h1>Walls</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_walls)} \
-                <h1>Heating</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_heating)} \
-                <h1>Mechanical Ventilation Systems, Air Tightness Testing & Energy</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mae)} \
-                <h1>Supplementary</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_s)} \
-                <h1>Heating Primary Measures</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_hpm)} \
-
-                </div>"""
-
-
-            if warnings != '':
-                output = f"""\
-                    <h1>Warnings</h1> \
-                    {warnings} \
-                    </div>""" + output
+                <h1>Warnings</h1> \
+                {warnings} \
+                </div>""" + output
 
         # print(output)
 
