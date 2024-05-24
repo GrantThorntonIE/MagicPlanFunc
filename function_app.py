@@ -742,7 +742,7 @@ def survey(root):
             print('about to create (almost) empty attachment files for ' + plan_name + " (id: " + str(id) + ")")
             # populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
             populate_template_new(xml_val_dict, 'template') # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
-            populate_template_new(xml_val_dict, 'template_mrc')
+            # populate_template_new(xml_val_dict, 'template_mrc')
             print('finished creating attachment files')
         
 
@@ -798,6 +798,55 @@ def survey(root):
                 
         
         ofl_wos = ['Attic Insulation'
+                , 'Internal Wall Insulation: Sloped or flat (horizontal) surface'
+                , 'Attic (Loft) Insulation 100 mm top-up'
+                , 'Attic (Loft) Insulation 150 mm top-up'
+                , 'Attic (Loft) Insulation 200 mm top-up'
+                , 'Attic (Loft) Insulation 250 mm top up'
+                , 'Attic (Loft) Insulation 300 mm'
+                , 'Attic Storage (5m2)'
+                , 'Installation of new attic hatch'
+                , 'Additional Roof Ventilation (High Level)'
+                , 'Additional Roof Ventilation (Low Level)'
+                , 'Walls'
+                , 'Draught Proofing (<= 20m installed)'
+                , 'Draught Proofing (> 20m installed)'
+                , 'MEV 15l/s Bathroom'
+                , 'MEV 30l/s Utility'
+                , 'MEV 60l/s Kitchen'
+                , 'Permanent ventilation wall vent (Certified Proprietary Integrated System)'
+                , 'Background ventilation wall vent (Certified Proprietary Integrated System)'
+                , 'Ducting existing cooker hood to exterior'
+                , 'Cavity Wall Insulation Bonded Bead'
+                , 'Loose Fibre Extraction'
+                , 'External Wall Insulation: Less than 60m2'
+                , 'External Wall Insulation: 60m2 to 85m2'
+                , 'External Wall Insulation: Greater than 85m2'
+                , 'ESB alteration'
+                , 'GNI meter alteration'
+                , 'GNI new connection'
+                , 'RGI Meter_No Heating'
+                , 'Internal Wall Insulation: Vertical Surface'
+                , 'External wall insulation and CWI: less than 60m2'
+                , 'External wall insulation and CWI: 60m2 to 85m2'
+                , 'External wall insulation and CWI: greater than 85m2'
+                , 'Window (same m2 rate will apply to windows with certified trickle vents)'
+                , 'Heating'
+                , 'Basic gas heating system'
+                , 'Basic oil heating system'
+                , 'Full gas heating system installation'
+                , 'Full oil heating system installation'
+                , 'Gas boiler and controls (Basic & controls pack)'
+                , 'Oil boiler and controls (Basic & controls pack)'
+                , 'Hot Water Cylinder Jacket'
+                , 'Mechanical Ventilation Systems and Air Tightness Testing & Energy'
+                , 'Air Tightness Testing'
+                , 'LED Bulbs: supply only (4 no.)'
+
+                ]
+        
+        
+        ofl_wos_2 = ['Attic Insulation'
                 , 'Internal Wall Insulation: Sloped or flat (horizontal) surface'
                 , 'Attic (Loft) Insulation 100 mm top-up'
                 , 'Attic (Loft) Insulation 150 mm top-up'
@@ -1461,7 +1510,6 @@ def survey(root):
                                 slope_dict[datum["symbol_instance_id"]] = pitch
         # print('balanced_flues', ':', str(balanced_flues))
 
-        print("Other Details Roof 1", ':', json_val_dict["Age Extension 1"])
 
 
 
@@ -2032,9 +2080,10 @@ def survey(root):
         # populate_template(output_dict)
         
         
-        # Below all N/A unless type = other
+        # Below all N/A unless type = other        
         
-        missing = ['Other Details Roof 1 *'
+        missing = ['Thermal Envelope - Heat loss walls, windows and doors'
+                , 'Other Details Roof 1 *'
                 , 'Other Details Roof 2 *'
                 , 'Other Details Roof 3 *'
                 , 'Other Details Roof 4 *'
@@ -2047,7 +2096,6 @@ def survey(root):
         
         
         
-                , 'Thermal Envelope - Heat loss walls, windows and doors'
                 , 'Internal Wall Insulation: Sloped or flat (horizontal) surface'
                 , 'Attic (Loft) Insulation 100 mm top-up'
                 , 'Attic (Loft) Insulation 150 mm top-up'
@@ -2084,23 +2132,30 @@ def survey(root):
         
         
         populate_template_new(xml_val_dict, 'template')
-        populate_template_new(output_dict, 'template_mrc')
         
+        json_val_dict["Is a Major Renovation calculation necessary?*"] = True
+        print('json_val_dict["Is a Major Renovation calculation necessary?*"]', ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
+        if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
+            print('generating template_mrc')
+            populate_template_new(output_dict, 'template_mrc')
         
+        # print(ofl_wos)
         
-        for f in ofl_wos:
+        # ofl_wos_2 = ofl_wos
+        
+        for f in ofl_wos_2:
             print('f', ':', f)
             if f in json_val_dict.keys():
-                print(f, ':', json_val_dict[f])
+                print(f, 'found in json_val_dict:', "'" + str(json_val_dict[f]) + "'")
                 if json_val_dict[f] in ['', 'N/A', None]:
                     ofl_wos.remove(f)
-                    print('removed')
+                    print('removed ' + f)
             else:
                 ofl_wos.remove(f)
                 print('removed')
         
         
-
+        # print('Attic (Loft) Insulation 200 mm top-up', ':', json_val_dict['Attic (Loft) Insulation 200 mm top-up'])
 
         styling = "border=\"1\""
         output = f"""\
@@ -2143,7 +2198,7 @@ def survey(root):
         # populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
         
         populate_template_new(output_dict, 'template')
-        populate_template_new(output_dict, 'template_mrc')
+        # populate_template_new(output_dict, 'template_mrc')
         
         # output = str(ex)
         output = traceback.format_exc()
@@ -2294,10 +2349,10 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
                 container_client = blob_service_client.create_container(container_name)
 
 
-            local_file_name = str(uuid.uuid4()) + '_post' + ".txt"
-            data = "Hello, World!"
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-            blob_client.upload_blob(data)
+            # local_file_name = str(uuid.uuid4()) + '_post' + ".txt"
+            # data = "Hello, World!"
+            # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
+            # blob_client.upload_blob(data)
 
 
 
@@ -2367,6 +2422,9 @@ def populate_template_new(json_val_dict, template):
     
         if template == 'template':
             filename = json_val_dict['plan_name'] + '.xlsx'
+            container_name = 'attachment'
+            local_path = "/tmp"
+            instance_file_path = os.path.join(local_path, filename)
             v = {
                 'Applicant Name': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C4'}
                 , 'Application ID': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E4'}
@@ -2613,15 +2671,23 @@ def populate_template_new(json_val_dict, template):
             
         if template == 'template_mrc':
             filename = json_val_dict['plan_name'] + ' Major Renovation calculation.xlsx'
+            container_name = "project-files"
+            local_path = json_val_dict['plan_name']
+            local_path = local_path.replace('\\\\', '\\')
+            print('local_path', ':', local_path)
+            instance_file_path = os.path.join(local_path, filename)
+            instance_file_path = instance_file_path.replace('\\\\', '\\')
+            print('instance_file_path', ':', instance_file_path)
+            
             v = {
                 'plan_name': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'D2'}
-                , 'Thermal envelope - Heat loss walls, windows and doors': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E6'}
+                , 'Thermal Envelope - Heat loss walls, windows and doors': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E6'}
                 , 'Thermal Envelope - Heat loss floor area': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E7'}
                 , 'Thermal Envelope - Heat loss roof area': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E8'}
                 , 'Heat loss Wall Area recommended for EWI and IWI': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E12'}
                 , 'New Windows being recommended for replacement': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E13'}
                 }
-        
+        print("json_val_dict['Thermal Envelope - Heat loss walls, windows and doors']", ':', json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
         for field in v:
             # print('field', ':', field)
             if field in json_val_dict.keys():
@@ -2639,17 +2705,17 @@ def populate_template_new(json_val_dict, template):
         # Create the BlobServiceClient object
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
 
-        container_name = 'attachment'
+        
         container_client = blob_service_client.get_container_client(container= container_name) 
         
 
 
-        local_path = "/tmp" # str(json_val_dict['plan_name'])
+        
         if not os.path.exists(local_path):
             os.mkdir(local_path)
         
         
-        instance_file_path = os.path.join(local_path, filename)
+        
         print("\nDownloading blob to \n\t" + instance_file_path)
         
         
