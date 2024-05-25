@@ -1176,7 +1176,7 @@ def survey(root):
         
         json_val_dict["Electric Storage Heater age (years)*"] = ''
         json_val_dict["Warm Air System age (years)*"] = ''
-        json_val_dict["Is there Mains Gas in the area?"] = ''
+        json_val_dict["Is there Mains Gas in the area?*"] = ''
         json_val_dict["Number of habitable rooms in the property"] = 0
         json_val_dict["Number of wet rooms in the property"] = 0
         json_val_dict["No. of habitable/wet rooms w/ open flued appliance"] = 0
@@ -2038,20 +2038,20 @@ def survey(root):
         
         if json_val_dict['Qualifying Boiler'] == True:
             if json_val_dict['Heating Systems Controls *'] == 'Full zone control to spec':
-                if json_val_dict["Is there Mains Gas in the area?"] == True:
+                if json_val_dict["Is there Mains Gas in the area?*"] == True:
                     json_val_dict['Basic gas heating system'] = True
                 else:
                     json_val_dict['Basic oil heating system'] = True
         
         if (json_val_dict["Electric Storage Heater age (years)*"] == "25+" or json_val_dict["Warm Air System age (years)*"] == "25+") or json_val_dict['Heating System *'] in ["Open Fire with Back Boiler", "Open Fire with Back Boiler With Enclosure Door", "Solid Fuel Range", "Solid Fuel Range with Back Boiler"]:
-            if json_val_dict["Is there Mains Gas in the area?"] == True:
+            if json_val_dict["Is there Mains Gas in the area?*"] == True:
                 json_val_dict['Full gas heating system installation'] = True
             else:
                 json_val_dict['Full oil heating system installation'] = True
         
         if json_val_dict['Qualifying Boiler'] == True:
             if json_val_dict['Heating Systems Controls *'] != 'Full zone control to spec':
-                if json_val_dict["Is there Mains Gas in the area?"] == True:
+                if json_val_dict["Is there Mains Gas in the area?*"] == True:
                     json_val_dict['Gas boiler and controls (Basic & controls pack)'] = True
                 else:
                     json_val_dict['Oil boiler and controls (Basic & controls pack)'] = True
