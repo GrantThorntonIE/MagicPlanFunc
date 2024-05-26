@@ -76,7 +76,10 @@ def create_table_text(dict, headers : list,
         
         if len(order_list) != 0:
             for item in order_list:
-                output += f'<tr><td>{item}</td>'
+                if item.isupper():
+                    output += f'<tr><td><strong>{item}</strong></td>'
+                else:
+                    output += f'<tr><td>{item}</td>'
                 value = dict[item] if item in dict.keys() else ''
                 if (type(value) == bool and value == True):
                     value = "Yes"
@@ -87,7 +90,10 @@ def create_table_text(dict, headers : list,
         else:
             for i, key in enumerate(dict):
                 # print(key, dict[key])
-                output += f'<tr><td>{key}</td>'
+                if key.isupper():
+                    output += f'<tr><td><strong>{key}</strong></td>'
+                else:
+                    output += f'<tr><td>{key}</td>'
                 output += f'<td>{dict[key]}</td>'
 
         output += '</table>'
@@ -640,26 +646,12 @@ def QA(root):
 def get_project_files(id, headers, plan_name):
             
     try:
+        output = []
         # azure_upload(json_data)
         # account_url = os.environ['AZ_STR_URL']
         account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
         default_credential = DefaultAzureCredential()
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-        
-        # container_name = os.environ['AZ_CNTR_ST']
-        # container_name = "project-files"
-        # container_client = blob_service_client.get_container_client(container_name)
-        # if not container_client.exists():
-            # container_client = blob_service_client.create_container(container_name)
-        
-        # local_file_name = str(uuid.uuid4()) + '.json'
-        # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-        # blob_client.upload_blob(json_data)
-        # local_file_name = str(uuid.uuid4()) + ".txt"
-        # data = "Hello, World!"
-        # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-        # blob_client.upload_blob(data)
-        
         
         
         container_name = "project-files"
@@ -683,21 +675,25 @@ def get_project_files(id, headers, plan_name):
         
         for file in JSON["data"]["files"]:
             if file["file_type"] == "pdf":
+                output.append(file["name"])
+                print('getting file: ' + file["name"])
+                if (socket.gethostname()) != "PC1VXW6X":
+                    request = urllib.request.Request(file["url"], headers=headers)
+                    file_content = urllib.request.urlopen(request).read()
+                    local_file_name = file["name"]
+                    blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
+                    blob_client.upload_blob(file_content, overwrite=True)
+
+        
+        for file in JSON["data"]["photos"]:
+            output.append(file["name"])
+            print('getting file: ' + file["name"])
+            if (socket.gethostname()) != "PC1VXW6X":
                 request = urllib.request.Request(file["url"], headers=headers)
                 file_content = urllib.request.urlopen(request).read()
                 local_file_name = file["name"]
                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
-                print('getting file: ' + file["name"])
                 blob_client.upload_blob(file_content, overwrite=True)
-
-        
-        for file in JSON["data"]["photos"]:
-            request = urllib.request.Request(file["url"], headers=headers)
-            file_content = urllib.request.urlopen(request).read()
-            local_file_name = file["name"]
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
-            print('getting file: ' + file["name"])
-            blob_client.upload_blob(file_content, overwrite=True)
     
     except Exception as ex:
         # exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -708,11 +704,12 @@ def get_project_files(id, headers, plan_name):
         print(output)
         
     finally:
-        return
+        return output
 
 
 def survey(root):
     try:
+        output = ''
         xml_ref_dict, nwa_dict, xml_val_dict = XML_2_dict(root)
         # id = xml_val_dict['Application ID'] # take this out once all erroneous references have been updated
         id = xml_val_dict['id'] # take this out once all erroneous references have been updated
@@ -731,73 +728,28 @@ def survey(root):
             , "customer": "63b5a4ae69c91"
             , "accept": "application/json"
             }
+
+
+        ofl_filelist = []
         
-        if (socket.gethostname()) != "PC1VXW6X":
-            # print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
-            get_project_files(id, headers, plan_name)
-            # print('finished getting project files')
-            # json_val_dict = {}
+        # if (socket.gethostname()) != "PC1VXW6X":
+        # print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
+        ofl_filelist = get_project_files(id, headers, plan_name)
+        # print('finished getting project files')
+        # for filename in ofl_filelist:
+            # print(filename)
+        
+   
+        print('about to create (almost) empty attachment files for ' + plan_name + " (id: " + str(id) + ")")
+        # populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
+        populate_template_new(xml_val_dict, 'template') # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
+        # populate_template_new(xml_val_dict, 'template_mrc')
+        print('finished creating attachment files')
             
-       
-            print('about to create (almost) empty attachment files for ' + plan_name + " (id: " + str(id) + ")")
-            # populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
-            populate_template_new(xml_val_dict, 'template') # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
-            # populate_template_new(xml_val_dict, 'template_mrc')
-            print('finished creating attachment files')
-        
 
         
         
-        
-        
-        ofl_wos = ['Internal Wall Insulation: Sloped or flat (horizontal) surface (M2)'
-                , 'Attic (Loft) Insulation 100 mm top-up (M2)'
-                , 'Attic (Loft) Insulation 150 mm top-up (M2)'
-                , 'Attic (Loft) Insulation 200 mm top-up (M2)'
-                , 'Attic (Loft) Insulation 250 mm top up (M2)'
-                , 'Attic (Loft) Insulation 300 mm (M2)'
-                , 'Attic Storage (5m2) (Nr)'
-                , 'Installation of new attic hatch (Nr)'
-                , 'Additional Roof Ventilation (High Level) (mm2)'
-                , 'Additional Roof Ventilation (Low Level) (mm2)'
-                , 'Walls'
-                , 'Draught Proofing (<= 20m installed) (Nr)'
-                , 'Draught Proofing (> 20m installed) (Nr)'
-                , 'MEV 15l/s Bathroom (Nr)'
-                , 'MEV 30l/s Utility (Nr)'
-                , 'MEV 60l/s Kitchen (Nr)'
-                , 'Permanent ventilation wall vent (Certified Proprietary Integrated System) (Nr)'
-                , 'Background ventilation wall vent (Certified Proprietary Integrated System) (Nr)'
-                , 'Ducting existing cooker hood to exterior (Nr)'
-                , 'Cavity Wall Insulation Bonded Bead (M2)'
-                , 'Loose Fibre Extraction (M2)'
-                , 'External Wall Insulation: Less than 60m2 (Nr)'
-                , 'External Wall Insulation: 60m2 to 85m2 (Nr)'
-                , 'External Wall Insulation: Greater than 85m2 (Nr)'
-                , 'ESB alteration (Nr)'
-                , 'GNI meter alteration (Nr)'
-                , 'GNI new connection (M)'
-                , 'RGI Meter_No Heating (M2)'
-                , 'Internal Wall Insulation: Vertical Surface (Nr)'
-                , 'External wall insulation and CWI: less than 60m2 (Nr)'
-                , 'External wall insulation and CWI: 60m2 to 85m2 (M2)'
-                , 'External wall insulation and CWI: greater than 85m2 (M2)'
-                , 'Window (same m2 rate will apply to windows with certified trickle vents) (M2)'
-                , 'Heating'
-                , 'Basic gas heating system (Nr)'
-                , 'Basic oil heating system (Nr)'
-                , 'Full gas heating system installation (Nr)'
-                , 'Full oil heating system installation (Nr)'
-                , 'Gas boiler and controls (Basic & controls pack) (Nr)'
-                , 'Oil boiler and controls (Basic & controls pack) (Nr)'
-                , 'Hot Water Cylinder Jacket (Nr)'
-                , 'Mechanical Ventilation Systems and Air Tightness Testing & Energy'
-                , 'Air Tightness Testing (Nr)'
-                , 'LED Bulbs: supply only (4 no.) (Nr)'
-                ]
-                
-        
-        ofl_wos = ['Attic Insulation'
+        ofl_wos = ['ATTIC INSULATION'
                 , 'Internal Wall Insulation: Sloped or flat (horizontal) surface'
                 , 'Attic (Loft) Insulation 100 mm top-up'
                 , 'Attic (Loft) Insulation 150 mm top-up'
@@ -808,7 +760,7 @@ def survey(root):
                 , 'Installation of new attic hatch'
                 , 'Additional Roof Ventilation (High Level)'
                 , 'Additional Roof Ventilation (Low Level)'
-                , 'Walls'
+                , 'WALLS'
                 , 'Draught Proofing (<= 20m installed)'
                 , 'Draught Proofing (> 20m installed)'
                 , 'MEV 15l/s Bathroom'
@@ -831,7 +783,7 @@ def survey(root):
                 , 'External wall insulation and CWI: 60m2 to 85m2'
                 , 'External wall insulation and CWI: greater than 85m2'
                 , 'Window (same m2 rate will apply to windows with certified trickle vents)'
-                , 'Heating'
+                , 'HEATING'
                 , 'Basic gas heating system'
                 , 'Basic oil heating system'
                 , 'Full gas heating system installation'
@@ -839,14 +791,14 @@ def survey(root):
                 , 'Gas boiler and controls (Basic & controls pack)'
                 , 'Oil boiler and controls (Basic & controls pack)'
                 , 'Hot Water Cylinder Jacket'
-                , 'Mechanical Ventilation Systems and Air Tightness Testing & Energy'
-                , 'Air Tightness Testing'
+                , 'MECHANICAL VENTILATION SYSTEMS AND AIR TIGHTNESS TESTING & ENERGY'
+                , 'Air-tightness test recommended?'
                 , 'LED Bulbs: supply only (4 no.)'
 
                 ]
         
         
-        ofl_wos_2 = ['Attic Insulation'
+        ofl_wos_2 = ['ATTIC INSULATION'
                 , 'Internal Wall Insulation: Sloped or flat (horizontal) surface'
                 , 'Attic (Loft) Insulation 100 mm top-up'
                 , 'Attic (Loft) Insulation 150 mm top-up'
@@ -857,7 +809,7 @@ def survey(root):
                 , 'Installation of new attic hatch'
                 , 'Additional Roof Ventilation (High Level)'
                 , 'Additional Roof Ventilation (Low Level)'
-                , 'Walls'
+                , 'WALLS'
                 , 'Draught Proofing (<= 20m installed)'
                 , 'Draught Proofing (> 20m installed)'
                 , 'MEV 15l/s Bathroom'
@@ -880,7 +832,7 @@ def survey(root):
                 , 'External wall insulation and CWI: 60m2 to 85m2'
                 , 'External wall insulation and CWI: greater than 85m2'
                 , 'Window (same m2 rate will apply to windows with certified trickle vents)'
-                , 'Heating'
+                , 'HEATING'
                 , 'Basic gas heating system'
                 , 'Basic oil heating system'
                 , 'Full gas heating system installation'
@@ -888,8 +840,8 @@ def survey(root):
                 , 'Gas boiler and controls (Basic & controls pack)'
                 , 'Oil boiler and controls (Basic & controls pack)'
                 , 'Hot Water Cylinder Jacket'
-                , 'Mechanical Ventilation Systems and Air Tightness Testing & Energy'
-                , 'Air Tightness Testing'
+                , 'MECHANICAL VENTILATION SYSTEMS AND AIR TIGHTNESS TESTING & ENERGY'
+                , 'Air-tightness test recommended?'
                 , 'LED Bulbs: supply only (4 no.)'
 
                 ]
@@ -1045,6 +997,7 @@ def survey(root):
                 , 'Notes (Roof)']
         
         ofl_walls = ['Wall Type 1*'
+                    , 'Other Wall type 1 Details*'
                     , 'Wall 1 wall thickness (mm)*'
                     , 'Wall 1 Insulation Present?*'
                     , 'Wall 1 Insulation Type*'
@@ -1053,6 +1006,7 @@ def survey(root):
                     , 'Can Wall type 1 Insulation Thickness be Measured?*'
                     , "If 'Yes' enter Wall type 1 insulation thickness (mm)*"
                     , 'Wall Type 2'
+                    , 'Other Wall type 2 Details*'
                     , 'Wall 2 wall thickness (mm)*'
                     , 'Wall 2 Insulation Present?*'
                     , 'Wall 2 Insulation Type*'
@@ -1061,6 +1015,7 @@ def survey(root):
                     , 'Can Wall type 2 Insulation Thickness be Measured?*'
                     , "If 'Yes' enter Wall type 2 insulation thickness (mm)*"
                     , 'Wall Type 3'
+                    , 'Other Wall type 3 Details*'
                     , 'Wall 3 wall thickness (mm)*'
                     , 'Wall 3 Insulation Present?*'
                     , 'Wall 3 Insulation Type*'
@@ -1069,6 +1024,7 @@ def survey(root):
                     , 'Can Wall type 3 Insulation Thickness be Measured?*'
                     , "If 'Yes' enter Wall type 3 insulation thickness (mm)*"
                     , 'Wall Type 4'
+                    , 'Other Wall type 4 Details*'
                     , 'Wall 4 wall thickness (mm)*'
                     , 'Wall 4 Insulation Present?*'
                     , 'Wall 4 Insulation Type*'
@@ -1176,7 +1132,7 @@ def survey(root):
         
         json_val_dict["Electric Storage Heater age (years)*"] = ''
         json_val_dict["Warm Air System age (years)*"] = ''
-        json_val_dict["Is there Mains Gas in the area?*"] = ''
+        json_val_dict["Is there Mains Gas in the Area?"] = ''
         json_val_dict["Number of habitable rooms in the property"] = 0
         json_val_dict["Number of wet rooms in the property"] = 0
         json_val_dict["No. of habitable/wet rooms w/ open flued appliance"] = 0
@@ -1528,7 +1484,7 @@ def survey(root):
                                 json_val_dict['Requires Service *'] = field["value"]["value"]
                             if field['label'] == '':
                                 json_val_dict["Other Primary Heating Details *"] = field["value"]["value"]
-                            if field['label'] == 'Not working details *':
+                            if field['label'] == 'Not working details*':
                                 json_val_dict['Not Working Details Primary Heating *'] = field["value"]["value"]
                             # if field['label'] == 'Does the appliance require service?':
                                 # json_val_dict['Requires Service (App?)*'] = field["value"]["value"]
@@ -1554,7 +1510,7 @@ def survey(root):
                                 json_val_dict['Secondary System Requires Service *'] = field["value"]["value"]
                             if field['label'] == '':
                                 json_val_dict["Other Primary Heating Details *"] = field["value"]["value"]
-                            if field['label'] == 'Not working details *':
+                            if field['label'] == 'Not working details*':
                                 json_val_dict['Not Working Details Secondary Heating *'] = field["value"]["value"]
                             # if field['label'] == 'Does the appliance require service?':
                                 # json_val_dict['Secondary System Requires Service (App?)*'] = field["value"]["value"]
@@ -1840,11 +1796,11 @@ def survey(root):
         json_val_dict['sloped_surface_area'] = round(slope_roof_area_sum) if round(slope_roof_area_sum) != 0 else 'N/A'
         
         print('sfi_dict', ':', json_val_dict["sfi_dict"])
-        json_val_dict['storage'] = 0
+        json_val_dict['Attic Storage (5m2)'] = 0
         for t in [100, 150, 200, 250, 300]:
             if str(t) in json_val_dict["sfi_dict"].keys():
                 json_val_dict[f'ins_{t}_area'] = round(json_val_dict["sfi_dict"][str(t)])
-                json_val_dict['storage'] = 1
+                json_val_dict['Attic Storage (5m2)'] = 1
         
         
         json_val_dict['new_hatch_count'] = new_hatch_count
@@ -2038,20 +1994,20 @@ def survey(root):
         
         if json_val_dict['Qualifying Boiler'] == True:
             if json_val_dict['Heating Systems Controls *'] == 'Full zone control to spec':
-                if json_val_dict["Is there Mains Gas in the area?*"] == True:
+                if json_val_dict["Is there Mains Gas in the Area?"] == True:
                     json_val_dict['Basic gas heating system'] = True
                 else:
                     json_val_dict['Basic oil heating system'] = True
         
         if (json_val_dict["Electric Storage Heater age (years)*"] == "25+" or json_val_dict["Warm Air System age (years)*"] == "25+") or json_val_dict['Heating System *'] in ["Open Fire with Back Boiler", "Open Fire with Back Boiler With Enclosure Door", "Solid Fuel Range", "Solid Fuel Range with Back Boiler"]:
-            if json_val_dict["Is there Mains Gas in the area?*"] == True:
+            if json_val_dict["Is there Mains Gas in the Area?"] == True:
                 json_val_dict['Full gas heating system installation'] = True
             else:
                 json_val_dict['Full oil heating system installation'] = True
         
         if json_val_dict['Qualifying Boiler'] == True:
             if json_val_dict['Heating Systems Controls *'] != 'Full zone control to spec':
-                if json_val_dict["Is there Mains Gas in the area?*"] == True:
+                if json_val_dict["Is there Mains Gas in the Area?"] == True:
                     json_val_dict['Gas boiler and controls (Basic & controls pack)'] = True
                 else:
                     json_val_dict['Oil boiler and controls (Basic & controls pack)'] = True
@@ -2133,61 +2089,70 @@ def survey(root):
         
         populate_template_new(xml_val_dict, 'template')
         
-        # json_val_dict["Is a Major Renovation calculation necessary?*"] = True
-        print('json_val_dict["Is a Major Renovation calculation necessary?*"]', ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
-        if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
-            print('generating template_mrc')
-            output = populate_template_new(output_dict, 'template_mrc')
-        
+                
         # print(ofl_wos)
         
         # ofl_wos_2 = ofl_wos
         
         for f in ofl_wos_2:
-            print('f', ':', f)
-            if f in json_val_dict.keys():
-                print(f, 'found in json_val_dict:', "'" + str(json_val_dict[f]) + "'")
-                if json_val_dict[f] in ['', 'N/A', None]:
-                    ofl_wos.remove(f)
-                    print('removed ' + f)
+            # print('f', ':', f)
+            if f.isupper():
+                continue
             else:
-                ofl_wos.remove(f)
-                print('removed')
+                if f in json_val_dict.keys():
+                    # print(f, 'found in json_val_dict:', "'" + str(json_val_dict[f]) + "'")
+                    if json_val_dict[f] in ['', 'N/A', None, 0]:
+                        ofl_wos.remove(f)
+                        # print('removed ' + f)
+                else:
+                    # print('removing ', f)
+                    ofl_wos.remove(f)
+        output = ''
+        # json_val_dict["Is a Major Renovation calculation necessary?*"] = True
+        print('json_val_dict["Is a Major Renovation calculation necessary?*"]', ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
+        if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
+            print('generating template_mrc')
+            output, filename = populate_template_new(output_dict, 'template_mrc')
+            
+            ofl_filelist.append(filename)
+            print(ofl_filelist)
         
-        
+        print(output)
         # print('Attic (Loft) Insulation 200 mm top-up', ':', json_val_dict['Attic (Loft) Insulation 200 mm top-up'])
-
-        styling = "border=\"1\""
-        output = f"""\
-            <h1>Work Order Summary</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_wos)} \
-            <h1>General</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
-            <h1>Major Renovation</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
-            <h1>Primary Measures</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
-            <h1>Roof</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)} \
-            <h1>Walls</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_walls)} \
-            <h1>Heating</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_heating)} \
-            <h1>Mechanical Ventilation Systems, Air Tightness Testing & Energy</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mae)} \
-            <h1>Supplementary</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_s)} \
-            <h1>Heating Primary Measures</h1> \
-            {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_hpm)} \
-
-            </div>"""
-
-
-        if warnings != '':
+        if output == '':
+            styling = "border=\"1\""
             output = f"""\
-                <h1>Warnings</h1> \
-                {warnings} \
-                </div>""" + output
+                <h1>Work Order Summary</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_wos)} \
+                <h1>General</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
+                <h1>Major Renovation</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
+                <h1>Primary Measures</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
+                <h1>Roof</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_roof)} \
+                <h1>Walls</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_walls)} \
+                <h1>Heating</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_heating)} \
+                <h1>Mechanical Ventilation Systems, Air Tightness Testing & Energy</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mae)} \
+                <h1>Supplementary</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_s)} \
+                <h1>Heating Primary Measures</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_hpm)} \
+                <h1>File List</h1> \
+                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_filelist)} \
+
+                </div>"""
+
+
+            if warnings != '':
+                output = f"""\
+                    <h1>Warnings</h1> \
+                    {warnings} \
+                    </div>""" + output
 
         # print(output)
 
@@ -2420,6 +2385,7 @@ def azure_upload(file_data, container_name = 'attachment'):
 def populate_template_new(json_val_dict, template):
     try:
         output = ''
+        return_filename = ''
         if template == 'template':
             filename = json_val_dict['plan_name'] + '.xlsx'
             container_name = 'attachment'
@@ -2671,6 +2637,7 @@ def populate_template_new(json_val_dict, template):
             
         if template == 'template_mrc':
             filename = json_val_dict['plan_name'] + ' Major Renovation calculation.xlsx'
+            return_filename = filename
             container_name = "project-files"
             local_path = json_val_dict['plan_name']
             local_path = local_path.replace('\\\\', '\\')
@@ -2759,7 +2726,7 @@ def populate_template_new(json_val_dict, template):
         print(output)
 
     finally:
-        return output
+        return output, return_filename
 
 
 
