@@ -2088,7 +2088,7 @@ def survey(root):
         
         
         
-        print('Not Working Details Primary Heating *', ':', json_val_dict['Not Working Details Primary Heating *'])
+        # print('Not Working Details Primary Heating *', ':', json_val_dict['Not Working Details Primary Heating *'])
         
         populate_template_new(xml_val_dict, 'template')
         
