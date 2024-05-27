@@ -2025,6 +2025,7 @@ def survey(root):
         json_val_dict['Permanent ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Permanent Vent"]
         json_val_dict['Background ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Background Vent"]
         json_val_dict['Ducting existing cooker hood to exterior'] = json_val_dict['Duct Cooker Hood']
+        json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'] = json_val_dict['New Windows being recommended for replacement']
         
         
         
