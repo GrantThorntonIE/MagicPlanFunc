@@ -2615,7 +2615,9 @@ def populate_template_new(json_val_dict, template):
             container_name = "project-files"
             local_path = json_val_dict['plan_name']
             print('local_path', ':', local_path)
-            instance_file_path = filename
+            # instance_file_path = filename
+            instance_file_path = os.path.join(local_path, filename)
+            
             # instance_file_path = instance_file_path.replace('\\\\', '\\')
             # instance_file_path = instance_file_path.replace('\\', '/')
             # print('instance_file_path', ':', instance_file_path)
@@ -2827,6 +2829,7 @@ def exterior_walls(root):
         # print('ext_wall_area_gross', ':', str(ext_wall_area_gross))
         # print('extern_perim', ':', str(extern_perim))
     return ext_wall_area_gross, exploded_wall_dict
+
 
 
 
