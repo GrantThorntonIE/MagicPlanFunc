@@ -2611,14 +2611,9 @@ def populate_template_new(json_val_dict, template):
             container_name = "project-files"
             local_path = json_val_dict['plan_name']
             print('local_path', ':', local_path)
-            # if (socket.gethostname()) != "PC1VXW6X":
-            # local_path = os.path.join('/', local_path)
-            # if not os.path.exists(local_path):
-            # print('about to create local_path', ':', local_path)
-            # os.mkdir(local_path)
             instance_file_path = os.path.join(local_path, filename)
-            instance_file_path = instance_file_path.replace('\\\\', '\\')
-            instance_file_path = instance_file_path.replace('\\', '/')
+            # instance_file_path = instance_file_path.replace('\\\\', '\\')
+            # instance_file_path = instance_file_path.replace('\\', '/')
             print('instance_file_path', ':', instance_file_path)
             
             v = {
@@ -2646,13 +2641,7 @@ def populate_template_new(json_val_dict, template):
 
         # Create the BlobServiceClient object
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
-
-        
         container_client = blob_service_client.get_container_client(container= container_name) 
-        
-
-
-        
 
         # if not os.path.exists(local_path):
             # print('about to create local_path', ':', local_path)
