@@ -2352,8 +2352,12 @@ def azure_upload(file_data, container_name = 'attachment'):
 
 def populate_template_new(json_val_dict, template):
     try:
+
+        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+        default_credential = DefaultAzureCredential()
         output = ''
         return_filename = ''
+        
         if template == 'template':
             filename = json_val_dict['plan_name'] + '.xlsx'
             container_name = 'attachment'
@@ -2611,10 +2615,10 @@ def populate_template_new(json_val_dict, template):
             container_name = "project-files"
             local_path = json_val_dict['plan_name']
             print('local_path', ':', local_path)
-            instance_file_path = os.path.join(local_path, filename)
+            instance_file_path = filename
             # instance_file_path = instance_file_path.replace('\\\\', '\\')
             # instance_file_path = instance_file_path.replace('\\', '/')
-            print('instance_file_path', ':', instance_file_path)
+            # print('instance_file_path', ':', instance_file_path)
             
             v = {
                 'plan_name': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'D2'}
@@ -2636,8 +2640,6 @@ def populate_template_new(json_val_dict, template):
 
         # print(v)
 
-        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
-        default_credential = DefaultAzureCredential()
 
         # Create the BlobServiceClient object
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
@@ -2674,7 +2676,7 @@ def populate_template_new(json_val_dict, template):
         xfile.save(instance_file_path)
 
 
-
+        instance_file_path = os.path.join(local_path, filename)
         with open(file=instance_file_path, mode="rb") as upload_file:
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=instance_file_path)
             blob_client.upload_blob(upload_file, overwrite=True)
