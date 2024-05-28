@@ -2612,8 +2612,10 @@ def populate_template_new(json_val_dict, template):
         if template == 'template_mrc':
             filename = json_val_dict['plan_name'] + ' Major Renovation calculation.xlsx'
             return_filename = filename
-            container_name = "project-files"
-            local_path = json_val_dict['plan_name']
+            # container_name = "project-files"
+            container_name = 'attachment'
+            # local_path = json_val_dict['plan_name']
+            local_path = "/tmp"
             print('local_path', ':', local_path)
             # instance_file_path = filename
             instance_file_path = os.path.join(local_path, filename)
