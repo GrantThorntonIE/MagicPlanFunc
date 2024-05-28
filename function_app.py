@@ -2358,7 +2358,9 @@ def populate_template_new(json_val_dict, template):
             filename = json_val_dict['plan_name'] + '.xlsx'
             container_name = 'attachment'
             local_path = "/tmp"
+            print('local_path', ':', local_path)
             instance_file_path = os.path.join(local_path, filename)
+            print('instance_file_path', ':', instance_file_path)
             v = {
                 'Applicant Name': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C4'}
                 , 'Application ID': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E4'}
@@ -2609,11 +2611,13 @@ def populate_template_new(json_val_dict, template):
             container_name = "project-files"
             local_path = json_val_dict['plan_name']
             local_path = local_path.replace('\\\\', '\\')
-            # local_path = local_path.replace('\\', '/')
+            local_path = local_path.replace('\\', '/')
             print('local_path', ':', local_path)
+            # if (socket.gethostname()) != "PC1VXW6X":
+            # local_path = os.path.join('/', local_path)
             instance_file_path = os.path.join(local_path, filename)
             instance_file_path = instance_file_path.replace('\\\\', '\\')
-            # instance_file_path = instance_file_path.replace('\\', '/')
+            instance_file_path = instance_file_path.replace('\\', '/')
             print('instance_file_path', ':', instance_file_path)
             
             v = {
@@ -2648,8 +2652,10 @@ def populate_template_new(json_val_dict, template):
 
 
         
-        if not os.path.exists(local_path):
-            os.mkdir(local_path)
+
+        # if not os.path.exists(local_path):
+            # print('about to create local_path', ':', local_path)
+            # os.mkdir(local_path)
         
         
         
