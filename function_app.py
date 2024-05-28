@@ -2122,6 +2122,7 @@ def survey(root):
             output, filename = populate_template_new(output_dict, 'template_mrc')
             
             ofl_filelist.append(filename)
+            # ofl_filelist.append(filename)
             print(ofl_filelist)
         
         
@@ -2608,9 +2609,11 @@ def populate_template_new(json_val_dict, template):
             container_name = "project-files"
             local_path = json_val_dict['plan_name']
             local_path = local_path.replace('\\\\', '\\')
+            local_path = local_path.replace('\\', '/')
             print('local_path', ':', local_path)
             instance_file_path = os.path.join(local_path, filename)
-            # instance_file_path = instance_file_path.replace('\\\\', '\\')
+            instance_file_path = instance_file_path.replace('\\\\', '\\')
+            instance_file_path = instance_file_path.replace('\\', '/')
             print('instance_file_path', ':', instance_file_path)
             
             v = {
