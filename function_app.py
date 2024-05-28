@@ -2831,4 +2831,3 @@ def exterior_walls(root):
 
 
 
-
