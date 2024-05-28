@@ -647,6 +647,9 @@ def get_project_files(id, headers, plan_name):
             
     try:
         output = []
+        generate_locally = True
+        if (socket.gethostname()) == "PC1VXW6X":
+            generate_locally = False
         # azure_upload(json_data)
         # account_url = os.environ['AZ_STR_URL']
         account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
@@ -677,7 +680,7 @@ def get_project_files(id, headers, plan_name):
             if file["file_type"] == "pdf":
                 output.append(file["name"])
                 print('getting file: ' + file["name"])
-                if (socket.gethostname()) != "PC1VXW6X":
+                if generate_locally == True:
                     request = urllib.request.Request(file["url"], headers=headers)
                     file_content = urllib.request.urlopen(request).read()
                     local_file_name = file["name"]
@@ -688,7 +691,7 @@ def get_project_files(id, headers, plan_name):
         for file in JSON["data"]["photos"]:
             output.append(file["name"])
             print('getting file: ' + file["name"])
-            if (socket.gethostname()) != "PC1VXW6X":
+            if generate_locally == True:
                 request = urllib.request.Request(file["url"], headers=headers)
                 file_content = urllib.request.urlopen(request).read()
                 local_file_name = file["name"]
@@ -740,11 +743,11 @@ def survey(root):
             # print(filename)
         
    
-        print('about to create (almost) empty attachment files for ' + plan_name + " (id: " + str(id) + ")")
+        # print('about to create (almost) empty attachment files for ' + plan_name + " (id: " + str(id) + ")")
         # populate_template(xml_val_dict) # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
         populate_template_new(xml_val_dict, 'template') # adds an (almost) empty copy of the template to avoid potential Logic App error if file not found
         # populate_template_new(xml_val_dict, 'template_mrc')
-        print('finished creating attachment files')
+        print('finished creating empty attachment files')
             
 
         
@@ -1141,7 +1144,7 @@ def survey(root):
         
         wt_dict = {}
         wt_dict['ext_wall_area_gross'], exploded_wall_dict = exterior_walls(root)
-        print("wt_dict['ext_wall_area_gross']", ':', wt_dict['ext_wall_area_gross'])
+        # print("wt_dict['ext_wall_area_gross']", ':', wt_dict['ext_wall_area_gross'])
         wt_dict['gross'] = 0
         wt_dict['total'] = 0
         wt_dict['total_window_a'] = 0
@@ -1152,7 +1155,7 @@ def survey(root):
             for room in nwa_dict[floor]:
                 for wall in nwa_dict[floor][room]:
                     if 10 <= int(floor) <= 13:
-                        print(nwa_dict[floor][room][wall]['total_window_a'])
+                        # print(nwa_dict[floor][room][wall]['total_window_a'])
                         wt_dict['total_window_a'] += nwa_dict[floor][room][wall]['total_window_a']
                         if 'loadBearingWall' in list(nwa_dict[floor][room][wall].keys()):
                             if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
@@ -1170,7 +1173,7 @@ def survey(root):
                                 req_area = nwa_dict[floor][room][wall]['a']
                             else:
                                 req_area = nwa_dict[floor][room][wall]['net_a']
-                            print(name, 'req_area', ':', str(req_area))
+                            # print(name, 'req_area', ':', str(req_area))
                             if nwa_dict[floor][room][wall][key] in wt_dict.keys():
                                 wt_dict[nwa_dict[floor][room][wall][key]] += req_area
                             else:
@@ -1183,7 +1186,7 @@ def survey(root):
         
         
         wt_dict['ext_wall_area_net'] = wt_dict['ext_wall_area_gross'] - wt_dict['total_party_a']
-        print(wt_dict)
+        # print(wt_dict)
         
         # (if any value blank then 0)
 
@@ -1228,14 +1231,14 @@ def survey(root):
                     # print(str(x1), str(y1))
                     # print(room, str(x1), str(y1), str(x3), str(y3))
                     # print(room, str(x2), str(y2), str(x4), str(y4))
-                    print(room, str(x3), str(y3))
-                    print(room, str(x4), str(y4))
+                    # print(room, str(x3), str(y3))
+                    # print(room, str(x4), str(y4))
 
         # else:
             # print('WARNING: No floor 10')
         
                     # for floor in exploded_wall_dict:
-                    print(floor)
+                    # print(floor)
                     d_min = 1
                     w_candidates = []
                     for wall in exploded_wall_dict[floor].keys():
@@ -1245,8 +1248,8 @@ def survey(root):
                         x6 = exploded_wall_dict[floor][wall]["x2"]
                         y6 = exploded_wall_dict[floor][wall]["y2"]
                         w_type = exploded_wall_dict[floor][wall]["type"]
-                        print(wall, str(x5), str(y5))
-                        print(wall, str(x6), str(y6))
+                        # print(wall, str(x5), str(y5))
+                        # print(wall, str(x6), str(y6))
                         
                         d = cart_distance((x3, y3), (x5, y5))
                         if d == d_min:
@@ -1261,7 +1264,7 @@ def survey(root):
                             d_min = d
                             w_candidates.append(wall)
                             
-                    print('d_min', ':', d_min)
+                    # print('d_min', ':', d_min)
                     print('w_candidates', ':', w_candidates)
 
         
@@ -1473,7 +1476,7 @@ def survey(root):
         # Go through Forms again to get values for Primary & Secondary Heating Systems
         for datum in JSON["data"]:
             if datum["symbol_name"] == json_val_dict['Heating System *']:
-                print(datum["symbol_name"])
+                # print(datum["symbol_name"])
                 for form in datum["forms"]:
                     for section in form["sections"]:
                         for field in section["fields"]:
@@ -2114,7 +2117,7 @@ def survey(root):
         output = ''
         # json_val_dict["Is a Major Renovation calculation necessary?*"] = True
         print('json_val_dict["Is a Major Renovation calculation necessary?*"]', ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
-        if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
+        if json_val_dict["Is a Major Renovation calculation necessary?*"] == "Yes":
             print('generating template_mrc')
             output, filename = populate_template_new(output_dict, 'template_mrc')
             
@@ -2123,8 +2126,6 @@ def survey(root):
         
         
         
-        'Permanent ventilation wall vent (Certified Proprietary Integrated System)'
-        'Background ventilation wall vent (Certified Proprietary Integrated System)'
         
         
         print(output)
@@ -2184,50 +2185,6 @@ def survey(root):
     finally:
         return output
     return output
-
-
-def XML_old():
-    # Go through the XML, referring to the JSON data whenever we need to - this is now disused but might need it again if there are any required values not included in the JSON (e.g. counts of objects)
-    
-    # values = root.findall('values/value')
-    # for value in values:
-        # k = value.attrib["key"]
-        # if value.attrib["key"] in json_ref_dict.keys():
-            # k = json_ref_dict[value.attrib["key"]]
-        # if 'statistics.' in k:
-            # continue
-        # output_dict[k] = value.text
-    
-    
-    # values = root.findall('floor/floorRoom/')
-    # for value in values:
-        # k = value.attrib["key"]
-        # if value.attrib["key"] in json_ref_dict.keys():
-            # k = json_ref_dict[value.attrib["key"]]
-        # output_dict[k] = value.text
-    
-    
-            
-    floors = root.findall('floor')
-    # LOGGER.info('no of floors:' + str(len(floors)))
-    
-    # Calculated Field. Equals SUM of "Ground surface without walls: m²" for floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
-    floor_area = 0
-    floor_area_without_walls = 0
-    floor_area_with_walls = 0
-    # for floor in root.findall('floor[@floorType="10"]'):
-    for floor in floors:
-        if int(floor.get('floorType')) > 9:
-            continue
-        print('floorType: ' + floor.get('floorType'))
-        floor_area_without_walls += float(floor.get('areaWithoutWalls')) if floor.get('areaWithoutWalls') != None else 0
-        floor_area_with_walls += float(floor.get('areaWithInteriorWallsOnly')) if floor.get('areaWithInteriorWallsOnly') != None else 0
-    output_dict['floor_area_without_walls'] = floor_area_without_walls
-    output_dict['floor_area_with_walls'] = floor_area_with_walls
-    
-    # Count of floors Basement level 1, Ground Floor, higher ground floor, 1st floor, 2nd floor, 3rd floor……...up to 9th floor
-    output_dict['no_of_floors'] = len(floors)
-
 
 
 
@@ -2653,7 +2610,7 @@ def populate_template_new(json_val_dict, template):
             local_path = local_path.replace('\\\\', '\\')
             print('local_path', ':', local_path)
             instance_file_path = os.path.join(local_path, filename)
-            instance_file_path = instance_file_path.replace('\\\\', '\\')
+            # instance_file_path = instance_file_path.replace('\\\\', '\\')
             print('instance_file_path', ':', instance_file_path)
             
             v = {
@@ -2719,7 +2676,7 @@ def populate_template_new(json_val_dict, template):
     
 
         
-        
+        print('created')
         
         
         
@@ -2742,7 +2699,47 @@ def populate_template_new(json_val_dict, template):
 
 
 
+def lot(output_dict):
+    Lot = 'S' # No works recommended
+    
+    # Shallow
+        # Attic Only	Sa
+        # Cavity Only	Sc
+        # A & Cavity	Sac
+        # Cavity & Windows	Scw
+        # A, C, & Windows	Sacw
 
+
+    # Deeper
+    # Internal + any shallow insulation	I
+    # Internal + any shallow insulation + Windows	Iw
+    
+    # External + any shallow insulation + Internal	E
+    # External + any shallow insulation + Internal + Windows	Ew
+    if output_dict['External Wall Insulation: Less than 60m2'] + output_dict['External Wall Insulation: 60m2 to 85m2'] + output_dict['External Wall Insulation: Greater than 85m2'] > 0:
+        print('External')
+    
+    
+    
+    
+    # Deeper with Heating 
+    # Heating + any shall ins + Internal	H
+    # Heating + any shall ins + Internal + windows	Hw
+    # Heating + External + any shall ins + Internal	HE
+    # Heating + External + any shall ins + Internal + windows	HEw
+
+    # Heat Pump + any shall ins + Internal	HP
+    # Heat Pump + any shall ins + Internal + windows	HPw
+    # Heat Pump + External + any shall ins + Internal	HPE
+    # Heat Pump + External + any shall ins + Internal + windows	HPEw
+
+
+    
+
+    # No longer in use: Sw, a, b, c
+    
+    
+    return Lot
 
 
 
@@ -2757,14 +2754,14 @@ def exterior_walls(root):
     
     floors = root.findall('interiorRoomPoints/floor')
     # floors = root.findall('floor')
-    print('len(floors)', ':', len(floors))
+    # print('len(floors)', ':', len(floors))
     for floor in floors:
         floor_type = floor.get('floorType')
         ft = floor_type
         if floor_type not in ['10', '11', '12', '13']:
             continue
         exterior_walls = [] # {} 
-        print('floor_type', ':', floor_type)
+        # print('floor_type', ':', floor_type)
         walls = floor.findall('exploded/wall')
         exploded_wall_dict[ft] = {}
         for i, wall in enumerate(walls):
@@ -2787,9 +2784,9 @@ def exterior_walls(root):
                 wall_height = 2
                 
             area = wall_height * length
-            print('length ' + str(i) , ':', length)
-            print('wall_height ' + str(i) , ':', wall_height)
-            print('area ' + str(i) , ':', area)
+            # print('length ' + str(i) , ':', length)
+            # print('wall_height ' + str(i) , ':', wall_height)
+            # print('area ' + str(i) , ':', area)
             
             (x1, y1), (x2, y2)
             
@@ -2820,9 +2817,11 @@ def exterior_walls(root):
             # ext_wall_area_gross -= wall_types['Internal Wall Area'][floor_index_adj] if 'Internal Wall Area' in wall_types else 0
 
             # walls_area_gross.append(wall_area_gross)
-        print('ext_wall_area_gross', ':', str(ext_wall_area_gross))
+        # print('ext_wall_area_gross', ':', str(ext_wall_area_gross))
         # print('extern_perim', ':', str(extern_perim))
     return ext_wall_area_gross, exploded_wall_dict
+
+
 
 
 
