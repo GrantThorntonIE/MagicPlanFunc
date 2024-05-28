@@ -2656,7 +2656,7 @@ def populate_template_new(json_val_dict, template):
             os.mkdir(local_path)
         except Exception as ex:
             error = traceback.format_exc()
-            print('error', ':', error)
+            # print('error', ':', error)
             
         
         
@@ -2691,6 +2691,9 @@ def populate_template_new(json_val_dict, template):
         
         
         
+        output = copy_from_container(json_val_dict['plan_name'])
+        
+        
     except Exception as ex:
         # exc_type, exc_obj, exc_tb = sys.exc_info()
         # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
@@ -2707,7 +2710,54 @@ def populate_template_new(json_val_dict, template):
         return output, return_filename
 
 
+def copy_from_container(plan_name):
 
+    try:
+        output = ''
+        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+        default_credential = DefaultAzureCredential()
+
+        # filename = json_val_dict['plan_name'] + '.xlsx'
+        # plan_name = 'WH571501 QA'
+        filename = plan_name + ' Major Renovation calculation' + '.xlsx'
+        # container_name = 'attachment'
+        container_from = 'attachment'
+        local_path_from = "/tmp"
+
+        container_to = 'project-files'
+        local_path_to = plan_name
+
+        # instance_file_path = os.path.join(local_path, filename)
+        # print('instance_file_path', ':', instance_file_path)
+        instance_file_path_from = os.path.join(local_path_from, filename)
+        print('instance_file_path_from', ':', instance_file_path_from)
+        instance_file_path_to = os.path.join(local_path_to, filename)
+        print('instance_file_path_to', ':', instance_file_path_to)
+
+
+
+        # Create the BlobServiceClient object
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        container_client = blob_service_client.get_container_client(container= container_from) 
+        
+        
+        file_content = container_client.download_blob(instance_file_path_from).readall()
+        print('got file_content')
+
+        blob_client = blob_service_client.get_blob_client(container=container_to, blob=instance_file_path_to)
+        blob_client.upload_blob(file_content, overwrite=True)
+
+        # with open(file=instance_file_path_to, mode="rb") as upload_file:
+            # blob_client = blob_service_client.get_blob_client(container=container_to, blob=instance_file_path_from)
+            # blob_client.upload_blob(upload_file, overwrite=True)
+
+    except:
+        output = traceback.format_exc()
+
+    finally:
+        # print('output', ':', output)
+        return output
+        
 
 
 def lot(output_dict):
