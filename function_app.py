@@ -203,13 +203,15 @@ def roof_general(json_val_dict):
     
     for n in range(1, 5):
         if f"Notes (Roof Type {n})" in json_val_dict.keys():
-            json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n}): "
-            json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})"]
-            json_val_dict["Notes (Roof)"] += "<BR>"
+            if json_val_dict[f"Notes (Roof Type {n})"] not in json_val_dict["Notes (Roof)"]:
+                json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n}): "
+                json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})"]
+                json_val_dict["Notes (Roof)"] += "<BR>"
         if f"Notes (Roof Type {n})*" in json_val_dict.keys():
-            json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n})*: "
-            json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})*"]
-            json_val_dict["Notes (Roof)"] += "<BR>"
+            if json_val_dict[f"Notes (Roof Type {n})*"] not in json_val_dict["Notes (Roof)"]:
+                json_val_dict["Notes (Roof)"] += f"Notes (Roof Type {n})*: "
+                json_val_dict["Notes (Roof)"] += json_val_dict[f"Notes (Roof Type {n})*"]
+                json_val_dict["Notes (Roof)"] += "<BR>"
     # print('json_val_dict["Notes (Roof)"]: ', json_val_dict["Notes (Roof)"])
     
     for n in range(1, 5):
@@ -273,13 +275,15 @@ def walls_general(json_val_dict):
     
     for n in range(1, 5):
         if f"Notes (Wall type {n} Walls)" in json_val_dict.keys():
-            json_val_dict["Notes (Walls)"] += f"Notes (Wall type {n} Walls): "
-            json_val_dict["Notes (Walls)"] += json_val_dict[f"Notes (Wall type {n} Walls)"]
-            json_val_dict["Notes (Walls)"] += "<BR>"
+            if json_val_dict[f"Notes (Wall type {n} Walls)"] not in json_val_dict["Notes (Walls)"]:
+                json_val_dict["Notes (Walls)"] += f"Notes (Wall type {n} Walls): "
+                json_val_dict["Notes (Walls)"] += json_val_dict[f"Notes (Wall type {n} Walls)"]
+                json_val_dict["Notes (Walls)"] += "<BR>"
         if f"Notes (Wall type {n} Walls)*" in json_val_dict.keys():
-            json_val_dict["Notes (Walls)"] += f"Notes (Wall type {n} Walls)*: "
-            json_val_dict["Notes (Walls)"] += json_val_dict[f"Notes (Wall type {n} Walls)*"]
-            json_val_dict["Notes (Walls)"] += "<BR>"
+            if json_val_dict[f"Notes (Wall type {n} Walls)*"] not in json_val_dict["Notes (Walls)"]:
+                json_val_dict["Notes (Walls)"] += f"Notes (Wall type {n} Walls)*: "
+                json_val_dict["Notes (Walls)"] += json_val_dict[f"Notes (Wall type {n} Walls)*"]
+                json_val_dict["Notes (Walls)"] += "<BR>"
     # print('json_val_dict["Notes (Walls)"]: ', json_val_dict["Notes (Walls)"])
     
     if json_val_dict["Is the property suitable for wall insulation? *"] == False:
@@ -691,13 +695,18 @@ def get_project_files(id, headers, plan_name):
 
         
         for file in JSON["data"]["photos"]:
-            output.append(file["name"])
-            print('getting file: ' + file["name"])
+            local_file_name = file["name"]
+            local_file_name = local_file_name.replace("10th Floor", "Ground Floor")
+            local_file_name = local_file_name.replace("11th Floor", "1st Floor")
+            local_file_name = local_file_name.replace("12th Floor", "2nd Floor")
+            local_file_name = local_file_name.replace("13th Floor", "3rd Floor")
+            local_file_name = local_file_name.replace("14th Floor", "4th Floor")
+            output.append(local_file_name)
+            print('getting file: ' + file["name"], 'local: ', local_file_name)
             if generate_locally == True:
                 request = urllib.request.Request(file["url"], headers=headers)
                 file_content = urllib.request.urlopen(request).read()
-                local_file_name = file["name"]
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, local_file_name))
                 blob_client.upload_blob(file_content, overwrite=True)
     
     except Exception as ex:
@@ -1779,7 +1788,7 @@ def survey(root):
             HSC_count += 1
         # % of Radiators/Rads with TRVs >=50%
         if json_val_dict['TRVs Number *'] > 0:
-            if json_val_dict['Rads Number *'] > 0: # should be redundant due to preceeding condition...
+            if json_val_dict['Rads Number *'] > 0: # should be redundant due to preceeding condition... (apparently not!)
                 r = json_val_dict['TRVs Number *'] / json_val_dict['Rads Number *']
                 if r >= 0.5:
                     HSC_count += 1
@@ -1793,8 +1802,10 @@ def survey(root):
         if HSC_count == 0:
             json_val_dict['Heating Systems Controls *'] = 'No Controls'
         if 1 <= HSC_count <= 3:
+            cylinder_stat_yn = "Yes" if cylinder_stat == True else "No"
+            percentage = str(round(r * 100)) + '%'
             json_val_dict['Heating Systems Controls *'] = 'Partial Controls'
-            json_val_dict["Partial Details *"] = 'No of Programmers: ' + str(json_val_dict['Programmer / Timeclock *']) + "<BR>" + 'No of Room Stats: ' + str(json_val_dict['Room Thermostat Number *']) + "<BR>" + '% of Radiators  with TRVs: ' + str(r) + "<BR>" + 'Cylinder Stat?: ' + str(cylinder_stat)
+            json_val_dict["Partial Details *"] = 'No of Programmers: ' + str(json_val_dict['Programmer / Timeclock *']) + "<BR>" + 'No of Room Stats: ' + str(json_val_dict['Room Thermostat Number *']) + "<BR>" + '% of Radiators  with TRVs: ' + percentage + "<BR>" + 'Cylinder Stat?: ' + cylinder_stat_yn
         if HSC_count == 4:
             json_val_dict['Heating Systems Controls *'] = 'Full zone control to spec'
             
@@ -1851,10 +1862,17 @@ def survey(root):
         json_val_dict['Total Surface Area receiving EWWR (m2)'] = round(float(wt_dict['EWI/IWI']) + float(json_val_dict['replace_window_area']), 2)
         json_val_dict['Result %'] = round(100 * (json_val_dict['Total Surface Area receiving EWWR (m2)'] / json_val_dict['Total Surface Area (m2)']), 2) if json_val_dict['Total Surface Area (m2)'] > 0 else 0
         json_val_dict['Is Major Renovation?'] = 'Yes' if json_val_dict['Result %'] >= 23 else 'No'
-                    
+        
+        json_val_dict['THERMAL ENVELOPE OF BUILDING AREA'] = json_val_dict['Total Surface Area (m2)']
+        json_val_dict['TOTAL SURFACE AREA FOR MAJOR RENOVATION WORKS'] = json_val_dict['Total Surface Area receiving EWWR (m2)']
+        json_val_dict['Total surface area for MR works / Thermal Envelope'] = json_val_dict['Result %']
+        json_val_dict['WARMER HOMES MAJOR RENOVATION RESULT'] = json_val_dict['Is Major Renovation?']
+        
+        
+        
         json_val_dict['EWI/IWI > 25% *'] = json_val_dict['Is Major Renovation?']
         
-
+        
 
         
         json_val_dict["ESB alteration"] = json_val_dict["ESB alteration"] if json_val_dict["ESB alteration"] != 0 else ''
@@ -1863,7 +1881,7 @@ def survey(root):
         
         
 
-        print(1)
+        # print(1)
         
         
         
@@ -1913,7 +1931,7 @@ def survey(root):
         # print('req_lagging_jacket_count', ':', req_lagging_jacket_count)
         
         for pm in ofl_pm:
-            print(json_val_dict[pm])
+            # print(json_val_dict[pm])
             if str(json_val_dict[pm]) not in ['', '0', 'N/A']: # if any primary measure has any valid value
                 json_val_dict["LED Bulbs: supply only (4 no.)"] = 1
                 json_val_dict["Hot Water Cylinder Jacket"] = req_lagging_jacket_count
@@ -2003,6 +2021,10 @@ def survey(root):
                 else:
                     json_val_dict['Basic oil heating system'] = 1
         
+        print("Electric Storage Heater age (years)*", ':', json_val_dict["Electric Storage Heater age (years)*"])
+        print("Warm Air System age (years)*", ':', json_val_dict["Warm Air System age (years)*"])
+        print('Heating System *', ':', json_val_dict['Heating System *'])
+        
         if (json_val_dict["Electric Storage Heater age (years)*"] == "25+" or json_val_dict["Warm Air System age (years)*"] == "25+") or json_val_dict['Heating System *'] in ["Open Fire with Back Boiler", "Open Fire with Back Boiler With Enclosure Door", "Solid Fuel Range", "Solid Fuel Range with Back Boiler"]:
             if json_val_dict["Is there Mains Gas in the Area?"] == "Yes":
                 json_val_dict['Full gas heating system installation'] = 1
@@ -2016,14 +2038,14 @@ def survey(root):
                 else:
                     json_val_dict['Oil boiler and controls (Basic & controls pack)'] = 1
         
-        print(2)
-        print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
+        # print(2)
+        # print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
         for field in ofl_hpm:
             if json_val_dict[field] != '' and field != 'Hot Water Cylinder Jacket':
                 print(field, ':', json_val_dict[field])
                 json_val_dict['Hot Water Cylinder Jacket'] = ''
-        print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
-        print(3)
+        # print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
+        # print(3)
         json_val_dict['Permanent ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Permanent Vent"]
         json_val_dict['Background ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Background Vent"]
         json_val_dict['Ducting existing cooker hood to exterior'] = json_val_dict['Duct Cooker Hood']
@@ -2130,7 +2152,7 @@ def survey(root):
             # print(ofl_filelist)
         
         # print(output_dict)
-        output_dict['Lot *'] = lot(output_dict)
+        output_dict['Lot *'] = 'Lot ' + lot(output_dict)
         print(output_dict['plan_name'], 'Lot *', ':', output_dict['Lot *'])
         
         
@@ -2467,31 +2489,18 @@ def populate_template_new(json_val_dict, template):
                 , 'Suitable for Insulation *': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E54'}
                 , 'Roof not suitable details*': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E56'}
                 , 'Notes (Roof)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'E59'}
-                , 'Internal Wall Insulation: Sloped or flat (horizontal) surface': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I67'}
-                , 'Attic (Loft) Insulation 100 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I68'}
-                , 'Attic (Loft) Insulation 150 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I69'}
-                , 'Attic (Loft) Insulation 200 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I70'}
-                , 'Attic (Loft) Insulation 250 mm top up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I71'}
-                , 'Attic (Loft) Insulation 300 mm': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I72'}
+                , 'Internal Wall Insulation: Sloped or flat (horizontal) surface': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I67', 'Default': ''}
+                , 'Attic (Loft) Insulation 100 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I68', 'Default': ''}
+                , 'Attic (Loft) Insulation 150 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I69', 'Default': ''}
+                , 'Attic (Loft) Insulation 200 mm top-up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I70', 'Default': ''}
+                , 'Attic (Loft) Insulation 250 mm top up': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I71', 'Default': ''}
+                , 'Attic (Loft) Insulation 300 mm': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I72', 'Default': ''}
                 
-                , 'Attic Storage (5m2)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I76'}
-                , 'Replacement of CWST/F&E tank': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I78'}
-                , 'Additional Roof Ventilation (High Level)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I84'}
-                , 'Additional Roof Ventilation (Low Level)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I85'}
+                , 'Attic Storage (5m2)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I76', 'Default': ''}
+                , 'Replacement of CWST/F&E tank': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I78', 'Default': ''}
+                , 'Additional Roof Ventilation (High Level)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I84', 'Default': ''}
+                , 'Additional Roof Ventilation (Low Level)': { 'Value': '' , 'Tab': 'Roof' , 'Cell': 'I85', 'Default': ''}
 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
                 
                 
                 
@@ -2535,29 +2544,29 @@ def populate_template_new(json_val_dict, template):
                 , 'EWI/IWI > 25% *': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E47'}
                 , 'Suitable for Draught Proofing': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E49'}
                 , 'Not suitable details Draughtproofing*': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E51'}
-                , 'Draught Proofing (<= 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L68'}
-                , 'Draught Proofing (> 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L69'}
-                , 'MEV 15l/s Bathroom': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L74'}
-                , 'MEV 30l/s Utility': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L75'}
-                , 'MEV 60l/s Kitchen': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L76'}
-                , 'New Permanent Vent': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L80'}
-                , 'New Background Vent': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L81'}
-                , 'Duct Cooker Hood': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L82'}
-                , 'Cavity Wall Insulation Bonded Bead': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F86'}
-                , 'Loose Fibre Extraction': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F87'}
-                , 'External Wall Insulation: Less than 60m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F88'}
-                , 'External Wall Insulation: 60m2 to 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F89'}
-                , 'External Wall Insulation: Greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F90'}
-                , 'ESB alteration': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F91'}
-                , 'GNI meter alteration': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F92'}
-                , 'New Gas Connection': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F93'}
-                , 'RGI Meter_No Heating': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F94'}
-                , 'Internal Wall Insulation: Vertical Surface': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F99'}
-                , 'External wall insulation and CWI: less than 60m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F104'}
-                , 'External wall insulation and CWI: 60m2 to 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F105'}
-                , 'External wall insulation and CWI: greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F106'}
-                , 'replace_window_area': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L113'}
-                , 'Notes (Windows and Doors)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E117'}
+                , 'Draught Proofing (<= 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L68', 'Default': ''}
+                , 'Draught Proofing (> 20m installed)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L69', 'Default': ''}
+                , 'MEV 15l/s Bathroom': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L74', 'Default': ''}
+                , 'MEV 30l/s Utility': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L75', 'Default': ''}
+                , 'MEV 60l/s Kitchen': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L76', 'Default': ''}
+                , 'New Permanent Vent': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L80', 'Default': ''}
+                , 'New Background Vent': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L81', 'Default': ''}
+                , 'Duct Cooker Hood': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L82', 'Default': ''}
+                , 'Cavity Wall Insulation Bonded Bead': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F86', 'Default': ''}
+                , 'Loose Fibre Extraction': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F87', 'Default': ''}
+                , 'External Wall Insulation: Less than 60m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F88', 'Default': ''}
+                , 'External Wall Insulation: 60m2 to 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F89', 'Default': ''}
+                , 'External Wall Insulation: Greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F90', 'Default': ''}
+                , 'ESB alteration': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F91', 'Default': ''}
+                , 'GNI meter alteration': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F92', 'Default': ''}
+                , 'New Gas Connection': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F93', 'Default': ''}
+                , 'RGI Meter_No Heating': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F94', 'Default': ''}
+                , 'Internal Wall Insulation: Vertical Surface': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F99', 'Default': ''}
+                , 'External wall insulation and CWI: less than 60m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F104', 'Default': ''}
+                , 'External wall insulation and CWI: 60m2 to 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F105', 'Default': ''}
+                , 'External wall insulation and CWI: greater than 85m2': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'F106', 'Default': ''}
+                , 'replace_window_area': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'L113', 'Default': ''}
+                , 'Notes (Windows and Doors)': { 'Value': '' , 'Tab': 'Wall' , 'Cell': 'E117', 'Default': ''}
                 
                 
                 
@@ -2587,6 +2596,17 @@ def populate_template_new(json_val_dict, template):
                 , 'Not suitable details*': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E70'}
                 , 'Notes (Heating)': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'E74'}
                 
+                
+                , 'Basic gas heating system': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K81', 'Default': ''}
+                , 'Basic oil heating system': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K85', 'Default': ''}
+                , 'Full gas heating system installation': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K89', 'Default': ''}
+                , 'Full oil heating system installation': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K114', 'Default': ''}
+                , 'Gas boiler and controls (Basic & controls pack)': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K118', 'Default': ''}
+                , 'Hot Water Cylinder Jacket': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K127', 'Default': ''}
+                , 'Oil boiler and controls (Basic & controls pack)': { 'Value': '' , 'Tab': 'Heating' , 'Cell': 'K167', 'Default': ''}
+                
+                
+                
                 , 'Secondary Heating System': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'E25'}
                 , 'Secondary System Age *': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'E27'}
                 , 'Secondary System Fully Working *': { 'Value': '' , 'Tab': 'Heating - Secondary' , 'Cell': 'E29'}
@@ -2597,8 +2617,8 @@ def populate_template_new(json_val_dict, template):
                 , 'Number of habitable rooms in the property': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D55'}
                 , 'Number of wet rooms in the property': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D57'}
                 , 'No. of habitable/wet rooms w/ open flued appliance': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'D59'}
-                , 'LED Bulbs: supply only (4 no.)': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E31'}
-                , 'Air-tightness test recommended?': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E27'}
+                , 'LED Bulbs: supply only (4 no.)': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E31', 'Default': ''}
+                , 'Air-tightness test recommended?': { 'Value': '' , 'Tab': 'Mechanical Ventilation Systems' , 'Cell': 'E27', 'Default': ''}
 
                 , 'Adequate Access*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'D25'}
                 , 'No Access Details*': { 'Value': '' , 'Tab': 'Supplementary' , 'Cell': 'I25'}
@@ -2636,15 +2656,26 @@ def populate_template_new(json_val_dict, template):
                 , 'Thermal Envelope - Heat loss walls, windows and doors': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E6'}
                 , 'Thermal Envelope - Heat loss floor area': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E7'}
                 , 'Thermal Envelope - Heat loss roof area': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E8'}
+                , 'THERMAL ENVELOPE OF BUILDING AREA': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E9'}
                 , 'Heat loss Wall Area recommended for EWI and IWI': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E12'}
                 , 'New Windows being recommended for replacement': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E13'}
+                , 'TOTAL SURFACE AREA FOR MAJOR RENOVATION WORKS': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E14'}
+                , 'Total surface area for MR works / Thermal Envelope': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E17'}
+                , 'WARMER HOMES MAJOR RENOVATION RESULT': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E18'}
+                
+                
                 }
         # print("json_val_dict['Thermal Envelope - Heat loss walls, windows and doors']", ':', json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
         for field in v:
-            # print('field', ':', field)
+            print('field', ':', field)
             if field in json_val_dict.keys():
                 v[field]['Value'] = json_val_dict[field]
-                # print("v[field]['Value']", ':', v[field]['Value'])
+                print("v[field]['Value']", ':', v[field]['Value'])
+                
+                if v[field]['Value'] in ['', 'N/A', 0]:
+                    if "Default" in v[field].keys():
+                        v[field]['Value'] = v[field]['Default']
+                
                 if type(v[field]['Value']) == str and '<BR>' in v[field]['Value']:
                     v[field]['Value'] = v[field]['Value'].replace('<BR>', '\n')
                 # print(field, ':', v[field]['Value'])
@@ -2780,7 +2811,8 @@ def lot(output_dict):
             , "Cavity Wall Insulation Bonded Bead": "c"
             , "Internal Wall Insulation: Vertical Surface": "I"
             , "Basic gas heating system": "H"
-            , "Basic oil heating system Full gas heating system installation": "H"
+            , "Basic oil heating system": "H"
+            , "Full gas heating system installation": "H"
             , "Full oil heating system installation": "H"
             , "Gas boiler and controls (Basic & controls pack)": "H"
             , "Oil boiler and controls (Basic & controls pack)": "H"
@@ -2797,7 +2829,7 @@ def lot(output_dict):
         for k in recommended_works_dict:
             v = recommended_works_dict[k]
             if k in output_dict.keys() and output_dict[k] not in ['N/A', 0, ""] and v not in (Lot_upper + Lot_lower):
-                print('adding: ', output_dict[k])
+                # print('adding: ', output_dict[k])
                 if v.isupper():
                     Lot_upper += v
                 else:
@@ -2817,7 +2849,7 @@ def lot(output_dict):
         
         # IEacw
         
-        valid_lots = ['Sa', 'Sc', 'Sac', 'Scw', 'Sacw', 'I', 'Iw', 'E', 'Ew', 'H', 'Hw', 'HE ', 'HEw', 'S']
+        valid_lots = ['Sa', 'Sc', 'Sac', 'Scw', 'Sacw', 'I', 'Iw', 'E', 'Ew', 'H', 'Hw', 'HE', 'HEw', 'S']
         if Lot not in valid_lots:
             # print('invalid')
             Lot = Lot + ' (invalid)'
