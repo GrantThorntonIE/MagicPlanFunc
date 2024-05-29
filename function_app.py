@@ -608,6 +608,8 @@ def XML_2_dict(root, t = "floor"):
                     for window in o:
                         if 'x1' not in list(o[window].keys()):
                             continue
+                        if 'x3' not in list(o[window].keys()):
+                            continue
                         # print(window)
                         if linear_subset(float(o[window]['x1']), float(o[window]['y1']), float(o[window]['x2']), float(o[window]['y2']), float(y[wall]['x3']), float(y[wall]['y3']), float(y[wall]['x4']), float(y[wall]['y4'])) == True:
                             y[wall]['windows'].append(window + ' (' + str(o[window]['a']) + ')')
@@ -1678,6 +1680,8 @@ def survey(root):
                             json_val_dict["New Background Vent"] += 1
                         if furniture["name"] == "Duct Cooker Hood":
                             json_val_dict["Duct Cooker Hood"] += 1
+                        if furniture["name"] == "Duct Mechanical Extract Vent":
+                            json_val_dict["Duct Cooker Hood"] += 1
                         if furniture["name"] == "New Hatch": # only found in -1 to 9 and Roof?
                             new_hatch_count += 1
                 
@@ -1759,6 +1763,8 @@ def survey(root):
         
         json_val_dict['Gross floor area (m2) *'] = round(json_val_dict['Gross floor area (m2) *'], 2)
         json_val_dict['Required per standards (mm2) *'] = round(sum_low * 10000)
+        
+
         
         
         HSC_count = 0
@@ -1857,7 +1863,7 @@ def survey(root):
         
         
 
-        
+        print(1)
         
         
         
@@ -1915,7 +1921,7 @@ def survey(root):
         # print('sum of Ex/In: ', float(external_wall_insulation) + float(json_val_dict["Internal Wall Insulation: Vertical Surface"]))
         json_val_dict["Air-tightness test recommended?"] = 1 if float(external_wall_insulation) + float(json_val_dict["Internal Wall Insulation: Vertical Surface"]) > 0 else ''
         
-        
+        print(2)
         json_val_dict["Cavity Wall Insulation Bonded Bead"] = round(json_val_dict["Cavity Wall Insulation Bonded Bead"]) if json_val_dict["Cavity Wall Insulation Bonded Bead"] != 0 else 'N/A'
         json_val_dict["Loose Fibre Extraction"] = round(json_val_dict["Loose Fibre Extraction"]) if json_val_dict["Loose Fibre Extraction"] != 0 else 'N/A'
         json_val_dict["Internal Wall Insulation: Vertical Surface"] = round(json_val_dict["Internal Wall Insulation: Vertical Surface"]) if json_val_dict["Internal Wall Insulation: Vertical Surface"] != 0 else 'N/A'
@@ -1971,7 +1977,7 @@ def survey(root):
         
         # print('EWI/IWI > 25% *', ':', json_val_dict['EWI/IWI > 25% *'])
         # print('EWI/IWI > 25% *', ':', json_val_dict['EWI/IWI > 25% *'])
-        # print('condensing', ':', condensing)
+        print('condensing', ':', condensing)
         
         
         json_val_dict['Qualifying Boiler'] = False
@@ -2024,13 +2030,16 @@ def survey(root):
             if json_val_dict[field] != '':
                 json_val_dict['Hot Water Cylinder Jacket'] = ''
         
-        
+        print(3)
         json_val_dict['Permanent ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Permanent Vent"]
         json_val_dict['Background ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Background Vent"]
         json_val_dict['Ducting existing cooker hood to exterior'] = json_val_dict['Duct Cooker Hood']
-        json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'] = json_val_dict['New Windows being recommended for replacement']
+        json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'] = round(json_val_dict['New Windows being recommended for replacement'])
+        json_val_dict['GNI new connection'] = json_val_dict['New Gas Connection']
+        json_val_dict['Additional Roof Ventilation (Low Level)'] = json_val_dict['Required per standards (mm2) *'] - json_val_dict["Existing (mm2)*"]
+        json_val_dict['Additional Roof Ventilation (High Level)'] = json_val_dict['high_roof_vent_area']
         
-        
+        print('Window (same m2 rate will apply to windows with certified trickle vents)', ':', json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'])
         
         # xl_2_pdf(xl_path)
         # print(json_val_dict)
@@ -2083,6 +2092,7 @@ def survey(root):
                 
                 ]
         
+        print('missing:')
         for m in missing:
             if m not in json_val_dict.keys():
                 print(m, 'not in json_val_dict.keys')
@@ -2123,10 +2133,11 @@ def survey(root):
             
             ofl_filelist.append(filename)
             # ofl_filelist.append(filename)
-            print(ofl_filelist)
+            # print(ofl_filelist)
         
-        
-        
+        # print(output_dict)
+        output_dict['Lot *'] = lot(output_dict)
+        print(output_dict['plan_name'], 'Lot *', ':', output_dict['Lot *'])
         
         
         print(output)
@@ -2139,7 +2150,7 @@ def survey(root):
                 <h1>General</h1> \
                 {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_general)} \
                 <h1>Major Renovation</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
+                {create_table_text(output_dict, headers = ['Building Thermal Envelope', 'm2'], styling=styling, do_not_sum=['All'], order_list = ofl_mr)} \
                 <h1>Primary Measures</h1> \
                 {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_pm)} \
                 <h1>Roof</h1> \
@@ -2690,8 +2701,8 @@ def populate_template_new(json_val_dict, template):
         print('created')
         
         
-        
-        output = copy_from_container(json_val_dict['plan_name'])
+        if template == 'template_mrc':
+            output = copy_from_container(json_val_dict['plan_name'])
         
         
     except Exception as ex:
@@ -2759,49 +2770,71 @@ def copy_from_container(plan_name):
         return output
         
 
-
 def lot(output_dict):
-    Lot = 'S' # No works recommended
-    
-    # Shallow
-        # Attic Only	Sa
-        # Cavity Only	Sc
-        # A & Cavity	Sac
-        # Cavity & Windows	Scw
-        # A, C, & Windows	Sacw
+    try:
+        Lot = 'S' # No works recommended
+        
+        recommended_works_dict = {
+            "Internal Wall Insulation: Sloped or flat (horizontal) surface": "a"
+            , "Attic (Loft) Insulation 100 mm top-up": "a"
+            , "Attic (Loft) Insulation 150 mm top-up": "a"
+            , "Attic (Loft) Insulation 200 mm top-up": "a"
+            , "Attic (Loft) Insulation 250 mm top up": "a"
+            , "Attic (Loft) Insulation 300 mm": "a"
+            , "Cavity Wall Insulation Bonded Bead": "c"
+            , "Internal Wall Insulation: Vertical Surface": "I"
+            , "Basic gas heating system": "H"
+            , "Basic oil heating system Full gas heating system installation": "H"
+            , "Full oil heating system installation": "H"
+            , "Gas boiler and controls (Basic & controls pack)": "H"
+            , "Oil boiler and controls (Basic & controls pack)": "H"
+            , "External Wall Insulation: Less than 60m2": "E"
+            , "External Wall Insulation: 60m2 to 85m2": "E"
+            , "External Wall Insulation: Greater than 85m2": "E"
+            , "External wall insulation and CWI: less than 60m2": "E"
+            , "External wall insulation and CWI: 60m2 to 85m2": "E"
+            , "External wall insulation and CWI: greater than 85m2": "E"
+            , "Window (same m2 rate will apply to windows with certified trickle vents)": "w"
+        }
+        Lot_upper = ''
+        Lot_lower = ''
+        for k in recommended_works_dict:
+            v = recommended_works_dict[k]
+            if k in output_dict.keys() and output_dict[k] not in ['N/A', 0, ""] and v not in (Lot_upper + Lot_lower):
+                print('adding: ', output_dict[k])
+                if v.isupper():
+                    Lot_upper += v
+                else:
+                    Lot_lower += v
+        
+        Lot_upper = Lot_upper.replace("IE", "E")
+        Lot_upper = Lot_upper.replace("IH", "H")
+        if Lot_upper == '':
+            Lot_upper = 'S'
+        else:
+            Lot_lower = Lot_lower.replace('a', '')
+            Lot_lower = Lot_lower.replace('c', '')
+        Lot = Lot_upper + Lot_lower
+        
+        
+        # print(Lot)
+        
+        # IEacw
+        
+        valid_lots = ['Sa', 'Sc', 'Sac', 'Scw', 'Sacw', 'I', 'Iw', 'E', 'Ew', 'H', 'Hw', 'HE ', 'HEw', 'S']
+        if Lot not in valid_lots:
+            # print('invalid')
+            Lot = Lot + ' (invalid)'
+            print(list(valid_lots))
 
+        
 
-    # Deeper
-    # Internal + any shallow insulation	I
-    # Internal + any shallow insulation + Windows	Iw
-    
-    # External + any shallow insulation + Internal	E
-    # External + any shallow insulation + Internal + Windows	Ew
-    if output_dict['External Wall Insulation: Less than 60m2'] + output_dict['External Wall Insulation: 60m2 to 85m2'] + output_dict['External Wall Insulation: Greater than 85m2'] > 0:
-        print('External')
-    
-    
-    
-    
-    # Deeper with Heating 
-    # Heating + any shall ins + Internal	H
-    # Heating + any shall ins + Internal + windows	Hw
-    # Heating + External + any shall ins + Internal	HE
-    # Heating + External + any shall ins + Internal + windows	HEw
+        # No longer in use: Sw, a, b, c
+    except:
+        Lot = traceback.format_exc()
 
-    # Heat Pump + any shall ins + Internal	HP
-    # Heat Pump + any shall ins + Internal + windows	HPw
-    # Heat Pump + External + any shall ins + Internal	HPE
-    # Heat Pump + External + any shall ins + Internal + windows	HPEw
-
-
-    
-
-    # No longer in use: Sw, a, b, c
-    
     
     return Lot
-
 
 
 def exterior_walls(root):
