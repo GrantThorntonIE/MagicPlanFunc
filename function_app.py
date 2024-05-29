@@ -1471,7 +1471,7 @@ def survey(root):
                                 slope_dict[datum["symbol_instance_id"]] = pitch
         # print('balanced_flues', ':', str(balanced_flues))
 
-
+        
 
 
         json_val_dict['Notes (Heating)'] = ''
@@ -1907,11 +1907,19 @@ def survey(root):
         json_val_dict['Gas boiler and controls (Basic & controls pack)'] = ''
         json_val_dict['Oil boiler and controls (Basic & controls pack)'] = ''
         
+        
+        
+        # print('req_lagging_jackets', ':', req_lagging_jackets)
+        # print('req_lagging_jacket_count', ':', req_lagging_jacket_count)
+        
         for pm in ofl_pm:
-            # print(json_val_dict[pm])
+            print(json_val_dict[pm])
             if str(json_val_dict[pm]) not in ['', '0', 'N/A']: # if any primary measure has any valid value
                 json_val_dict["LED Bulbs: supply only (4 no.)"] = 1
                 json_val_dict["Hot Water Cylinder Jacket"] = req_lagging_jacket_count
+        
+        # print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
+        # print('req_lagging_jacket_count', ':', req_lagging_jacket_count)
         
         
         # print(external_wall_insulation)
@@ -1921,7 +1929,7 @@ def survey(root):
         # print('sum of Ex/In: ', float(external_wall_insulation) + float(json_val_dict["Internal Wall Insulation: Vertical Surface"]))
         json_val_dict["Air-tightness test recommended?"] = 1 if float(external_wall_insulation) + float(json_val_dict["Internal Wall Insulation: Vertical Surface"]) > 0 else ''
         
-        print(2)
+
         json_val_dict["Cavity Wall Insulation Bonded Bead"] = round(json_val_dict["Cavity Wall Insulation Bonded Bead"]) if json_val_dict["Cavity Wall Insulation Bonded Bead"] != 0 else 'N/A'
         json_val_dict["Loose Fibre Extraction"] = round(json_val_dict["Loose Fibre Extraction"]) if json_val_dict["Loose Fibre Extraction"] != 0 else 'N/A'
         json_val_dict["Internal Wall Insulation: Vertical Surface"] = round(json_val_dict["Internal Wall Insulation: Vertical Surface"]) if json_val_dict["Internal Wall Insulation: Vertical Surface"] != 0 else 'N/A'
@@ -1962,24 +1970,6 @@ def survey(root):
             warnings = ''
         
         
-        # json_val_dict['Qualifying Boiler'] = ''
-        
-        # if json_val_dict['EWI/IWI > 25% *'] == 'No':
-            # json_val_dict['Qualifying Boiler'] = 'N/A'
-        # else:
-            # if condensing == True:
-                # json_val_dict['Qualifying Boiler'] = False
-            # if condensing == False and linked_stove_bb == True:
-                # json_val_dict['Qualifying Boiler'] = False
-        
-
-        
-        
-        # print('EWI/IWI > 25% *', ':', json_val_dict['EWI/IWI > 25% *'])
-        # print('EWI/IWI > 25% *', ':', json_val_dict['EWI/IWI > 25% *'])
-        print('condensing', ':', condensing)
-        
-        
         json_val_dict['Qualifying Boiler'] = False
         
         if json_val_dict['EWI/IWI > 25% *'] == 'No':
@@ -1999,7 +1989,7 @@ def survey(root):
             json_val_dict['Suitable for Heating Measures *'] = True
         
         # print(json_val_dict['Suitable for Heating Measures *'])
-        print("Is there Mains Gas in the Area?", ':', json_val_dict["Is there Mains Gas in the Area?"])
+        # print("Is there Mains Gas in the Area?", ':', json_val_dict["Is there Mains Gas in the Area?"])
         
         
         if json_val_dict['Suitable for Heating Measures *'] == False:
@@ -2026,10 +2016,13 @@ def survey(root):
                 else:
                     json_val_dict['Oil boiler and controls (Basic & controls pack)'] = 1
         
+        print(2)
+        print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
         for field in ofl_hpm:
-            if json_val_dict[field] != '':
+            if json_val_dict[field] != '' and field != 'Hot Water Cylinder Jacket':
+                print(field, ':', json_val_dict[field])
                 json_val_dict['Hot Water Cylinder Jacket'] = ''
-        
+        print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
         print(3)
         json_val_dict['Permanent ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Permanent Vent"]
         json_val_dict['Background ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Background Vent"]
@@ -2040,6 +2033,7 @@ def survey(root):
         json_val_dict['Additional Roof Ventilation (High Level)'] = json_val_dict['high_roof_vent_area']
         
         print('Window (same m2 rate will apply to windows with certified trickle vents)', ':', json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'])
+
         
         # xl_2_pdf(xl_path)
         # print(json_val_dict)
@@ -2142,6 +2136,8 @@ def survey(root):
         
         print(output)
         # print('Attic (Loft) Insulation 200 mm top-up', ':', json_val_dict['Attic (Loft) Insulation 200 mm top-up'])
+        
+        print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
         if output == '':
             styling = "border=\"1\""
             output = f"""\
