@@ -1427,23 +1427,28 @@ def survey(root):
                             cylinder_stat = True
                         if field["label"] == "Is the cylinder heated from the primary heating system?":
                             if field["value"]["value"] == True:
-                                json_val_dict['HWS'] += ('From Primary heating system' + '<BR>')
                                 json_val_dict['From Primary heating system'] = True
+                                if 'From Primary heating system' not in json_val_dict['HWS']:
+                                    json_val_dict['HWS'] += ('From Primary heating system' + '<BR>')
                         if field["label"] == "Is the cylinder heated from the secondary heating system?":
                             if field["value"]["value"] == True:
-                                json_val_dict['HWS'] += ('From Secondary heating system' + '<BR>')
                                 json_val_dict['From Secondary heating system'] = True
+                                if 'From Secondary heating system' not in json_val_dict['HWS']:
+                                    json_val_dict['HWS'] += ('From Secondary heating system' + '<BR>')
                         if field["label"] == "Is there an electric immersion?" and field["value"]["value"] == True:
-                            json_val_dict['HWS'] += ('Electric Immersion' + '<BR>')
                             json_val_dict['Electric Immersion'] = True
+                            if 'Electric Immersion' not in json_val_dict['HWS']:
+                                json_val_dict['HWS'] += ('Electric Immersion' + '<BR>')
                         if field["label"] == "How is the cylinder heated? (Do not include immersion)" and field["value"]["has_value"] == True:
-                            json_val_dict['HWS'] += ('Other' + '<BR>')
                             json_val_dict["Other HW Details *"] = field["value"]["value"]
+                            if 'Other' not in json_val_dict['HWS']:
+                                json_val_dict['HWS'] += ('Other' + '<BR>')
                             
                         if field['label'] == "Heating notes*":
                             if datum["symbol_name"] not in [json_val_dict['Heating System *'], json_val_dict['Secondary Heating System']]:
                                 n = 'Other System: ' + field["value"]["value"] + '<BR>'
-                                other_heating_notes += n
+                                if n not in other_heating_notes:
+                                    other_heating_notes += n
 
 
 
@@ -1513,7 +1518,8 @@ def survey(root):
                                 linked_stove_bb = True
                             if field['label'] == "Heating notes*":
                                 n = 'Primary System: ' + field["value"]["value"] + '<BR>'
-                                json_val_dict['Notes (Heating)'] += n
+                                if n not in json_val_dict['Notes (Heating)']:
+                                    json_val_dict['Notes (Heating)'] += n
 
             if datum["symbol_name"] == json_val_dict['Secondary Heating System']:
                 for form in datum["forms"]:
@@ -1535,7 +1541,8 @@ def survey(root):
                                 json_val_dict['Requires Service Details Secondary Heating *'] = field["value"]["value"]
                             if field['label'] == "Heating notes*":
                                 n = 'Secondary System: ' + field["value"]["value"] + '<BR>'
-                                json_val_dict['Notes (Heating)'] += n
+                                if n not in json_val_dict['Notes (Heating)']:
+                                    json_val_dict['Notes (Heating)'] += n
                     
         
         
@@ -1857,7 +1864,7 @@ def survey(root):
         json_val_dict['Thermal Envelope - Heat loss floor area'] = round(json_val_dict['Thermal Envelope - Heat loss floor area'], 2)
         json_val_dict['Thermal Envelope - Heat loss roof area'] = json_val_dict['Thermal Envelope - Heat loss floor area']
         json_val_dict['Heat loss Wall Area recommended for EWI and IWI'] = round(wt_dict['EWI/IWI'], 2) # round(wt_dict['total'], 2)
-        json_val_dict['New Windows being recommended for replacement'] = round(json_val_dict['replace_window_area'], 2)
+        json_val_dict['New Windows being recommended for replacement'] = round(json_val_dict['replace_window_area'], 2) if json_val_dict['replace_window_area'] > 0.5 else 0
         json_val_dict['Total Surface Area (m2)'] = round(json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] + (2 * json_val_dict['Thermal Envelope - Heat loss floor area']), 2)
         json_val_dict['Total Surface Area receiving EWWR (m2)'] = round(float(wt_dict['EWI/IWI']) + float(json_val_dict['replace_window_area']), 2)
         json_val_dict['Result %'] = round(100 * (json_val_dict['Total Surface Area receiving EWWR (m2)'] / json_val_dict['Total Surface Area (m2)']), 2) if json_val_dict['Total Surface Area (m2)'] > 0 else 0
@@ -1968,13 +1975,23 @@ def survey(root):
         # json_val_dict["Reason Major Renovation calculation is not necessary?*"] = "The proportions of EWI/IWI or significantly greater than 25%"
         # json_val_dict['Qualifying Boiler'] = 'N/A'
         
-        warnings = 'WARNINGS:'
+        warnings = 'Major Renovation Error:'
         # print("Is a Major Renovation calculation necessary?*", ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
         if json_val_dict["Is a Major Renovation calculation necessary?*"] == True:
-            for q in ['Thermal Envelope - Heat loss walls, windows and doors', 'Thermal Envelope - Heat loss floor area', 'Heat loss Wall Area recommended for EWI and IWI']:
-                if json_val_dict[q] == 0:
-                    warnings = warnings + "<BR>" + "Setting 'EWI/IWI > 25% *' to 'No', since Major Renovation calculation has been confirmed as necessary but zero value provided for '" + q + "'"
-                    json_val_dict["EWI/IWI > 25% *"] = "No"
+            if 0 in ['Thermal Envelope - Heat loss walls, windows and doors', 'Thermal Envelope - Heat loss floor area', 'Heat loss Wall Area recommended for EWI and IWI']:
+                warnings = warnings + "<BR>" + 'Major Renovation calculation has been confirmed as necessary but not provided. The Values for "EWI/IWI >25%", "Qualifying Boiler", Heating Recommendations and the Lot Type may be incorrect as the required information has not been provided. Please resubmit to include Major Renovation calculations on Heat Loss 10th floor, 11th floor etc. and include values for Walls receiving EWI or IWI and External Walls not receiving EWI or IWI and confirm the response to the form question "Is there Mains Gas in the Area?"'
+                json_val_dict["EWI/IWI > 25% *"] = "No"
+
+            # for q in ['Thermal Envelope - Heat loss walls, windows and doors', 'Thermal Envelope - Heat loss floor area', 'Heat loss Wall Area recommended for EWI and IWI']:
+                # if json_val_dict[q] == 0:
+                    # warnings = warnings + "<BR>" + "Setting 'EWI/IWI > 25% *' to 'No', since Major Renovation calculation has been confirmed as necessary but zero value provided for '" + q + "'"
+                    # json_val_dict["EWI/IWI > 25% *"] = "No"
+            
+            
+            
+            
+            
+            
             
         if json_val_dict["Is a Major Renovation calculation necessary?*"] == False:
             # print(json_val_dict["Reason Major Renovation calculation is not necessary?*"])
@@ -2003,6 +2020,7 @@ def survey(root):
         
         
         json_val_dict['Suitable for Heating Measures *'] = False
+        
         if json_val_dict['Qualifying Boiler'] == True:
             json_val_dict['Suitable for Heating Measures *'] = True
         
@@ -2013,31 +2031,32 @@ def survey(root):
         if json_val_dict['Suitable for Heating Measures *'] == False:
             json_val_dict['Not suitable details*'] = json_val_dict['Notes (Heating)']
         
-        
-        if json_val_dict['Qualifying Boiler'] == True:
-            if json_val_dict['Heating Systems Controls *'] == 'Full zone control to spec':
+        print(json_val_dict["Is there Mains Gas in the Area?"])
+        if json_val_dict["Is there Mains Gas in the Area?"] != "N/A - No heating measured being recommended":
+            if json_val_dict['Qualifying Boiler'] == True:
+                if json_val_dict['Heating Systems Controls *'] == 'Full zone control to spec':
+                    if json_val_dict["Is there Mains Gas in the Area?"] == "Yes":
+                        json_val_dict['Basic gas heating system'] = 1
+                    else:
+                        json_val_dict['Basic oil heating system'] = 1
+            
+            # print("Electric Storage Heater age (years)*", ':', json_val_dict["Electric Storage Heater age (years)*"])
+            # print("Warm Air System age (years)*", ':', json_val_dict["Warm Air System age (years)*"])
+            # print('Heating System *', ':', json_val_dict['Heating System *'])
+            
+            if (json_val_dict['Heating System *'] in ["Electric Storage Heater", "Warm Air System"] and json_val_dict['System Age *'] == "25+") or json_val_dict['Heating System *'] in ["Open Fire with Back Boiler", "Open Fire with Back Boiler With Enclosure Door", "Solid Fuel Range", "Solid Fuel Range with Back Boiler", "Fixed Electric Inset Fire", "Gas Fire Room Heater", "Oil Stove Room Heater", "Open Fire", "Open Fire With Enclosure Door"]:
                 if json_val_dict["Is there Mains Gas in the Area?"] == "Yes":
-                    json_val_dict['Basic gas heating system'] = 1
+                    json_val_dict['Full gas heating system installation'] = 1
                 else:
-                    json_val_dict['Basic oil heating system'] = 1
-        
-        print("Electric Storage Heater age (years)*", ':', json_val_dict["Electric Storage Heater age (years)*"])
-        print("Warm Air System age (years)*", ':', json_val_dict["Warm Air System age (years)*"])
-        print('Heating System *', ':', json_val_dict['Heating System *'])
-        
-        if (json_val_dict["Electric Storage Heater age (years)*"] == "25+" or json_val_dict["Warm Air System age (years)*"] == "25+") or json_val_dict['Heating System *'] in ["Open Fire with Back Boiler", "Open Fire with Back Boiler With Enclosure Door", "Solid Fuel Range", "Solid Fuel Range with Back Boiler"]:
-            if json_val_dict["Is there Mains Gas in the Area?"] == "Yes":
-                json_val_dict['Full gas heating system installation'] = 1
-            else:
-                json_val_dict['Full oil heating system installation'] = 1
-        
-        if json_val_dict['Qualifying Boiler'] == True:
-            if json_val_dict['Heating Systems Controls *'] != 'Full zone control to spec':
-                if json_val_dict["Is there Mains Gas in the Area?"] == "Yes":
-                    json_val_dict['Gas boiler and controls (Basic & controls pack)'] = 1
-                else:
-                    json_val_dict['Oil boiler and controls (Basic & controls pack)'] = 1
-        
+                    json_val_dict['Full oil heating system installation'] = 1
+            
+            if json_val_dict['Qualifying Boiler'] == True:
+                if json_val_dict['Heating Systems Controls *'] != 'Full zone control to spec':
+                    if json_val_dict["Is there Mains Gas in the Area?"] == "Yes":
+                        json_val_dict['Gas boiler and controls (Basic & controls pack)'] = 1
+                    else:
+                        json_val_dict['Oil boiler and controls (Basic & controls pack)'] = 1
+            
         # print(2)
         # print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
         for field in ofl_hpm:
@@ -2049,12 +2068,12 @@ def survey(root):
         json_val_dict['Permanent ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Permanent Vent"]
         json_val_dict['Background ventilation wall vent (Certified Proprietary Integrated System)'] = json_val_dict["New Background Vent"]
         json_val_dict['Ducting existing cooker hood to exterior'] = json_val_dict['Duct Cooker Hood']
-        json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'] = round(json_val_dict['New Windows being recommended for replacement'])
+        json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'] = int(round(json_val_dict['New Windows being recommended for replacement'], 0))
         json_val_dict['GNI new connection'] = json_val_dict['New Gas Connection']
         json_val_dict['Additional Roof Ventilation (Low Level)'] = json_val_dict['Required per standards (mm2) *'] - json_val_dict["Existing (mm2)*"]
         json_val_dict['Additional Roof Ventilation (High Level)'] = json_val_dict['high_roof_vent_area']
         
-        print('Window (same m2 rate will apply to windows with certified trickle vents)', ':', json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'])
+        # print('Window (same m2 rate will apply to windows with certified trickle vents)', ':', json_val_dict['Window (same m2 rate will apply to windows with certified trickle vents)'])
 
         
         # xl_2_pdf(xl_path)
@@ -2156,7 +2175,7 @@ def survey(root):
         print(output_dict['plan_name'], 'Lot *', ':', output_dict['Lot *'])
         
         
-        print(output)
+        # print(output)
         # print('Attic (Loft) Insulation 200 mm top-up', ':', json_val_dict['Attic (Loft) Insulation 200 mm top-up'])
         
         print("Hot Water Cylinder Jacket", ':', json_val_dict["Hot Water Cylinder Jacket"])
@@ -2667,10 +2686,10 @@ def populate_template_new(json_val_dict, template):
                 }
         # print("json_val_dict['Thermal Envelope - Heat loss walls, windows and doors']", ':', json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
         for field in v:
-            print('field', ':', field)
+            # print('field', ':', field)
             if field in json_val_dict.keys():
                 v[field]['Value'] = json_val_dict[field]
-                print("v[field]['Value']", ':', v[field]['Value'])
+                # print("v[field]['Value']", ':', v[field]['Value'])
                 
                 if v[field]['Value'] in ['', 'N/A', 0]:
                     if "Default" in v[field].keys():
