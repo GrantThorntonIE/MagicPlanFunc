@@ -2137,9 +2137,13 @@ def survey(root):
         
         
         
+        # print(output_dict)
+        output_dict['Lot *'] = 'Lot ' + lot(output_dict)
+        print(output_dict['plan_name'], 'Lot *', ':', output_dict['Lot *'])
+        
         # print('Not Working Details Primary Heating *', ':', json_val_dict['Not Working Details Primary Heating *'])
         
-        populate_template_new(xml_val_dict, 'template')
+        populate_template_new(output_dict, 'template')
         
                 
         # print(ofl_wos)
@@ -2170,9 +2174,7 @@ def survey(root):
             # ofl_filelist.append(filename)
             # print(ofl_filelist)
         
-        # print(output_dict)
-        output_dict['Lot *'] = 'Lot ' + lot(output_dict)
-        print(output_dict['plan_name'], 'Lot *', ':', output_dict['Lot *'])
+
         
         
         # print(output)
