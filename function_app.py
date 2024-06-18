@@ -19,7 +19,7 @@ import numpy as np
 
 import socket
 print(socket.gethostname())
-import pprint
+
 
 # import office365
 # from office365.runtime.auth.authentication_context import AuthenticationContext
@@ -1259,7 +1259,7 @@ def JSON_2_dict(project_id, headers = {
         
         
         
-        pprint.pprint(form_dict)
+        # pprint.pprint(form_dict)
         
         
         
@@ -1288,7 +1288,7 @@ def BER(root, output = '', email = ''):
         xml_val_dict = xml_dict[2]
         
         print('xml_val_dict', ':')
-        pprint.pprint(xml_val_dict)
+        # pprint.pprint(xml_val_dict)
         
         
         
@@ -1330,7 +1330,7 @@ def BER(root, output = '', email = ''):
         # populate the dicts 
         for sheet_name in sheet_names:
             print(sheet_name, ':')
-            pprint.pprint(output_dict[sheet_name])
+            # pprint.pprint(output_dict[sheet_name])
             for field in output_dict[sheet_name]:
                 print()
                 field_req = output_dict[sheet_name][field]['field_req']
