@@ -648,7 +648,12 @@ def QA(root):
 
 
 
-def get_project_files(id, headers, plan_name):
+def get_project_files(id, plan_name, headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
+            , "customer": "63b5a4ae69c91"
+            , "accept": "application/json"
+            }):
             
     try:
         output = []
@@ -747,7 +752,7 @@ def survey(root):
         
         # if (socket.gethostname()) != "PC1VXW6X":
         # print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
-        ofl_filelist = get_project_files(id, headers, plan_name)
+        ofl_filelist = get_project_files(id, plan_name, headers)
         # print('finished getting project files')
         # for filename in ofl_filelist:
             # print(filename)
