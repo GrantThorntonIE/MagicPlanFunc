@@ -58,6 +58,65 @@ def create_table(dict : dict[str, list[float]], headers : list,
     return output
 
 
+
+def create_table_new(dict, headers : list,
+                  do_not_sum : list[str] = [], 
+                  styling: str = "", order_list = []) -> str:
+    try:
+        
+        # print(dict)
+        
+        
+        
+        
+        output = f'<table {styling}><tr>'
+        
+        for header in headers:
+            output += f'<th>{header}</th>'
+        output += '</tr>'
+        
+        if len(order_list) != 0:
+            for item in order_list:
+                if item.isupper():
+                    output += f'<tr><td><strong>{item}</strong></td>'
+                else:
+                    output += f'<tr><td>{item}</td>'
+                value = dict[item]["value"] if (item in dict.keys() and "value" in dict[item].keys()) else ''
+                if (type(value) == bool and value == True):
+                    value = "Yes"
+                if (type(value) == bool and value == False):
+                    value = "No"
+                output += f'<td>{value}</td>'
+                # print(item, value)
+        else:
+            for i, key in enumerate(dict):
+                # print(key, dict[key])
+                if key.isupper():
+                    output += f'<tr><td><strong>{key}</strong></td>'
+                else:
+                    output += f'<tr><td>{key}</td>'
+                output += f'<td>{dict[key]}</td>'
+
+        output += '</table>'
+        
+        
+    except Exception as ex:
+        # exc_type, exc_obj, exc_tb = sys.exc_info()
+        # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
+        
+        output = str(ex)
+        output = traceback.format_exc()
+        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
+        print(output)
+        
+        # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        # print(exc_type, fname, exc_tb.tb_lineno)
+    finally:
+        return output
+    return output
+
+
+
 def create_table_text(dict, headers : list,
                   do_not_sum : list[str] = [], 
                   styling: str = "", order_list = []) -> str:
