@@ -2741,6 +2741,58 @@ def XML_2_dict_new(root, t = "floor"):
         return xml_ref_dict, nwa_dict, xml_val_dict
 
 
+def get_forms_data(id, headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
+            , "customer": "63b5a4ae69c91"
+            , "accept": "application/json"
+            }):
+    
+    try:
+        json_val_dict = {}
+        form_dict = {}
+        json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + id
+        request = urllib.request.Request(json_url, headers=headers)
+        
+        JSON = urllib.request.urlopen(request).read()
+        JSON = json.loads(JSON)
+        for datum in JSON["data"]:
+            if datum["symbol_type"] not in form_dict.keys():
+                form_dict[datum["symbol_type"]] = {}
+            if datum["symbol_name"] not in form_dict[datum["symbol_type"]].keys():
+                form_dict[datum["symbol_type"]][datum["symbol_name"]] = {}
+            form_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]] = {}
+            for form in datum["forms"]:
+                for section in form["sections"]:
+                    for field in section["fields"]:
+                        v = ''
+                        if field["value"]["value"] == None:
+                            vals = []
+                            if field["type_as_string"] == "list":
+                                # print("type_as_string", ':', field["type_as_string"])
+                                vals = [val["value"] for val in field["value"]["values"]]
+                                for val in vals:
+                                    v += val
+                                    v += '<BR>'
+                        else:
+                            v = field["value"]["value"]
+                        # print(field["label"], ':', v)
+                        # form_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]][field["label"]] = v
+                        # json_val_dict[field["label"]] = v
+                        
+                        im = field["label"].replace(' *', '')
+                        im = im.replace('*', '')
+                        form_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]][im] = v
+                        json_val_dict[im] = v
+        
+        output = json_val_dict, form_dict
+    
+    except:
+        output = traceback.format_exc()
+        print(output)
+    
+    return output
+
 
 
 def distributor_function(form, root = ''):
