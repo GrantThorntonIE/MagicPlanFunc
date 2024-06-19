@@ -2941,7 +2941,7 @@ def distributor_function(form, root = ''):
 
         json_data = json.dumps({
             'email' : email
-            , 'name'  : project_name + " (" + project_type + ")"
+            , 'name'  : project_name
             , 'table' : output
         })
         output = json_data
@@ -3145,7 +3145,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             # return_body = output
             json_data = json.dumps({
                 'email' : email,
-                'name'  : project_name + " (" + project_type + ")", 
+                'name'  : project_name, 
                 'table' : output
             })
             azure_upload(json_data)
