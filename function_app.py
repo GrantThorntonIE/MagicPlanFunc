@@ -2245,50 +2245,579 @@ def survey(root):
     return output
 
 
+def no_2_alph(no):
+    alph = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    return alph[no - 1]
 
 
-def distributor_function(form):
-    # At this point we can hopefully use info from the form to identify what type it is
-    # The extracted XML "root" is then sent to the appropriate function which returns a HTML formatted table as output
-    # which is then included in the JSON 
+def XL_2_dict(
+                file_name
+                , account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+                , default_credential = DefaultAzureCredential()
+                , container_from = 'attachment'
+                , local_path_from = "/tmp"
+                # , container_to = 'project-files'
+                # , local_path_to = plan_name
+                ):
+    '''
+    Read the contents of an Excel Workbook from Azure Blob Storage and return as a dictionary
     
-    plan_name = form['title']
-    email = form['email']
-    xml = form['xml']
-    root : ET.Element
-    with urllib.request.urlopen(xml) as f:
-        s = f.read().decode('utf-8')
-    root = dET.fromstring(s)
-
-    # if "Survey" in plan_name:
-        # output = survey(root)
-    # elif "BER" in plan_name:
-        # output = ber_old(root)
-    # elif "Pre BER" in plan_name:
-        # output = preBER(root)
-    # elif "Inspection" in plan_name:
-        # output = inspection(root)
-    # elif "QA" in plan_name:
-        # output = qa(root)
+    Three types of worksheet expected format: [trivial, table, lookup_table]
     
-    output = survey(root)
-    # output = ber_old(root)
+    trivial:
+        2 columns, B & C, field_name and field_req
+        field_req is one of the following four : [exact text, variable name, count, logic_dict]
+        
+    table: 
+        need to update populate_template_new() to handle multicol outputs
+        need to establish how many columns?
+    
+    lookup_table:
+        2 cols
+        create lookup_table_dict
+        lookup is: field_value = lookup_table_dict[col_1]?
+    
+    '''
+    
+    try:
+        azure_source_fp = file_name
+        instance_fp = os.path.join(os.getcwd(), local_path_from, file_name)
+        print(instance_fp)
+        
+        # file_name = plan_name + ' Major Renovation calculation' + '.xlsx'
 
-    output = output + '<h2>' + xml + '</h2></div>'
+
+        # Create the BlobServiceClient object
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        container_client = blob_service_client.get_container_client(container= container_from) 
+        
+        with open(file=instance_fp, mode="wb") as download_file:
+            download_file.write(container_client.download_blob(azure_source_fp).readall())
+        
+        # file_content = container_client.download_blob(azure_source_fp).readall()
+        
+        wb = openpyxl.load_workbook(instance_fp, data_only = True)
+        
+        output_tables = ["1. Survey Details P1"
+                        , "7. Thermal Mass P1"
+                        , "8. Ventilation P1"
+                        , "11. Lighting P1"
+                        ]
+        
+        
+        lookup_tables = ['1.1 Assessor Details Table'
+                            , '2.2 Referance Table S8'
+                            , '3.1 Referance Table S5'
+                            , '3.2 Referance Table S4'
+                            , '3.3 Referance Table Non Default'
+                            , '7.1 Referance Table'
+                            ]
+       
+        multicol_tables = ['5.1 Windows Summary Table'
+                            , '5.2 Window Schedule Table'
+                            , '5.3 Building | Doors P1'
+                            , '6. Colour Area Table P1'
+                            , '8.1 Ventilation Items'
+                            , '11.1 Lighting Schedule'
+
+                            ]
+        output = {}
+        lookup = {}
+        for sheet in wb.worksheets:
+            # print(sheet.title)
+
+            # if sheet.title == '2.2 Referance Table S8':
+                # for i, row in enumerate(list(sheet.values)):
+                    # for j, x in enumerate(['Α', 'B', 'C', 'D', 'E', 'F', 'G', 'Η', 'I', 'J', 'K']):
+                        # line = str(row[1]) + "_" + str(row[2]) + "_" + str(x) + "\t" + str(row[j+3])
+                        # print(line)
+                        
+            
+            if sheet.title in multicol_tables:
+                print('multicol_table', ':', sheet.title)
+            
+            elif sheet.title in output_tables:
+                    output[sheet.title] = {}
+                    for i, row in enumerate(list(sheet.values)):
+                        field_name = row[1]
+                        if field_name == None:
+                            continue
+                        print('field_name', ':', field_name)
+                        
+                        field_req = row[2]
+                        field_loc = no_2_alph(2) + str(i)
+                        # print('field_loc', ':', field_loc)
+                        output[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc}
+                
+            elif sheet.title in lookup_tables:
+                    lookup[sheet.title] = {}
+                    for i, row in enumerate(list(sheet.values)):
+                        field_name = row[1]
+                        if field_name == None:
+                            continue
+                        print('field_name', ':', field_name)
+                        
+                        field_req = row[2]
+                        field_loc = no_2_alph(2) + str(i)
+                        # print('field_loc', ':', field_loc)
+                        lookup[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc}
+                
+
+            
+    except:
+        output = traceback.format_exc()
+        print(output)
+        
+        
+    return output, lookup
+
+
+def JSON_2_dict(project_id, headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
+            , "customer": "63b5a4ae69c91"
+            , "accept": "application/json"
+            }):
+    '''
+    This function retrieves Forms & Statistics JSON files from MagicPlan
+    Combines and filters the data to return json_dict:
+        floor; room; object; details
+        label_val_dict
+    '''
+    try:
+        json_dict = {}
+        
+        # need json_Forms and json_Statistics
+        
+        # first go through Statistics
+        # populate  json_dict = {floor; room; object; detail}
+        # Floors -1 to 9
+        # Then go through Forms and add any interesting information to the appropriate entry in json_dict
+        # 
+        # Count - should these be contained in json_dict? leaning towards no
+        # 
+        json_dict, form_dict = get_forms_data(project_id)
+        
+        
+        
+        # pprint.pprint(form_dict)
+        
+        
+        
+        
+        
+        
+        output = json_dict
+    
+    except:
+        output = traceback.format_exc()
+        print(output)
+   
+    return output
+
+
+def XML_2_dict_new(root, t = "floor"):
+    '''
+    Returns [xml_ref_dict, # links floors and rooms with their uids
+            , nwa_dict # net wall area
+            , obj_dict
+            , xml_val_dict # includes any variables required as output
+            , 
+            ]
+        
+    '''
+    try:
+        # d = {}
+        xml_ref_dict = {}
+        nwa_dict = {}
+        obj_dict = {}
+        xml_val_dict = {}
+        
+        xml_val_dict['project_id'] = root.get('id')
+        
+        project_name = root.get('name')
+        if project_name[-1] == ' ':
+            project_name = project_name[:-1]
+        xml_val_dict['project_name'] = project_name
+        
+        project_address = ''
+        address_fields = ['street', 'city', 'province', 'country', 'postalCode']
+        for af in address_fields:
+            f = root.get(af)
+            if f is not None:
+                project_address = (project_address + ', ' + str(f)) if project_address != '' else str(f)
+        xml_val_dict['project_address'] = project_address
+        
+        
+        xml_val_dict['eircode'] = root.get('postalCode')
+        
+        
+        
+        
+        MagicPlan_2_SEAI_dict = {
+            "date": "survey_date"
+            , "qf.34d66ce4q3": "rating_type"
+            , "qf.34d66ce4q4": "rating_purpose"
+            , "author": "Surveyor"
+            }
+        # note MagicPlan also has a separate "Surveyor" field ("qf.34d66ce4q1") but "author" is the one used for SEAI survey purposes
+        # ToDo: confirm if also the case for BER
+        values = root.findall('values/value')
+        for mpk in MagicPlan_2_SEAI_dict:
+            xml_val_dict[MagicPlan_2_SEAI_dict[mpk]] = ''
+            for value in values:
+                k = value.attrib["key"]
+                if k == mpk:
+                    xml_val_dict[MagicPlan_2_SEAI_dict[mpk]] = value.text
+            print(MagicPlan_2_SEAI_dict[mpk], ':', xml_val_dict[MagicPlan_2_SEAI_dict[mpk]])
+        
+        # w = {}
+        wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108', '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74', '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f', '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e', '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57', '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789', '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111', '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a', '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c', '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f', '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a', '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49', '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e', '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592', 'arcdoor', 'doorbypass', 'doorbypassglass', 'doordoublefolding', 'doordoublehinged', 'doordoublesliding', 'doorfolding', 'doorfrench', 'doorgarage', 'doorglass', 'doorhinged', 'doorpocket', 'doorsliding', 'doorslidingglass', 'doorswing', 'doorwithwindow', 'windowarched', 'windowawning', 'windowbay', 'windowbow', 'windowcasement', 'windowfixed', 'windowfrench', 'windowhopper', 'windowhung', 'windowsliding', 'windowtrapezoid', 'windowtriangle', 'windowtskylight1', 'windowtskylight2', 'windowtskylight3']
+        xml_ref_dict['habitable_rooms'] = []
+        xml_ref_dict['wet_rooms'] = []
+        xml_ref_dict['exclude_rooms'] = []
+        # xml_ref_dict['include_rooms'] = []
+        xml_ref_dict['exclude_room_types'] = ['Attic', 'Balcony', 'Storage', 'Patio', 'Deck', 'Porch', 'Cellar', 'Garage', 'Furnace Room', 'Outbuilding', 'Unfinished Basement', 'Workshop']
+        
+        xml_ref_dict['habitable_room_types'] = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
+        xml_ref_dict['wet_room_types'] = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
+
+        
+        
+        
+        
+        
+        
+        floors = root.findall('interiorRoomPoints/floor')
+        for floor in floors:
+            ft = floor.get('floorType')
+            xml_ref_dict[floor.get('floorType')] = floor.get('uid')
+            xml_ref_dict[floor.get('uid')] = floor.get('floorType')
+            nwa_dict[ft] = {}
+            
+            for room in floor.findall('floorRoom'):
+                if room.get('type') not in xml_ref_dict.keys():
+                    xml_ref_dict[room.get('type')] = []
+                xml_ref_dict[room.get('type')].append(room.get('uid'))
+                xml_ref_dict[room.get('uid')] = room.get('type')
+                # print(room.get('type'))
+                if room.get('type') in xml_ref_dict['habitable_room_types']:
+                    xml_ref_dict['habitable_rooms'].append(room.get('uid'))
+                    xml_ref_dict['habitable_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid'))
+                
+                if room.get('type') in xml_ref_dict['wet_room_types']:
+                    xml_ref_dict['wet_rooms'].append(room.get('uid'))
+                    xml_ref_dict['wet_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid'))
+                
+                if room.get('type') in xml_ref_dict['exclude_room_types']:
+                    xml_ref_dict['exclude_rooms'].append(room.get('uid'))
+                    xml_ref_dict['exclude_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                # else:
+                    # xml_ref_dict['include_rooms'].append(room.get('uid'))
+                    # xml_ref_dict['include_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                
+                # print('exclude_rooms', ':', xml_ref_dict['exclude_rooms'])
+                
+                for value in room.findall('values/value'):
+                    key = value.get('key')
+                    # print(key)
+                    if key == "qcustomfield.2979903aq1": # Include?
+                        # print(room.get('type'))
+                        floor_area_include = value.text
+                        # print('floor_area_include', ':', floor_area_include)
+                        # if floor_area_include == '0':
+                            # xml_ref_dict['exclude_rooms'].append(room.get('uid'))
+                        if floor_area_include == '1':
+                            if room.get('uid') in xml_ref_dict['exclude_rooms']:
+                                xml_ref_dict['exclude_rooms'].remove(room.get('uid'))
+                                xml_ref_dict['exclude_rooms'].remove('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
+                                # print(xml_ref_dict['exclude_rooms'])
+                                # print(room.get('type'))
+                
+                # print('exclude_rooms', ':', xml_ref_dict['exclude_rooms'])
+                
+                rt = room.get('type') + ' (' + room.get('uid') + ')'
+                x = {}
+                room_x = room.get('x')
+                room_y = room.get('y')
+                w_index = 0
+                for point in room.findall('point'):
+                    w_index += 1
+                    # uid = point.get('uid')
+                    x[w_index] = {}
+                    for value in point.findall('values/value'):
+                        if value.get('key') in ['qf.c52807ebq1', 'qf.bdbaf056q1', 'qf.c52807ebq1']:
+                            x[w_index]['type'] = value.text
+                    # if 'type' not in list(x[w_index].keys()):
+                        # x.pop(w_index)
+                        # continue
+                    x[w_index]['uid'] = point.get('uid')
+                    x[w_index]['x1'] = float(point.get('snappedX')) + float(room_x)
+                    x[w_index]['y1'] = -float(point.get('snappedY')) - float(room_y)
+                    x[w_index]['h'] = point.get('height')
+                    for value in point.findall('values/value'):
+                        if value.get('key') == "loadBearingWall":
+                            # print("loadBearingWall", ':', value.text)
+                            x[w_index]['loadBearingWall'] = value.text
+                # print('ft', ':', ft)
+                # print('rt', ':', rt)
+                # print('x', ':', x)
+                # print('len(x)', ':', len(x))
+                
+                        
+                w_index = 0
+                for wall in x:
+                    w_index += 1
+                    # print(list(x[1].keys()))
+                    if w_index + 1 in list(x.keys()):
+                        x[w_index]['x2'] = x[w_index + 1]['x1']
+                        x[w_index]['y2'] = x[w_index + 1]['y1']
+                    else:
+                        x[w_index]['x2'] = x[1]['x1']
+                        x[w_index]['y2'] = x[1]['y1']
+                    x[w_index]['l'] = cart_distance((x[w_index]['x1'], x[w_index]['y1']), (x[w_index]['x2'], x[w_index]['y2']))
+                    x[w_index]['a'] = float(x[w_index]['l']) * float(x[w_index]['h'])
+                
+                y = {}
+                for wall in x:
+                    uid = x[wall]['uid']
+                    y[uid] = {}
+                    if 'type' in list(x[wall].keys()):
+                        y[uid]['type'] = x[wall]['type']
+                    y[uid]['x1'] = x[wall]['x1']
+                    y[uid]['y1'] = x[wall]['y1']
+                    y[uid]['x2'] = x[wall]['x2']
+                    y[uid]['y2'] = x[wall]['y2']
+                    y[uid]['h'] = x[wall]['h']
+                    y[uid]['l'] = x[wall]['l']
+                    y[uid]['a'] = x[wall]['a']
+                    # print(list(x[wall].keys()))
+                    if 'loadBearingWall' in list(x[wall].keys()):
+                        y[uid]['loadBearingWall'] = x[wall]['loadBearingWall']
+                        
+                
+                # print('len(y)', ':', len(y))
+                # print('y', ':', y)
+                # print('adding wall dict y for room ' + rt + ' to nwa_dict')
+                nwa_dict[ft][rt] = y
+                
+        # print('nwa_dict', ':', nwa_dict)
+        
+        # print("xml_ref_dict['exclude_rooms']", ':', str(xml_ref_dict['exclude_rooms']))
+        # print("xml_ref_dict['include_rooms']", ':', str(xml_ref_dict['include_rooms']))
+        
+        
+        
+        
+        # Create Object Dictionary 
+            # - first get list of all objects on each floor
+            # - then add any additional details available from "exploded" section (linked via "id" e.g. "W-1-5")
+        floors = root.findall('floor')
+        for floor in floors:
+            ft = floor.get('floorType')
+            
+            o = {}
+            
+            for p in floor.findall('symbolInstance'):
+                # print("p.get('uid')", ':', p.get('uid'))
+                if p.get('symbol') in wd_list:
+                    id = p.get('id')
+                    o[id] = {}
+                    o[id]['uid'] = p.get('uid')
+                    o[id]['symbol'] = p.get('symbol')
+            # print('o', ':', o)
+                
+            
+            
+            for p in floor.findall('exploded/door'):
+                si = p.get('symbolInstance')
+                # print('si', ':', si)
+                if si in list(o.keys()):
+                # o[si] = {}
+                # o[si]['symbolInstance'] = window.get('symbolInstance')
+                    o[si]['x1'] = p.get('x1')
+                    o[si]['y1'] = -float(p.get('y1'))
+                    o[si]['x2'] = p.get('x2')
+                    o[si]['y2'] = -float(p.get('y2'))
+                    o[si]['w'] = p.get('width')
+                    o[si]['d'] = p.get('depth')
+                    o[si]['h'] = p.get('height')
+                    o[si]['a'] = float(o[si]['w']) * float(o[si]['h'])
+            
+            for p in floor.findall('exploded/window'):
+                # o_index += 1
+                si = p.get('symbolInstance')
+                # print('si', ':', si)
+                if si in list(o.keys()):
+                # o[si] = {}
+                # o[si]['symbolInstance'] = window.get('symbolInstance')
+                    o[si]['x1'] = p.get('x1')
+                    o[si]['y1'] = -float(p.get('y1'))
+                    o[si]['x2'] = p.get('x2')
+                    o[si]['y2'] = -float(p.get('y2'))
+                    o[si]['w'] = p.get('width')
+                    o[si]['d'] = p.get('depth')
+                    o[si]['h'] = p.get('height')
+                    o[si]['a'] = float(o[si]['w']) * float(o[si]['h'])
+            
+            
+            
+            
+            # print('o', ':', o)
+            obj_dict[ft] = o
+            
+            for room in floor.findall('floorRoom'):
+                rt = room.get('type') + ' (' + room.get('uid') + ')'
+                
+                w = {}
+                room_x = room.get('x')
+                room_y = room.get('y')
+                w_index = 0
+                for point in room.findall('point'): # get (x3, y3)
+                    w_index += 1
+                    w[w_index] = {}
+                    w[w_index]['uid'] = point.get('uid')
+                    w[w_index]['x3'] = float(point.get('snappedX')) + float(room_x)
+                    w[w_index]['y3'] = -float(point.get('snappedY')) - float(room_y)
+
+                w_index = 0
+                for wall in w: # get (x4, y4), the second point in each line segment - WARNING: relies on the assumption that the points are in order
+                    w_index += 1
+                    if w_index + 1 in list(w.keys()):
+                        w[w_index]['x4'] = w[w_index + 1]['x3']
+                        w[w_index]['y4'] = w[w_index + 1]['y3']
+                    else:
+                        w[w_index]['x4'] = w[1]['x3']
+                        w[w_index]['y4'] = w[1]['y3']
+                
+                # print('ft', ':', ft)
+                # print('rt', ':', '"' + rt + '"')
+                # print('w', ':', w)
+                
+                for wall in w: # transfer values to nwa_dict (where wall key is "uid" instead of numbered index)
+                    uid = w[wall]['uid']
+                    nwa_dict[ft][rt][uid]['x3'] = w[wall]['x3']
+                    nwa_dict[ft][rt][uid]['y3'] = w[wall]['y3']
+                    nwa_dict[ft][rt][uid]['x4'] = w[wall]['x4']
+                    nwa_dict[ft][rt][uid]['y4'] = w[wall]['y4']
+                
+                y = nwa_dict[ft][rt] # for brevity
+                
+                w_index = 0
+                for wall in y:
+                    w_index += 1
+                    # print('wall', ':', wall)
+                    
+                    
+                    
+                    y[wall]['windows'] = []
+                    y[wall]['net_a'] = y[wall]['a']
+                    y[wall]['total_window_a'] = 0
+                    for window in o:
+                        if 'x1' not in list(o[window].keys()):
+                            continue
+                        if 'x3' not in list(o[window].keys()):
+                            continue
+                        # print(window)
+                        if linear_subset(float(o[window]['x1']), float(o[window]['y1']), float(o[window]['x2']), float(o[window]['y2']), float(y[wall]['x3']), float(y[wall]['y3']), float(y[wall]['x4']), float(y[wall]['y4'])) == True:
+                            y[wall]['windows'].append(window + ' (' + str(o[window]['a']) + ')')
+                            y[wall]['net_a'] -= o[window]['a']
+                            y[wall]['total_window_a'] += o[window]['a']
+                            
+                            # print('object ' + str(window) + ' (' + str(o[window]['x1']) + '\t' + str(o[window]['y1']) + ') -> (' + str(o[window]['x2']) + '\t' + str(o[window]['y2']) + ') is colinear with wall ' + str(wall) + ' (' + str(y[wall]['x3']) + '\t' + str(y[wall]['y3']) + ') -> (' + str(y[wall]['x4']) + '\t' + str(y[wall]['y4']) + ')')
+                            # print('yes')
+                    # print("w[wall]['windows']", ':', w[wall]['windows'])
+                
+                # print('y', ':', y)
+                nwa_dict[ft][rt] = y
+                
+                
+    except Exception as ex:
+        output = str(ex) + "\n\n" + traceback.format_exc()
+        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
+        print(output)
+    
+    finally:
+        return xml_ref_dict, nwa_dict, xml_val_dict
+
+
+
+
+def distributor_function(form, root = ''):
+    
+    # Processing steps common to all projects are performed first
+        # Establish fundamental parameters
+            # plan_name (name given to the project by the user)
+            # email (of the user who exported the project)
+            # xml (a url where the project XML data can be retrieved)
+        # Retrieve XML data
+            # Load as dict
+            # Get the MagicPlan Project ID (ToDo: check is this available directly from the form?)
+        
+        # Retrieve API data (forms, statistics, files) # Need forms here to get "This project is a" but others could probably wait... don't forget "get_project_files" returns a list that is currently included in the email body HTML tables so probably leave that where it is in the project-specific function
+            # Load as dict x 3
+            # ToDo: avoid any potential Key Errors by giving these all a default value of ''
+        # Identify what type of project it is
+    
+    # Project-specific processing is then carried out by dedicated functions:
+        # survey()
+        # BER()
+    # These return a HTML formatted table as output which will appear as the email body
+    
+    # Return "json_data" to be uploaded to Azure blob storage where it will be processed by the Logic App
     
     
-    if plan_name[-1] == ' ':
-        plan_name = plan_name[:-1]
+    try:
 
-    json_data = json.dumps({
-        'email' : email,
-        'name'  : plan_name, 
-        'table' : output
-    })
+        if root == '':
+            email = form['email']
+            xml = form['xml']
+            root : ET.Element # why is this line necessary? Does this initialise the variable? Does it enforce the type?
+            with urllib.request.urlopen(xml) as f:
+                s = f.read().decode('utf-8')
+            root = dET.fromstring(s)
+        else:
+            email = 'gtsupport@ie.gt.com'
+            xml = ''
+
+        project_name = root.get('name')
+        if project_name[-1] == ' ':
+            project_name = project_name[:-1]
+        
+        project_id = root.get('id')
+        
+        forms_val_dict, form_dict = get_forms_data(project_id)
+        
+        
+        output = ''
+        
+        if "This project is a" in forms_val_dict.keys():
+            print("This project is a", ':', forms_val_dict["This project is a"])
+            if forms_val_dict["This project is a"] == "BER":
+                output = BER(root, email = 'gtsupport@ie.gt.com')
+            if forms_val_dict["This project is a"] == "Survey":
+                output = survey(root)
+        
+        if output == '':
+            output = survey(root)
+        
+        output = output + '<h2>' + xml + '</h2></div>'
+        
+        
+
+        json_data = json.dumps({
+            'email' : email,
+            'name'  : project_name, 
+            'table' : output
+        })
+        output = json_data
+    except:
+        output = traceback.format_exc()
+        print(output)
+
+    return output
 
 
-
-    return json_data
 
 
 
