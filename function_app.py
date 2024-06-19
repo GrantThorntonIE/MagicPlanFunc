@@ -19,7 +19,7 @@ import openpyxl
 import socket
 print(socket.gethostname())
 
-
+import pprint
 
 MAX_REAL_FLOORS = 10
 
@@ -1272,17 +1272,17 @@ def survey(root):
         # print(exploded_wall_dict)
         
         
-        json_data = json.dumps(
-        nwa_dict
-        )
-        j = r"d:\USERS\gshortall\Documents\Shortcut\investigate_A.json"
+        # json_data = json.dumps(
+        # nwa_dict
+        # )
+        # j = r"d:\USERS\gshortall\Documents\Shortcut\investigate_A.json"
         # with open(j, "w") as investigate_file:
             # investigate_file.write(json_data)
         
-        json_data = json.dumps(
-        exploded_wall_dict
-        )
-        j = r"d:\USERS\gshortall\Documents\Shortcut\investigate_B.json"
+        # json_data = json.dumps(
+        # exploded_wall_dict
+        # )
+        # j = r"d:\USERS\gshortall\Documents\Shortcut\investigate_B.json"
         # with open(j, "w") as investigate_file:
             # investigate_file.write(json_data)
         
@@ -2405,7 +2405,7 @@ def XL_2_dict(
                         field_name = row[1]
                         if field_name == None:
                             continue
-                        print('field_name', ':', field_name)
+                        # print('field_name', ':', field_name)
                         
                         field_req = row[2]
                         field_loc = no_2_alph(2) + str(i)
@@ -2418,7 +2418,7 @@ def XL_2_dict(
                         field_name = row[1]
                         if field_name == None:
                             continue
-                        print('field_name', ':', field_name)
+                        # print('field_name', ':', field_name)
                         
                         field_req = row[2]
                         field_loc = no_2_alph(2) + str(i)
@@ -2440,7 +2440,9 @@ def JSON_2_dict(project_id, headers = {
             ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
             , "customer": "63b5a4ae69c91"
             , "accept": "application/json"
-            }):
+            }
+            , forms_data = {}
+            ):
     '''
     This function retrieves Forms & Statistics JSON files from MagicPlan
     Combines and filters the data to return json_dict:
@@ -2450,23 +2452,28 @@ def JSON_2_dict(project_id, headers = {
     try:
         json_dict = {}
         
-        # need json_Forms and json_Statistics
+        # json_dict: need to combine "forms_full_dict" and statistics (statistics_full_dict?)
         
-        # first go through Statistics
-        # populate  json_dict = {floor; room; object; detail}
-        # Floors -1 to 9
-        # Then go through Forms and add any interesting information to the appropriate entry in json_dict
+        if forms_data == {}:
+            forms_data = get_forms_data(project_id)
+        
+        print('len(forms_data)', ':', len(forms_data))
+        for i, d in enumerate(forms_data):
+            print('d', str(i), ':', d)
+        # pprint.pprint(forms_data)
+        form_val_dict = forms_data['form_val_dict']
+        forms_full_dict = forms_data['forms_full_dict']
+        # missing_vals = forms_data['missing_vals']
+        
+        
+        json_dict = form_val_dict # just for now
+        
+        # Go through Statistics?
+        # Eliminate all Floors other than -1 to 9?
+        # populate json_dict = {floor; room; object; detail}
         # 
-        # Count - should these be contained in json_dict? leaning towards no
+        # Counts - should these be contained in json_dict? leaning towards no
         # 
-        json_dict, form_dict = get_forms_data(project_id)
-        
-        
-        
-        # pprint.pprint(form_dict)
-        
-        
-        
         
         
         
@@ -2812,54 +2819,58 @@ def get_forms_data(id, headers = {
             }):
     
     try:
-        json_val_dict = {}
-        form_dict = {}
+        form_val_dict = {}
+        forms_full_dict = {}
+        missing_vals = {}
+
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + id
         request = urllib.request.Request(json_url, headers=headers)
-        
         JSON = urllib.request.urlopen(request).read()
         JSON = json.loads(JSON)
+
         for datum in JSON["data"]:
-            if datum["symbol_type"] not in form_dict.keys():
-                form_dict[datum["symbol_type"]] = {}
-            if datum["symbol_name"] not in form_dict[datum["symbol_type"]].keys():
-                form_dict[datum["symbol_type"]][datum["symbol_name"]] = {}
-            form_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]] = {}
+            if datum["symbol_type"] not in forms_full_dict.keys():
+                forms_full_dict[datum["symbol_type"]] = {}
+            if datum["symbol_name"] not in forms_full_dict[datum["symbol_type"]].keys():
+                forms_full_dict[datum["symbol_type"]][datum["symbol_name"]] = {}
+            forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]] = {}
             for form in datum["forms"]:
                 for section in form["sections"]:
                     for field in section["fields"]:
-                        v = ''
-                        if field["value"]["value"] == None:
-                            vals = []
-                            if field["type_as_string"] == "list":
-                                # print("type_as_string", ':', field["type_as_string"])
-                                vals = [val["value"] for val in field["value"]["values"]]
-                                for val in vals:
-                                    v += val
-                                    v += '<BR>'
-                        else:
-                            v = field["value"]["value"]
-                        # print(field["label"], ':', v)
-                        # form_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]][field["label"]] = v
-                        # json_val_dict[field["label"]] = v
-                        
                         im = field["label"].replace(' *', '')
                         im = im.replace('*', '')
-                        form_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]][im] = v
-                        json_val_dict[im] = v
-        
-        output = json_val_dict, form_dict
+                        v = ''
+                        if field["type_as_string"] == "list":
+                            vals = []
+                            # print("type_as_string", ':', field["type_as_string"])
+                            vals = [val["value"] for val in field["value"]["values"]]
+                            for val in vals:
+                                v += val
+                                v += '<BR>'
+                        else:
+                            v = field["value"]["value"]
+                        
+                        form_val_dict[im] = v
+                        forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]][im] = v
+                        
+                        if field["is_required"] == True and field["value"]["has_value"] == False:
+                            missing_vals[datum["symbol_name"]] = im
+                            
+        output = {}
+        output['form_val_dict'] = form_val_dict
+        output['forms_full_dict'] = forms_full_dict
+        output['missing_vals'] = missing_vals
     
     except:
         output = traceback.format_exc()
-        print(output)
+        print('exception', ':', output)
     
     return output
 
 
 
 def distributor_function(form, root = ''):
-    
+    '''
     # Processing steps common to all projects are performed first
         # Establish fundamental parameters
             # plan_name (name given to the project by the user)
@@ -2880,7 +2891,7 @@ def distributor_function(form, root = ''):
     # These return a HTML formatted table as output which will appear as the email body
     
     # Return "json_data" to be uploaded to Azure blob storage where it will be processed by the Logic App
-    
+    '''
     
     try:
 
@@ -2901,16 +2912,24 @@ def distributor_function(form, root = ''):
         
         project_id = root.get('id')
         
-        forms_val_dict, form_dict = get_forms_data(project_id)
+        forms_data = get_forms_data(project_id)
+        print('len(forms_data)', ':', len(forms_data))
+        for i, d in enumerate(forms_data):
+            print('d', str(i), ':', d)
+        # pprint.pprint(forms_data)
+        form_val_dict = forms_data['form_val_dict']
+        # forms_full_dict = forms_data['forms_full_dict']
+        # missing_vals = forms_data['missing_vals']
         
         
         output = ''
         
-        if "This project is a" in forms_val_dict.keys():
-            print("This project is a", ':', forms_val_dict["This project is a"])
-            if forms_val_dict["This project is a"] == "BER":
-                output = BER(root, email=email)
-            if forms_val_dict["This project is a"] == "Survey":
+        if "This project is a" in form_val_dict.keys():
+            project_type = form_val_dict["This project is a"]
+            print("This project is a", ':', form_val_dict["This project is a"])
+            if project_type == "BER":
+                output = BER(root, email=email, forms_data=forms_data)
+            if project_type == "Survey":
                 output = survey(root)
         
         if output == '':
@@ -2918,12 +2937,12 @@ def distributor_function(form, root = ''):
         
         output = output + '<h2>' + xml + '</h2></div>'
         
-        
+        # populate_template_new(xml_val_dict, 'template')
 
         json_data = json.dumps({
-            'email' : email,
-            'name'  : project_name, 
-            'table' : output
+            'email' : email
+            , 'name'  : project_name + " (" + project_type + ")"
+            , 'table' : output
         })
         output = json_data
     except:
@@ -2933,7 +2952,7 @@ def distributor_function(form, root = ''):
     return output
 
 
-def BER(root, output = '', email = ''):
+def BER(root, output = '', email = '', forms_data = {}):
     # read template xlsx (xlst?)
     # create dicts of required table/tab contents
     # populate the dicts
@@ -2946,15 +2965,16 @@ def BER(root, output = '', email = ''):
         xml_dict = XML_2_dict_new(root)
         xml_val_dict = xml_dict[2]
         
-        print('xml_val_dict', ':')
+        # print('xml_val_dict', ':')
         # pprint.pprint(xml_val_dict)
         
         
         
-        json_dict = JSON_2_dict(project_id) # does this need to be project-specific?
-        for f in ["Building Regulations Era", "Date of Plans", "Planning Reference"]:
+        json_dict = JSON_2_dict(project_id, forms_data=forms_data) # does this need to be project-specific?
+        for f in ["Building Regulations Era", "Date of Plans", "Planning Reference", "Orientation of front of building"]:
             if f not in json_dict.keys():
                 json_dict[f] = 'NOT FOUND'
+        
         print("Orientation of front of building", ':', json_dict["Orientation of front of building"])
         
         ofl_filelist = []
@@ -3110,41 +3130,10 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
             blob_client.upload_blob(json_data)
             
-            container_name = "project-files"
-            container_client = blob_service_client.get_container_client(container_name)
-            if not container_client.exists():
-                container_client = blob_service_client.create_container(container_name)
-
-
-            # local_file_name = str(uuid.uuid4()) + '_post' + ".txt"
-            # data = "Hello, World!"
-            # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-            # blob_client.upload_blob(data)
-
-
-
-            # json_url = "https://cloud.magicplan.app/api/v2/plans/" + str(xml_val_dict['Application ID']) + "/files?include_photos=true"
-            # request = urllib.request.Request(json_url, headers=headers)
-            # JSON = urllib.request.urlopen(request).read()
-            # JSON = json.loads(JSON)
-
-            # for file in JSON["data"]["files"]:
-                # print(file["file_type"])
-                # if file["file_type"] == "pdf":
-                    # request = urllib.request.Request(file["url"], headers=headers)
-                    # file_content = urllib.request.urlopen(request).read()
-                    # local_file_name = file["name"]
-                    # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-                    # blob_client.upload_blob(file_content)
-            
-            # for file in JSON["data"]["photos"]:
-                # request = urllib.request.Request(file["url"], headers=headers)
-                # file_content = urllib.request.urlopen(request).read()
-                # local_file_name = file["name"]
-                # blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
-                # blob_client.upload_blob(file_content)
-            
-            
+            # container_name = "project-files"
+            # container_client = blob_service_client.get_container_client(container_name)
+            # if not container_client.exists():
+                # container_client = blob_service_client.create_container(container_name)
             
             
             return_body = '0'
@@ -3156,7 +3145,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             # return_body = output
             json_data = json.dumps({
                 'email' : email,
-                'name'  : plan_name, 
+                'name'  : project_name + " (" + project_type + ")", 
                 'table' : output
             })
             azure_upload(json_data)
