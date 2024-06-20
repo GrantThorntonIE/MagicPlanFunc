@@ -3532,8 +3532,8 @@ def populate_template_new(json_val_dict, template):
         print('created')
         
         
-        # if template == 'template_mrc':
-        output = copy_from_container(json_val_dict['plan_name'], filename)
+        if template == 'template_mrc':
+            output = copy_from_container(json_val_dict['plan_name'], filename)
         
         
     except Exception as ex:
