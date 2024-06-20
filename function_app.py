@@ -19,7 +19,7 @@ import openpyxl
 import socket
 print(socket.gethostname())
 
-import pprint
+# import pprint
 
 MAX_REAL_FLOORS = 10
 
@@ -407,10 +407,10 @@ def XML_2_dict(root, t = "floor"):
         
         
         # date = root.find('values/value[@key="date"]').text
-        # xml_val_dict['Survey Date *'] = date
+        # xml_val_dict['Survey Date'] = date
         
         
-        MagicPlan_2_SEAI_dict = {"date": "Survey Date *", "qf.34d66ce4q3": "rating_type", "qf.34d66ce4q4": "rating_purpose", "author": "Surveyor"}
+        MagicPlan_2_SEAI_dict = {"date": "Survey Date", "qf.34d66ce4q3": "rating_type", "qf.34d66ce4q4": "rating_purpose", "author": "Surveyor"}
         
         # note MagicPlan also has a separate "Surveyor" field ("qf.34d66ce4q1") but "author" is the one used for SEAI survey purposes
         
@@ -986,7 +986,7 @@ def survey(root):
                         , 'Asbestos Suspected'
                         , 'Asbestos Details' # only if suspected after 2000 
                         , 'Lot *' # blank for now
-                        , 'Survey Date *' # project creation date in MP
+                        , 'Survey Date' # project creation date in MP
                         , 'Gross floor area (m2) *'
                         , 'Number of Storeys *' # 0-9
                         , 'Room in Roof' # yes if any "dormer / room in roof" else no
@@ -1399,8 +1399,8 @@ def survey(root):
         
         
         
-        condensing = False
-        linked_stove_bb = False
+        condensing = ''
+        linked_stove_bb = ''
         other_heating_notes = ''
         
         json_val_dict["Duct Cooker Hood"] = 0
@@ -1575,8 +1575,8 @@ def survey(root):
                                 # json_val_dict['Requires Service (App?)*'] = field["value"]["value"]
                             if field['label'] == 'Service details':
                                 json_val_dict['Requires Service Details Primary Heating *'] = field["value"]["value"]
-                            if field['label'] == "Is the boiler Condensing?*" and field["value"]["value"] == True:
-                                condensing = True
+                            if field['label'] == "Is the boiler Condensing?*" and field["value"]["value"] == False:
+                                condensing = False
                             if field['label'] == "Interlinked with?" and field["value"]["value"] == "Stove + Back Boiler":
                                 linked_stove_bb = True
                             if field['label'] == "Heating notes*" and field["value"]["value"] != None:
@@ -2910,12 +2910,20 @@ def distributor_function(form, root = ''):
         if project_name[-1] == ' ':
             project_name = project_name[:-1]
         
+        
+        
+        val_dict = {}
+        val_dict["plan_name"] = project_name
+        
+        
+        
+        
         project_id = root.get('id')
         
         forms_data = get_forms_data(project_id)
-        print('len(forms_data)', ':', len(forms_data))
-        for i, d in enumerate(forms_data):
-            print('d', str(i), ':', d)
+        # print('len(forms_data)', ':', len(forms_data))
+        # for i, d in enumerate(forms_data):
+            # print('d', str(i), ':', d)
         # pprint.pprint(forms_data)
         form_val_dict = forms_data['form_val_dict']
         # forms_full_dict = forms_data['forms_full_dict']
@@ -2928,6 +2936,8 @@ def distributor_function(form, root = ''):
             project_type = form_val_dict["This project is a"]
             print("This project is a", ':', form_val_dict["This project is a"])
             if project_type == "BER":
+                template = "template_ber"
+                populate_template_new(val_dict, template)
                 output = BER(root, email=email, forms_data=forms_data)
             if project_type == "Survey":
                 output = survey(root)
@@ -3181,6 +3191,15 @@ def populate_template_new(json_val_dict, template):
         output = ''
         return_filename = ''
         
+        if template == 'template_ber':
+            filename = json_val_dict['plan_name'] + '.xlsx'
+            container_name = 'attachment'
+            local_path = "/tmp"
+            print('local_path', ':', local_path)
+            instance_file_path = os.path.join(local_path, filename)
+            print('instance_file_path', ':', instance_file_path)
+            v= {}
+        
         if template == 'template':
             filename = json_val_dict['plan_name'] + '.xlsx'
             container_name = 'attachment'
@@ -3194,7 +3213,7 @@ def populate_template_new(json_val_dict, template):
                 , 'Client Address': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C6'}
                 , 'MPRN': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E6'}
                 , 'Surveyor': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C8'}
-                , 'Survey Date *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E8'}
+                , 'Survey Date': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E8'}
                 , 'Dwelling Type*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C10'}
                 , 'Gross floor area (m2) *': { 'Value': '' , 'Tab': 'General' , 'Cell': 'E10'}
                 , 'Dwelling Age*': { 'Value': '' , 'Tab': 'General' , 'Cell': 'C12'}
@@ -3433,17 +3452,10 @@ def populate_template_new(json_val_dict, template):
         if template == 'template_mrc':
             filename = json_val_dict['plan_name'] + ' Major Renovation calculation.xlsx'
             return_filename = filename
-            # container_name = "project-files"
             container_name = 'attachment'
-            # local_path = json_val_dict['plan_name']
             local_path = "/tmp"
             print('local_path', ':', local_path)
-            # instance_file_path = filename
             instance_file_path = os.path.join(local_path, filename)
-            
-            # instance_file_path = instance_file_path.replace('\\\\', '\\')
-            # instance_file_path = instance_file_path.replace('\\', '/')
-            # print('instance_file_path', ':', instance_file_path)
             
             v = {
                 'plan_name': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'D2'}
@@ -3456,10 +3468,8 @@ def populate_template_new(json_val_dict, template):
                 , 'TOTAL SURFACE AREA FOR MAJOR RENOVATION WORKS': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E14'}
                 , 'Total surface area for MR works / Thermal Envelope': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E17'}
                 , 'WARMER HOMES MAJOR RENOVATION RESULT': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E18'}
-                
-                
                 }
-        # print("json_val_dict['Thermal Envelope - Heat loss walls, windows and doors']", ':', json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
+        
         for field in v:
             # print('field', ':', field)
             if field in json_val_dict.keys():
@@ -3522,8 +3532,8 @@ def populate_template_new(json_val_dict, template):
         print('created')
         
         
-        if template == 'template_mrc':
-            output = copy_from_container(json_val_dict['plan_name'])
+        # if template == 'template_mrc':
+        output = copy_from_container(json_val_dict['plan_name'], filename)
         
         
     except Exception as ex:
@@ -3542,7 +3552,7 @@ def populate_template_new(json_val_dict, template):
         return output, return_filename
 
 
-def copy_from_container(plan_name):
+def copy_from_container(plan_name, filename):
 
     try:
         output = ''
@@ -3551,7 +3561,7 @@ def copy_from_container(plan_name):
 
         # filename = json_val_dict['plan_name'] + '.xlsx'
         # plan_name = 'WH571501 QA'
-        filename = plan_name + ' Major Renovation calculation' + '.xlsx'
+        # filename = plan_name + ' Major Renovation calculation' + '.xlsx'
         # container_name = 'attachment'
         container_from = 'attachment'
         local_path_from = "/tmp"
