@@ -3342,7 +3342,7 @@ def populate_template(project_name, template_name, data_dict = {}):
         print('created')
         
         
-        if template == 'template_mrc':
+        if template in ['template', 'template_mrc']:
             output = copy_from_container(json_val_dict['plan_name'], filename)
         
         
@@ -3790,7 +3790,7 @@ def populate_template_new(json_val_dict, template):
         print('created')
         
         
-        if template == 'template_mrc':
+        if template in ['template', 'template_mrc']:
             output = copy_from_container(json_val_dict['plan_name'], filename)
         
         
