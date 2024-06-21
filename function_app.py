@@ -59,34 +59,50 @@ def create_table(dict : dict[str, list[float]], headers : list,
 
 
 
-def create_table_new(dict, headers : list,
-                  do_not_sum : list[str] = [], 
-                  styling: str = "", order_list = []) -> str:
+def create_table_new(dict
+                    , headers  = ['name', 'value'] # in this case headers should come from dict
+                    , do_not_sum : list[str] = []
+                    , styling: str = ""
+                    , order_list = []
+                    ) -> str:
     try:
         
-        # print(dict)
+        # dict is output_dict[section]
+        # top-level entry is currently Field Name
+        # To allow multi-column need to insert new top level if each new column is a record?
+        # What if each new column is an attribute? Need value_list?
+        # headers depends on whether records are columns or rows
+            # columns: headers = order_list
+            # rows: headers = value_list
+        # identify from dict top-level?
         
+        # for now we want to work on 2.1 Building | Floors P1
         
-        
+        # pprint.pprint(dict)
         
         output = f'<table {styling}><tr>'
-        
+        # print('headers', ':', headers)
         for header in headers:
             output += f'<th>{header}</th>'
         output += '</tr>'
         
         if len(order_list) != 0:
             for item in order_list:
+                # add the row (populate first column): 
                 if item.isupper():
                     output += f'<tr><td><strong>{item}</strong></td>'
                 else:
                     output += f'<tr><td>{item}</td>'
-                value = dict[item]["value"] if (item in dict.keys() and "value" in dict[item].keys()) else ''
-                if (type(value) == bool and value == True):
-                    value = "Yes"
-                if (type(value) == bool and value == False):
-                    value = "No"
-                output += f'<td>{value}</td>'
+                # add the cols:
+                for r, record in enumerate(dict):
+                    value = dict[record][item]["value"] if (item in dict[record].keys() and "value" in dict[record][item].keys()) else '' # do we already have blank values covered?
+                    # substitute boolean values for strings (should this be done elsewhere?):
+                    if (type(value) == bool and value == True):
+                        value = "Yes"
+                    if (type(value) == bool and value == False):
+                        value = "No"
+                    output += f'<td>{value}</td>'
+                    # print(output)
                 # print(item, value)
         else:
             for i, key in enumerate(dict):
@@ -2045,9 +2061,9 @@ def survey(root):
         warnings = 'Major Renovation Error:'
         print("Is a Major Renovation calculation necessary?*", ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
         if json_val_dict["Is a Major Renovation calculation necessary?*"] in [True, "Yes"]:
-            print(json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
-            print(json_val_dict['Thermal Envelope - Heat loss floor area'])
-            print(json_val_dict['Heat loss Wall Area recommended for EWI and IWI'])
+            # print(json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'])
+            # print(json_val_dict['Thermal Envelope - Heat loss floor area'])
+            # print(json_val_dict['Heat loss Wall Area recommended for EWI and IWI'])
             if 0 in [json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'], json_val_dict['Thermal Envelope - Heat loss floor area'], json_val_dict['Heat loss Wall Area recommended for EWI and IWI']]:
                 warnings = warnings + "<BR>" + 'Major Renovation calculation has been confirmed as necessary but not provided. The Values for "EWI/IWI >25%", "Qualifying Boiler", Heating Recommendations and the Lot Type may be incorrect as the required information has not been provided. Please resubmit to include Major Renovation calculations on Heat Loss 10th floor, 11th floor etc. and include values for Walls receiving EWI or IWI and External Walls not receiving EWI or IWI and confirm the response to the form question "Is there Mains Gas in the Area?"'
                 json_val_dict["EWI/IWI > 25% *"] = "No"
@@ -2101,7 +2117,7 @@ def survey(root):
         if json_val_dict['Suitable for Heating Measures *'] == False:
             json_val_dict['Not suitable details*'] = json_val_dict['Notes (Heating)']
         
-        print(json_val_dict["Is there Mains Gas in the Area?"])
+        # print(json_val_dict["Is there Mains Gas in the Area?"])
         if json_val_dict["Is there Mains Gas in the Area?"] != "N/A - No heating measured being recommended":
             if json_val_dict['Qualifying Boiler'] == True:
                 if json_val_dict['Heating Systems Controls *'] == 'Full zone control to spec':
@@ -2313,6 +2329,147 @@ def no_2_alph(no):
     return alph[no - 1]
 
 
+def Azure_2_Local(file_name
+                , account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+                , default_credential = DefaultAzureCredential()
+                , container_from = 'attachment'
+                , local_dir = "/tmp"
+                ):
+    '''
+    Read the contents of a file from Azure Blob Storage to the local environment and return the local file path
+    '''
+    
+    try:
+        instance_fp = os.path.join(os.getcwd(), local_dir, file_name)
+        print(instance_fp)
+        
+        # Create the BlobServiceClient object
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        container_client = blob_service_client.get_container_client(container= container_from) 
+        
+        with open(file=instance_fp, mode="wb") as download_file:
+            download_file.write(container_client.download_blob(file_name).readall())
+            
+        output = instance_fp
+    
+    except:
+        output = traceback.format_exc()
+        print(output)
+        
+    return output
+
+
+
+def XL_2_dict_new(xl_file_path):
+    '''
+    Read the contents of an Excel Workbook and return as a dictionary
+    
+    Three types of worksheet expected format: [trivial, table, lookup_table]
+    
+    trivial:
+        2 columns, B & C, field_name and field_req
+        field_req is one of the following four : [exact text, variable name, count, logic_dict]
+        
+    table: 
+        need to update populate_template_new() to handle multicol outputs
+        need to establish how many columns?
+        done properly this will also cover trivial above
+    
+    lookup_table:
+        2 cols
+        create lookup_table_dict
+        lookup is: field_value = lookup_table_dict[col_1]?
+    
+    '''
+    
+    try:
+        
+        wb = openpyxl.load_workbook(xl_file_path, data_only = True)
+        
+        output_tables = [
+                        "1. Survey Details P1"
+                        # , '2.1 Building | Floors P1'
+                        , "7. Thermal Mass P1"
+                        , "8. Ventilation P1"
+                        , "11. Lighting P1"
+                        ]
+        
+        
+        lookup_tables = ['1.1 Assessor Details Table'
+                            , '2.2 Referance Table S8'
+                            , '3.1 Referance Table S5'
+                            , '3.2 Referance Table S4'
+                            , '3.3 Referance Table Non Default'
+                            , '7.1 Referance Table'
+                            ]
+       
+        # multicol_tables_by_record = ['2.1 Building | Floors P1'
+                            # , '3. Building | Roofs P1'
+                            # , '5. Building | WindowsP1'
+                            # , '5.3 Building | Doors P1'
+                            # ]
+                            
+                            
+        multicol_tables_by_value = ['5.1 Windows Summary Table'
+                            , '5.2 Window Schedule Table'
+                            , '5.3 Building | Doors P1'
+                            , '6. Colour Area Table P1'
+                            , '8.1 Ventilation Items'
+                            , '11.1 Lighting Schedule'
+                            ]
+        
+        multicol_tables = multicol_tables_by_value
+        
+        output = {}
+        lookup = {}
+        for sheet in wb.worksheets:
+            # print(sheet.title)
+            
+            if sheet.title in multicol_tables:
+                # only need to worry about this if each new col is different value
+                print('multicol_table', ' (by value)', ':', sheet.title)
+            
+            elif sheet.title in output_tables:
+                output[sheet.title] = {1 : {}}
+                print('output_table', ':', sheet.title)
+                for i, row in enumerate(list(sheet.values)):
+                    field_name = row[1]
+                    if field_name == None:
+                        continue
+                    # print('field_name', ':', field_name)
+                    
+                    field_req = row[2]
+                    field_loc = no_2_alph(2) + str(i)
+                    default_val = ''
+                    if len(row) >= 5 and row[4] != None:
+                        print('row: ', str(i), 'col 4:', row[4])
+                        default_val = eval(row[4])
+                    # print('field_loc', ':', field_loc)
+                    output[sheet.title][1][field_name] = {"field_req": field_req, "field_loc": field_loc, "default_val": default_val}
+                
+            elif sheet.title in lookup_tables:
+                    lookup[sheet.title] = {}
+                    for i, row in enumerate(list(sheet.values)):
+                        field_name = row[1]
+                        if field_name == None:
+                            continue
+                        # print('field_name', ':', field_name)
+                        
+                        field_req = row[2]
+                        field_loc = no_2_alph(2) + str(i)
+                        # print('field_loc', ':', field_loc)
+                        lookup[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc}
+                
+            
+    except:
+        output = traceback.format_exc()
+        print(output)
+        
+        
+    return output, lookup
+
+
+
 def XL_2_dict(
                 file_name
                 , account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
@@ -2457,16 +2614,17 @@ def JSON_2_dict(project_id, headers = {
         if forms_data == {}:
             forms_data = get_forms_data(project_id)
         
-        print('len(forms_data)', ':', len(forms_data))
-        for i, d in enumerate(forms_data):
-            print('d', str(i), ':', d)
+        # print('len(forms_data)', ':', len(forms_data))
+        # for i, d in enumerate(forms_data):
+            # print('d', str(i), ':', d)
         # pprint.pprint(forms_data)
         form_val_dict = forms_data['form_val_dict']
         forms_full_dict = forms_data['forms_full_dict']
         # missing_vals = forms_data['missing_vals']
         
         
-        json_dict = form_val_dict # just for now
+        # json_dict = forms_full_dict
+        json_dict = form_val_dict
         
         # Go through Statistics?
         # Eliminate all Floors other than -1 to 9?
@@ -2529,6 +2687,7 @@ def XML_2_dict_new(root, t = "floor"):
             , "qf.34d66ce4q3": "rating_type"
             , "qf.34d66ce4q4": "rating_purpose"
             , "author": "Surveyor"
+            , "notes": "project_notes"
             }
         # note MagicPlan also has a separate "Surveyor" field ("qf.34d66ce4q1") but "author" is the one used for SEAI survey purposes
         # ToDo: confirm if also the case for BER
@@ -2833,14 +2992,15 @@ def get_forms_data(id, headers = {
                 forms_full_dict[datum["symbol_type"]] = {}
             if datum["symbol_name"] not in forms_full_dict[datum["symbol_type"]].keys():
                 forms_full_dict[datum["symbol_type"]][datum["symbol_name"]] = {}
-            forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]] = {}
+            forms_full_dict[datum["symbol_type"]][datum["symbol_name"]]['uid'] = datum["symbol_instance_id"]
             for form in datum["forms"]:
                 for section in form["sections"]:
                     for field in section["fields"]:
                         im = field["label"].replace(' *', '')
                         im = im.replace('*', '')
                         v = ''
-                        if field["type_as_string"] == "list":
+                        # if field["type_as_string"] == "list":
+                        if field["value"]["value"] == None:
                             vals = []
                             # print("type_as_string", ':', field["type_as_string"])
                             vals = [val["value"] for val in field["value"]["values"]]
@@ -2851,7 +3011,7 @@ def get_forms_data(id, headers = {
                             v = field["value"]["value"]
                         
                         form_val_dict[im] = v
-                        forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][datum["symbol_instance_id"]][im] = v
+                        forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][im] = v
                         
                         if field["is_required"] == True and field["value"]["has_value"] == False:
                             missing_vals[datum["symbol_name"]] = im
@@ -2927,7 +3087,8 @@ def distributor_function(form, root = ''):
         # pprint.pprint(forms_data)
         form_val_dict = forms_data['form_val_dict']
         # forms_full_dict = forms_data['forms_full_dict']
-        # missing_vals = forms_data['missing_vals']
+        missing_vals = forms_data['missing_vals']
+        print('missing_vals', ':', missing_vals)
         
         
         output = ''
@@ -2981,110 +3142,131 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         json_dict = JSON_2_dict(project_id, forms_data=forms_data) # does this need to be project-specific?
-        for f in ["Building Regulations Era", "Date of Plans", "Planning Reference", "Orientation of front of building"]:
+        # print('json_dict', ':')
+        # pprint.pprint(json_dict)
+        
+        # if 'Building Orientation' in json_dict['furniture'].keys():
+            # json_dict["Orientation of front of building"] = json_dict['furniture']['Building Orientation']["Orientation of front of building"]
+            
+        for f in ["Orientation of front of building"]:
             if f not in json_dict.keys():
                 json_dict[f] = 'NOT FOUND'
         
         print("Orientation of front of building", ':', json_dict["Orientation of front of building"])
+        
+        
+        
         
         ofl_filelist = []
         ofl_filelist = get_project_files(project_id, plan_name = project_name) # ofl_filelist is part of this function's output
         # print('finished getting project files')
         print('warning: did not get project files')
         
-        # read template "BER template.xlsx"
-        # create dictionary of required table/tab contents
+        # read template "template_ber.xlsx.xlsx" from cloud (Azure for now, later SharePoint)
+        local_xl_fp = Azure_2_Local(file_name = "template_ber.xlsx")
+        # local_xl_fp = SharePoint_2_Local(url) # once we get access sorted
         
-        output_dict, lookup_dict = XL_2_dict(
-                                    file_name = "template_ber.xlsx"
-                                    , account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
-                                    , default_credential = DefaultAzureCredential()
-                                    , container_from = "attachment"
-                                    , local_path_from = "/tmp"
-                                    # , container_to = 'project-files'
-                                    # , local_path_to = project_name
-                                    )
+        # create dictionaries of required table/tab contents
+        output_dict, lookup_dict = XL_2_dict_new(local_xl_fp)
         
-        # output_dict = XL_2_dict_new(url)
-
-        
-        sheet_names = []
-        for section in output_dict:
-            sheet_names.append(section)
-            # print('section', ':', section)
-        print('sheet_names', ':', sheet_names)
-        
-        
+        # print('json_dict', ':')
+        # pprint.pprint(json_dict)
         
         # populate the dicts 
-        for sheet_name in sheet_names:
+        for sheet_name in output_dict:
             print(sheet_name, ':')
             # pprint.pprint(output_dict[sheet_name])
-            for field in output_dict[sheet_name]:
-                print()
-                field_req = output_dict[sheet_name][field]['field_req']
-                if field_req == None:
-                    continue
-                print('field', ':', field)
-                print('field_req', ':', field_req)
-                # first check if it's Exact Text (Forms question):
-                if field_req in json_dict.keys():
-                    output_dict[sheet_name][field]['value'] = json_dict[field_req]
+            for record in output_dict[sheet_name]: # at the moment there is only one of these... there should be x: the number of bbb from json_dict which is currently single level...
+                for field in output_dict[sheet_name][record]:
+                    field_req = output_dict[sheet_name][record][field]['field_req']
+                    if field_req == None:
+                        continue
 
-                # then check if it's a variable name from xml_val_dict (i.e. xml_val_dict)
-                elif field_req in xml_val_dict.keys():
-                    output_dict[sheet_name][field]['value'] = xml_val_dict[field_req]
-                
-                # lookup_table
-                elif field_req[0:6] == "lookup":
-                    lu = field_req.split("|")
-                    # print(eval(lu[2]))
-                    output_dict[sheet_name][field]['value'] = lookup_dict[lu[1]][eval(lu[2])]['field_req']
-                
-                # count, need json_dict...?
-                elif field_req[0:5] == "count":
-                    output_dict[sheet_name][field]['value'] = "COUNT"
-                
-                # either/or logic
-                elif field_req[0:5] == "logic":
-                    # print(field_req)
-                    lu = field_req.split("|")
-                    # print(lu)
-                    # print(eval(lu[1]))
-                    # print(eval(lu[2]))
-                    # print(lu[2])
-                    # print(lu[4])
-                    # print(eval(lu[4]))
-                    output_dict[sheet_name][field]['value'] = eval(lu[1]) if json_dict[eval(lu[2])] == eval(lu[3]) else eval(lu[4])
-                
-                # logic is uncharted
-                else:
-                    output_dict[sheet_name][field]['value'] = "NOT FOUND"
+                    # first check if it's Exact Text (Forms question):
                     
-        
+                    if field_req in json_dict.keys(): # check the other columns (E+) and apply logic that works even if they are empty
+                        output_dict[sheet_name][record][field]['value'] = json_dict[field_req]
+                    
+                    
+                    # could we check if field_req in lower level e.g. json_dict[room].keys()?
+                    
+                    
+                    
+                    # then check if it's a variable name from xml_val_dict (i.e. xml_val_dict)
+                    elif field_req in xml_val_dict.keys():
+                        output_dict[sheet_name][record][field]['value'] = xml_val_dict[field_req]
+                    
+                    # lookup_table
+                    elif field_req[0:6] == "lookup":
+                        lu = field_req.split("|")
+                        # print(eval(lu[2]))
+                        output_dict[sheet_name][record][field]['value'] = lookup_dict[lu[record]][eval(lu[2])]['field_req']
+                    
+                    # count, need json_dict...?
+                    elif field_req[0:5] == "count":
+                        output_dict[sheet_name][record][field]['value'] = "COUNT"
+                    
+                    # either/or logic
+                    elif field_req[0:5] == "logic": 
+                        # print(field_req)
+                        lu = field_req.split("|")
+                        # print(lu)
+                        # print(eval(lu[record]))
+                        # print(eval(lu[2]))
+                        # print(lu[2])
+                        # print(lu[4])
+                        # print(eval(lu[4]))
+                        output_dict[sheet_name][record][field]['value'] = eval(lu[record]) if json_dict[eval(lu[2])] == eval(lu[3]) else eval(lu[4])
+                    
+                    # logic is uncharted
+                    else:
+                        output_dict[sheet_name][record][field]['value'] = output_dict[sheet_name][record][field]['default_val'] if 'default_val' in output_dict[sheet_name][record][field].keys() else "NOT FOUND"
+                    
+                # print()
+                # print('field', ':', field)
+                # print('field_req', ':', field_req)
                 # print('value', ':', output_dict[sheet_name][field]['value'])
         
+        
+        
+        # *****************************
+        
         # use output_dict to populate (a copy of) the Excel template and save it to be sent as an email attachment
+        # populate_template(project_name, template_name, data_dict = {})
+        
+        # *****************************
+        
         
         
         # use output_dict to generate this function's "output" HTML to serve as the body of the return email
-        
-        if output == '':
+        if output == '': # otherwise might contain error details from a function
             styling = "border=\"1\""
             output = f"""\
                 <h1>File List</h1> \
                 {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_filelist)} \
-
                 </div>"""
 
             for section in output_dict:
-                order_list = [field for field in output_dict[section]]
-                # print(order_list)
+                print('section', ':', section)
+                # pprint.pprint(output_dict[section])
+                
+                # headers = [key for key in output_dict[section].keys()] # this is for multicol_tables_by_value
+                
+                headers = ['name']
+                for r, record in enumerate(output_dict[section]):
+                    header = 'record ' + str(r + 1)
+                    headers.append(header)
+                print('headers', ':', headers)
+                
+                order_list = [field for field in output_dict[section][1]] # rows should always be exactly the same for every record yes? otherwise build in loop above
+                print('order_list', ':', order_list)
+                
+                # for r, record in enumerate(output_dict[section]): # multicol_tables_by_record
+                    # print('record', ':', record)
                 section_output = f"""\
                                 <h1>{section}</h1> \
-                                {create_table_new(output_dict[section], headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = order_list)} \
+                                {create_table_new(output_dict[section], headers, styling=styling, do_not_sum=['All'], order_list = order_list)} \
                                 </div>"""
-                                
                 output = output + section_output
                 
             output = output + "</div>"
@@ -3095,6 +3277,81 @@ def BER(root, output = '', email = '', forms_data = {}):
     
     return output
 
+
+
+def populate_template(project_name, template_name, data_dict = {}):
+    try:
+        if template_name in ['template_ber', 'template']:
+            filename = json_val_dict['plan_name'] + '.xlsx'
+        if template_name == 'template_mrc':
+            filename = json_val_dict['plan_name'] + ' Major Renovation calculation.xlsx'
+        return_filename = filename
+
+        account_url = "https://ksnmagicplanfunc3e54b9.blob.core.windows.net"
+        default_credential = DefaultAzureCredential()
+        output = ''
+        container_name = 'attachment'
+        local_path = "/tmp"
+        instance_file_path = os.path.join(local_path, filename)
+        
+            
+        # v = {
+            # 'plan_name': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'D2'}
+            # , 'Thermal Envelope - Heat loss walls, windows and doors': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E6'}
+            # , 'Thermal Envelope - Heat loss floor area': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E7'}
+            # , 'Thermal Envelope - Heat loss roof area': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E8'}
+            # , 'THERMAL ENVELOPE OF BUILDING AREA': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E9'}
+            # , 'Heat loss Wall Area recommended for EWI and IWI': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E12'}
+            # , 'New Windows being recommended for replacement': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E13'}
+            # , 'TOTAL SURFACE AREA FOR MAJOR RENOVATION WORKS': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E14'}
+            # , 'Total surface area for MR works / Thermal Envelope': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E17'}
+            # , 'WARMER HOMES MAJOR RENOVATION RESULT': { 'Value': '' , 'Tab': 'Results' , 'Cell': 'E18'}
+            # }
+        
+        for field in data_dict:
+            print('field', ':', field)
+
+            if type(field['Value']) == str and '<BR>' in v[field]['Value']:
+                v[field]['Value'] = v[field]['Value'].replace('<BR>', '\n')
+
+
+        # Create the BlobServiceClient object
+        blob_service_client = BlobServiceClient(account_url, credential=default_credential)
+        container_client = blob_service_client.get_container_client(container= container_name) 
+
+
+        xfile = openpyxl.load_workbook(instance_file_path)
+        
+        for field in v:
+            # print(field)
+            sheet = xfile[v[field]['Tab']]
+            sheet[v[field]['Cell']] = v[field]['Value']
+
+
+
+        xfile.save(instance_file_path)
+
+
+        instance_file_path = os.path.join(local_path, filename)
+        with open(file=instance_file_path, mode="rb") as upload_file:
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=instance_file_path)
+            blob_client.upload_blob(upload_file, overwrite=True)
+    
+
+        
+        print('created')
+        
+        
+        # if template == 'template_mrc':
+        output = copy_from_container(json_val_dict['plan_name'], filename)
+        
+        
+    except:
+        output = traceback.format_exc()
+        print(output)
+
+    finally:
+        return output, return_filename
 
 
 
@@ -3180,6 +3437,7 @@ def azure_upload(file_data, container_name = 'attachment'):
     blob_client.upload_blob(file_data)
     
     return
+
 
 
 
@@ -3532,8 +3790,8 @@ def populate_template_new(json_val_dict, template):
         print('created')
         
         
-        if template == 'template_mrc':
-            output = copy_from_container(json_val_dict['plan_name'], filename)
+        # if template == 'template_mrc':
+        output = copy_from_container(json_val_dict['plan_name'], filename)
         
         
     except Exception as ex:
