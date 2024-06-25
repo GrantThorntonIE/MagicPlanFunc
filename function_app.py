@@ -2978,6 +2978,7 @@ def get_forms_data(id, headers = {
             }):
     
     try:
+        output = {}
         form_val_dict = {}
         forms_full_dict = {}
         missing_vals = {}
@@ -3022,8 +3023,8 @@ def get_forms_data(id, headers = {
         output['missing_vals'] = missing_vals
     
     except:
-        output = traceback.format_exc()
-        print('exception', ':', output)
+        output2 = traceback.format_exc()
+        print('exception', ':', output2)
     
     return output
 
@@ -3054,7 +3055,7 @@ def distributor_function(form, root = ''):
     '''
     
     try:
-
+        output = ''
         if root == '':
             email = form['email']
             xml = form['xml']
@@ -3094,17 +3095,17 @@ def distributor_function(form, root = ''):
                 print('missing_vals', ':', missing_vals)
         
         
-        output = ''
+
         
-        if "This project is a" in form_val_dict.keys():
-            project_type = form_val_dict["This project is a"]
-            print("This project is a", ':', form_val_dict["This project is a"])
-            if project_type == "BER":
-                template = "template_ber"
-                populate_template_new(val_dict, template)
-                output = BER(root, email=email, forms_data=forms_data)
-            if project_type == "Survey":
-                output = survey(root)
+            if "This project is a" in form_val_dict.keys():
+                project_type = form_val_dict["This project is a"]
+                print("This project is a", ':', form_val_dict["This project is a"])
+                if project_type == "BER":
+                    template = "template_ber"
+                    populate_template_new(val_dict, template)
+                    output = BER(root, email=email, forms_data=forms_data)
+                if project_type == "Survey":
+                    output = survey(root)
         
         if output == '':
             output = survey(root)
