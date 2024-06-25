@@ -3089,6 +3089,16 @@ def distributor_function(form, root = ''):
         if isinstance(forms_data, dict):
             if 'form_val_dict' in forms_data.keys():
                 form_val_dict = forms_data['form_val_dict']
+                if "This project is a" in form_val_dict.keys():
+                    project_type = form_val_dict["This project is a"]
+                    print("This project is a", ':', form_val_dict["This project is a"])
+                    if project_type == "BER":
+                        template = "template_ber"
+                        populate_template_new(val_dict, template)
+                        output = BER(root, email=email, forms_data=forms_data)
+                    if project_type == "Survey":
+                        output = survey(root)           
+            
             # forms_full_dict = forms_data['forms_full_dict']
             if 'missing_vals' in forms_data.keys():
                 missing_vals = forms_data['missing_vals']
@@ -3096,16 +3106,7 @@ def distributor_function(form, root = ''):
         
         
 
-        
-            if "This project is a" in form_val_dict.keys():
-                project_type = form_val_dict["This project is a"]
-                print("This project is a", ':', form_val_dict["This project is a"])
-                if project_type == "BER":
-                    template = "template_ber"
-                    populate_template_new(val_dict, template)
-                    output = BER(root, email=email, forms_data=forms_data)
-                if project_type == "Survey":
-                    output = survey(root)
+    
         
         if output == '':
             output = survey(root)
