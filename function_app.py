@@ -3085,12 +3085,13 @@ def distributor_function(form, root = ''):
         # for i, d in enumerate(forms_data):
             # print('d', str(i), ':', d)
         # pprint.pprint(forms_data)
-        if 'form_val_dict' in forms_data.keys():
-            form_val_dict = forms_data['form_val_dict']
-        # forms_full_dict = forms_data['forms_full_dict']
-        if 'missing_vals' in forms_data.keys():
-            missing_vals = forms_data['missing_vals']
-            print('missing_vals', ':', missing_vals)
+        if isinstance(forms_data, dict):
+            if 'form_val_dict' in forms_data.keys():
+                form_val_dict = forms_data['form_val_dict']
+            # forms_full_dict = forms_data['forms_full_dict']
+            if 'missing_vals' in forms_data.keys():
+                missing_vals = forms_data['missing_vals']
+                print('missing_vals', ':', missing_vals)
         
         
         output = ''
