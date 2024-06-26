@@ -19,7 +19,8 @@ import openpyxl
 import socket
 print(socket.gethostname())
 
-# import pprint
+import pprint
+from dictsearch.search import iterate_dictionary
 
 MAX_REAL_FLOORS = 10
 
@@ -59,7 +60,7 @@ def create_table(dict : dict[str, list[float]], headers : list,
 
 
 
-def create_table_new(dict
+def create_table_new(data_dict
                     , headers  = ['name', 'value'] # in this case headers should come from dict
                     , do_not_sum : list[str] = []
                     , styling: str = ""
@@ -77,14 +78,36 @@ def create_table_new(dict
         # identify from dict top-level?
         
         # for now we want to work on 2.1 Building | Floors P1
-        
-        # pprint.pprint(dict)
+        print('this is the data_dict we need to use to create a multicol table:')
+        pprint.pprint(data_dict)
         
         output = f'<table {styling}><tr>'
-        # print('headers', ':', headers)
+        
+        
+        
+        
+        if len(order_list) != 0:
+            for item in order_list:
+                # print('item', ':', item)
+                for r, record in enumerate(data_dict):
+                    # print(data_dict[record][item].keys())
+                    if 'value' in list(data_dict[record][item].keys()):
+                        # print('type', ':', type(data_dict[record][item]['value']))
+                        e = data_dict[record][item]['value']
+                        if isinstance(e, dict):
+                            for key in data_dict[record][item]['value'].keys():
+                                print('key', ':', key)
+                                if key not in headers:
+                                    headers.append(key)
+
+                        
+
+        print('headers', ':', headers)
         for header in headers:
             output += f'<th>{header}</th>'
         output += '</tr>'
+        
+        
         
         if len(order_list) != 0:
             for item in order_list:
@@ -94,24 +117,47 @@ def create_table_new(dict
                 else:
                     output += f'<tr><td>{item}</td>'
                 # add the cols:
-                for r, record in enumerate(dict):
-                    value = dict[record][item]["value"] if (item in dict[record].keys() and "value" in dict[record][item].keys()) else '' # do we already have blank values covered?
+                for r, record in enumerate(data_dict):
+                    # for elem in data_dict[record][item]:
+                    if 'value' not in data_dict[record][item].keys():
+                        continue
+                    
+
+                    if isinstance(data_dict[record][item]['value'], str):
+                        if data_dict[record][item]['value'] != '':
+                            v = data_dict[record][item]['value']
+                            data_dict[record][item]['value'] = {}
+                            data_dict[record][item]['value']['value'] = v # convert the string to a single-entry dict
+                    
+                    if isinstance(data_dict[record][item]['value'], dict):
+                        for header in headers[1:]:
+                            if header in data_dict[record][item]['value'].keys():
+                                value = data_dict[record][item]['value'][header]
+                            else:
+                                value = ' '
+                            output += f'<td>{value}</td>'
+                            
+
+                            # output(val, ':', data_dict[record][item][elem][m][val])
+                            # value = data_dict[record][item]["value"] if (item in data_dict[record].keys() and "value" in dict[record][item].keys()) else '' # already have blank values covered? If not then do we need a warning at this point?
+                            # value = data_dict[record][item][elem][m][val] if (m in data_dict[record][item][elem].keys() and val in data_dict[record][item].keys()) else '' # already have blank values covered? If not then do we need a warning at this point?
+                    
                     # substitute boolean values for strings (should this be done elsewhere?):
-                    if (type(value) == bool and value == True):
-                        value = "Yes"
-                    if (type(value) == bool and value == False):
-                        value = "No"
-                    output += f'<td>{value}</td>'
+                    # if (type(value) == bool and value == True):
+                        # value = "Yes"
+                    # if (type(value) == bool and value == False):
+                        # value = "No"
+                    # output += f'<td>{value}</td>'
                     # print(output)
                 # print(item, value)
         else:
-            for i, key in enumerate(dict):
-                # print(key, dict[key])
+            for i, key in enumerate(data_dict):
+                # print(key, data_dict[key])
                 if key.isupper():
                     output += f'<tr><td><strong>{key}</strong></td>'
                 else:
                     output += f'<tr><td>{key}</td>'
-                output += f'<td>{dict[key]}</td>'
+                output += f'<td>{data_dict[key]}</td>'
 
         output += '</table>'
         
@@ -2389,6 +2435,9 @@ def XL_2_dict_new(xl_file_path):
         output_tables = [
                         "1. Survey Details P1"
                         # , '2.1 Building | Floors P1'
+                        # , '3. Building | Roofs P1'
+                        # , '5. Building | WindowsP1'
+                        # , '5.3 Building | Doors P1'
                         , "7. Thermal Mass P1"
                         , "8. Ventilation P1"
                         , "11. Lighting P1"
@@ -2425,11 +2474,11 @@ def XL_2_dict_new(xl_file_path):
         for sheet in wb.worksheets:
             # print(sheet.title)
             
-            if sheet.title in multicol_tables:
+            # if sheet.title in multicol_tables:
                 # only need to worry about this if each new col is different value
-                print('multicol_table', ' (by value)', ':', sheet.title)
+                # print('multicol_table', ' (by value)', ':', sheet.title)
             
-            elif sheet.title in output_tables:
+            if sheet.title in output_tables:
                 output[sheet.title] = {1 : {}}
                 print('output_table', ':', sheet.title)
                 for i, row in enumerate(list(sheet.values)):
@@ -2442,7 +2491,7 @@ def XL_2_dict_new(xl_file_path):
                     field_loc = no_2_alph(2) + str(i)
                     default_val = ''
                     if len(row) >= 5 and row[4] != None:
-                        print('row: ', str(i), 'col 4:', row[4])
+                        # print('row: ', str(i), 'col 4:', row[4])
                         default_val = eval(row[4])
                     # print('field_loc', ':', field_loc)
                     output[sheet.title][1][field_name] = {"field_req": field_req, "field_loc": field_loc, "default_val": default_val}
@@ -2591,6 +2640,53 @@ def XL_2_dict(
         
     return output, lookup
 
+def get_counts(project_id, headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
+            , "customer": "63b5a4ae69c91"
+            , "accept": "application/json"
+            }
+            , xml_ref_dict = {}):
+    try:
+        output = {}
+        
+        # pprint.pprint(xml_ref_dict)
+        
+        
+        json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(project_id)
+        request = urllib.request.Request(json_url, headers=headers)
+        JSON = urllib.request.urlopen(request).read()
+        JSON = json.loads(JSON)
+
+        
+        # count_objects = ['Number of LED/CFL bulbs', 'Number of Halogen Lamp bulbs', 'Number of Halogen Lamp Low Voltage bulbs', 'Number of Incandescent/Unknown bulbs', 'Number of Linear Fluorescent bulbs']
+        
+        count_dict = {}
+        count_objects = ["LED/CFL", "Halogen Lamp", "Halogen LV", "Incandescent", "Linear Fluorescent"]
+        for co in count_objects:
+            count_dict[co] = 0
+        
+        
+        for floor in JSON["data"]["project_statistics"]["floors"]:
+            # print(floor["name"])
+            # print(floor["uid"])
+            # print('xml_ref_dict[floor["uid"]]', ':', xml_ref_dict[floor["uid"]])
+            for room in floor["rooms"]:
+                # print(room["name"])
+                # print(room["uid"])
+                for furniture in room["furnitures"]:
+                    # print(furniture["name"])
+                    # print(furniture["uid"])
+                    if furniture["name"] in count_objects:
+                        count_dict[furniture["name"]] += 1
+                
+        output = count_dict
+    
+    except:
+        output = traceback.format_exc()
+        print(output)
+    
+    return output
 
 def JSON_2_dict(project_id, headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
@@ -2599,7 +2695,7 @@ def JSON_2_dict(project_id, headers = {
             , "accept": "application/json"
             }
             , forms_data = {}
-            ):
+            , xml_ref_dict = {}):
     '''
     This function retrieves Forms & Statistics JSON files from MagicPlan
     Combines and filters the data to return json_dict:
@@ -2626,12 +2722,20 @@ def JSON_2_dict(project_id, headers = {
         # json_dict = forms_full_dict
         json_dict = form_val_dict
         
+        
+        count_dict = get_counts(project_id
+                                , xml_ref_dict=xml_ref_dict # real floors/excluded rooms
+                                )
+        
         # Go through Statistics?
         # Eliminate all Floors other than -1 to 9?
-        # populate json_dict = {floor; room; object; detail}
-        # 
-        # Counts - should these be contained in json_dict? leaning towards no
-        # 
+        # add counts to json_dict as strings
+        
+        print(count_dict)
+        
+        for key in count_dict.keys():
+            json_dict[key] = str(count_dict[key])
+        
         
         
         
@@ -3008,10 +3112,20 @@ def get_forms_data(id, headers = {
                             for val in vals:
                                 v += val
                                 v += '<BR>'
+                            # print(v)
                         else:
                             v = field["value"]["value"]
                         
-                        form_val_dict[im] = v
+                        if im not in form_val_dict.keys():
+                            form_val_dict[im] = {}
+                        # form_val_dict[im] = v
+                        key = datum["symbol_name"] + " (" + datum["symbol_instance_id"] + ")"
+                        if key not in form_val_dict[im].keys():
+                            # form_val_dict[im][datum["symbol_instance_id"]] = {}
+                            form_val_dict[im][key] = v
+                        
+
+                            
                         forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][im] = v
                         
                         if field["is_required"] == True and field["value"]["has_value"] == False:
@@ -3055,6 +3169,7 @@ def distributor_function(form, root = ''):
     '''
     
     try:
+
         output = ''
         if root == '':
             email = form['email']
@@ -3089,27 +3204,26 @@ def distributor_function(form, root = ''):
         if isinstance(forms_data, dict):
             if 'form_val_dict' in forms_data.keys():
                 form_val_dict = forms_data['form_val_dict']
-                if "This project is a" in form_val_dict.keys():
-                    project_type = form_val_dict["This project is a"]
-                    print("This project is a", ':', form_val_dict["This project is a"])
-                    if project_type == "BER":
-                        template = "template_ber"
-                        populate_template_new(val_dict, template)
-                        output = BER(root, email=email, forms_data=forms_data)
-                    if project_type == "Survey":
-                        output = survey(root)           
-            
             # forms_full_dict = forms_data['forms_full_dict']
             if 'missing_vals' in forms_data.keys():
                 missing_vals = forms_data['missing_vals']
                 print('missing_vals', ':', missing_vals)
         
         
-
-    
         
-        if output == '':
-            output = survey(root)
+            if "This project is a" in form_val_dict.keys():
+                for pt in form_val_dict["This project is a"]:
+                    project_type = form_val_dict["This project is a"][pt]
+                print("This project is a", ':', project_type)
+                if project_type == "BER":
+                    template = "template_ber"
+                    populate_template_new(val_dict, template)
+                    output = BER(root, email=email, forms_data=forms_data)
+                if project_type == "Survey":
+                    output = survey(root)
+        
+        # if output == '':
+            # output = survey(root)
         
         output = output + '<h2>' + xml + '</h2></div>'
         
@@ -3139,6 +3253,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         project_id = root.get("id")
         project_name = root.get("name") # ToDo: are we going to pass in xml_dict or do we need to produce a project-specific one?
         xml_dict = XML_2_dict_new(root)
+        
+        xml_ref_dict = xml_dict[0]
         xml_val_dict = xml_dict[2]
         
         # print('xml_val_dict', ':')
@@ -3146,7 +3262,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
-        json_dict = JSON_2_dict(project_id, forms_data=forms_data) # does this need to be project-specific?
+        json_dict = JSON_2_dict(project_id, forms_data=forms_data, xml_ref_dict=xml_ref_dict) # does this need to be project-specific?
         # print('json_dict', ':')
         # pprint.pprint(json_dict)
         
@@ -3174,8 +3290,58 @@ def BER(root, output = '', email = '', forms_data = {}):
         # create dictionaries of required table/tab contents
         output_dict, lookup_dict = XL_2_dict_new(local_xl_fp)
         
+        # print('json_dict["room"]', ':')
+        # pprint.pprint(json_dict["room"])
         # print('json_dict', ':')
         # pprint.pprint(json_dict)
+        
+        # print(iterate_dictionary(json_dict,"room"))
+        
+        
+        
+        
+        # *****************************
+        
+        count_dict = {}
+        
+        # *****************************
+        
+        
+        # count_dict['Number of LED/CFL bulbs'] = 0
+        # count_dict['Number of Halogen Lamp bulbs'] = 0
+        # count_dict['Number of Halogen Lamp Low Voltage bulbs'] = 0
+        # count_dict['Number of Incandescent/Unknown bulbs'] = 0
+        # count_dict['Number of Linear Fluorescent bulbs'] = 0
+
+        
+        
+        count_dict['Number of Light Elements'] = 0
+        count_dict['Number of Medium Elements'] = 0
+        count_dict['Number of Heavy Elements'] = 0
+        
+        for f in ['Ground Floor Mass', 'External Wall Mass', 'Separating Wall Mass', 'Internal Partition Mass']:
+            if f not in  json_dict.keys():
+                json_dict[f] = "Medium"
+        masses = [json_dict['Ground Floor Mass'], json_dict['External Wall Mass'], json_dict['Separating Wall Mass'], json_dict['Internal Partition Mass']]
+        
+        for m in masses:
+            print(m)
+            # print('masses[m]', ':', masses[m])
+            for n in m:
+                print(n)
+                val = m[n]
+            field = f'Number of {val} Elements'
+            count_dict[field] += 1
+        
+        count_dict['lmh'] = str(count_dict['Number of Light Elements']) + str(count_dict['Number of Medium Elements']) + str(count_dict['Number of Heavy Elements'])
+        
+        count_dict['Overall Thermal Mass Category'] = lookup_dict['7.1 Referance Table'][count_dict['lmh']]['field_req']
+        
+        # *****************************
+        
+        pprint.pprint(count_dict)
+        
+        # *****************************
         
         # populate the dicts 
         for sheet_name in output_dict:
@@ -3186,42 +3352,47 @@ def BER(root, output = '', email = '', forms_data = {}):
                     field_req = output_dict[sheet_name][record][field]['field_req']
                     if field_req == None:
                         continue
-
+                    
                     # first check if it's Exact Text (Forms question):
+                    # can we check if field_req in lower level e.g. json_dict[room].keys()?
+                    # for f in json_dict["room"]:
+                        # print('f', ':', f)
+                        # print('f.keys()', ':', json_dict["room"][f].keys())
+                        # if field_req in json_dict["room"][f].keys():
+                            # print('json_dict["room"][f]', ':', json_dict["room"][f])
+                            # output_dict[sheet_name][record][field]['value'] = json_dict["room"][f][field_req]
                     
                     if field_req in json_dict.keys(): # check the other columns (E+) and apply logic that works even if they are empty
                         output_dict[sheet_name][record][field]['value'] = json_dict[field_req]
-                    
-                    
-                    # could we check if field_req in lower level e.g. json_dict[room].keys()?
-                    
-                    
                     
                     # then check if it's a variable name from xml_val_dict (i.e. xml_val_dict)
                     elif field_req in xml_val_dict.keys():
                         output_dict[sheet_name][record][field]['value'] = xml_val_dict[field_req]
                     
                     # lookup_table
-                    elif field_req[0:6] == "lookup":
+                    elif isinstance(field_req, str) and field_req[0:6] == "lookup":
                         lu = field_req.split("|")
-                        # print(eval(lu[2]))
-                        output_dict[sheet_name][record][field]['value'] = lookup_dict[lu[record]][eval(lu[2])]['field_req']
+                        output_dict[sheet_name][record][field]['value'] = str(lookup_dict[lu[record]][eval(lu[2])]['field_req'])
+                    
+                    # this is currently referred to as count_dict...
+                    elif field_req in count_dict.keys():
+                        output_dict[sheet_name][record][field]['value'] = str(count_dict[field_req])
                     
                     # count, need json_dict...?
-                    elif field_req[0:5] == "count":
-                        output_dict[sheet_name][record][field]['value'] = "COUNT"
+                    # elif field_req[0:5] == "count":
+                        # output_dict[sheet_name][record][field]['value'] = "COUNT"
                     
                     # either/or logic
-                    elif field_req[0:5] == "logic": 
+                    # elif field_req[0:5] == "logic": 
                         # print(field_req)
-                        lu = field_req.split("|")
+                        # lu = field_req.split("|")
                         # print(lu)
                         # print(eval(lu[record]))
                         # print(eval(lu[2]))
                         # print(lu[2])
                         # print(lu[4])
                         # print(eval(lu[4]))
-                        output_dict[sheet_name][record][field]['value'] = eval(lu[record]) if json_dict[eval(lu[2])] == eval(lu[3]) else eval(lu[4])
+                        # output_dict[sheet_name][record][field]['value'] = eval(lu[record]) if json_dict[eval(lu[2])] == eval(lu[3]) else eval(lu[4])
                     
                     # logic is uncharted
                     else:
@@ -3252,22 +3423,13 @@ def BER(root, output = '', email = '', forms_data = {}):
                 </div>"""
 
             for section in output_dict:
-                print('section', ':', section)
+                # print('section', ':', section)
                 # pprint.pprint(output_dict[section])
                 
-                # headers = [key for key in output_dict[section].keys()] # this is for multicol_tables_by_value
-                
-                headers = ['name']
-                for r, record in enumerate(output_dict[section]):
-                    header = 'record ' + str(r + 1)
-                    headers.append(header)
-                print('headers', ':', headers)
-                
+                headers = ['name', 'value']
                 order_list = [field for field in output_dict[section][1]] # rows should always be exactly the same for every record yes? otherwise build in loop above
-                print('order_list', ':', order_list)
+                # print('order_list', ':', order_list)
                 
-                # for r, record in enumerate(output_dict[section]): # multicol_tables_by_record
-                    # print('record', ':', record)
                 section_output = f"""\
                                 <h1>{section}</h1> \
                                 {create_table_new(output_dict[section], headers, styling=styling, do_not_sum=['All'], order_list = order_list)} \
@@ -3787,7 +3949,7 @@ def populate_template_new(json_val_dict, template):
 
         instance_file_path = os.path.join(local_path, filename)
         with open(file=instance_file_path, mode="rb") as upload_file:
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=instance_file_path)
+            blob_client = blob_service_client.get_blob_client(container=container_name, blob=filename)
             blob_client.upload_blob(upload_file, overwrite=True)
     
 
@@ -3815,7 +3977,11 @@ def populate_template_new(json_val_dict, template):
         return output, return_filename
 
 
-def copy_from_container(plan_name, filename):
+def copy_from_container(plan_name
+                        , filename
+                        , container_from = 'attachment'
+                        , local_path_from = "/tmp"
+                        ):
 
     try:
         output = ''
@@ -3826,8 +3992,8 @@ def copy_from_container(plan_name, filename):
         # plan_name = 'WH571501 QA'
         # filename = plan_name + ' Major Renovation calculation' + '.xlsx'
         # container_name = 'attachment'
-        container_from = 'attachment'
-        local_path_from = "/tmp"
+        
+        
 
         container_to = 'project-files'
         local_path_to = plan_name
