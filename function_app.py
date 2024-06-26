@@ -4000,7 +4000,8 @@ def copy_from_container(plan_name
 
         # instance_file_path = os.path.join(local_path, filename)
         # print('instance_file_path', ':', instance_file_path)
-        instance_file_path_from = os.path.join(local_path_from, filename)
+        # instance_file_path_from = os.path.join(local_path_from, filename)
+        instance_file_path_from = filename
         print('instance_file_path_from', ':', instance_file_path_from)
         instance_file_path_to = os.path.join(local_path_to, filename)
         print('instance_file_path_to', ':', instance_file_path_to)
