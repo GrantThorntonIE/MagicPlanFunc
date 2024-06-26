@@ -19,8 +19,8 @@ import openpyxl
 import socket
 print(socket.gethostname())
 
-import pprint
-from dictsearch.search import iterate_dictionary
+# import pprint
+# from dictsearch.search import iterate_dictionary
 
 MAX_REAL_FLOORS = 10
 
@@ -79,7 +79,7 @@ def create_table_new(data_dict
         
         # for now we want to work on 2.1 Building | Floors P1
         print('this is the data_dict we need to use to create a multicol table:')
-        pprint.pprint(data_dict)
+        # pprint.pprint(data_dict)
         
         output = f'<table {styling}><tr>'
         
@@ -3339,7 +3339,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # *****************************
         
-        pprint.pprint(count_dict)
+        # pprint.pprint(count_dict)
         
         # *****************************
         
