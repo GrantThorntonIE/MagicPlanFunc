@@ -19,7 +19,7 @@ import openpyxl
 import socket
 print(socket.gethostname())
 
-# import pprint
+import pprint
 # from dictsearch.search import iterate_dictionary
 
 MAX_REAL_FLOORS = 10
@@ -58,124 +58,6 @@ def create_table(dict : dict[str, list[float]], headers : list,
     output += '</table>'
     return output
 
-
-
-def create_table_new(data_dict
-                    , headers  = ['name', 'value'] # in this case headers should come from dict
-                    , do_not_sum : list[str] = []
-                    , styling: str = ""
-                    , order_list = []
-                    ) -> str:
-    try:
-        
-        # dict is output_dict[section]
-        # top-level entry is currently Field Name
-        # To allow multi-column need to insert new top level if each new column is a record?
-        # What if each new column is an attribute? Need value_list?
-        # headers depends on whether records are columns or rows
-            # columns: headers = order_list
-            # rows: headers = value_list
-        # identify from dict top-level?
-        
-        # for now we want to work on 2.1 Building | Floors P1
-        print('this is the data_dict we need to use to create a multicol table:')
-        # pprint.pprint(data_dict)
-        
-        output = f'<table {styling}><tr>'
-        
-        
-        
-        
-        if len(order_list) != 0:
-            for item in order_list:
-                # print('item', ':', item)
-                for r, record in enumerate(data_dict):
-                    # print(data_dict[record][item].keys())
-                    if 'value' in list(data_dict[record][item].keys()):
-                        # print('type', ':', type(data_dict[record][item]['value']))
-                        e = data_dict[record][item]['value']
-                        if isinstance(e, dict):
-                            for key in data_dict[record][item]['value'].keys():
-                                print('key', ':', key)
-                                if key not in headers:
-                                    headers.append(key)
-
-                        
-
-        print('headers', ':', headers)
-        for header in headers:
-            output += f'<th>{header}</th>'
-        output += '</tr>'
-        
-        
-        
-        if len(order_list) != 0:
-            for item in order_list:
-                # add the row (populate first column): 
-                if item.isupper():
-                    output += f'<tr><td><strong>{item}</strong></td>'
-                else:
-                    output += f'<tr><td>{item}</td>'
-                # add the cols:
-                for r, record in enumerate(data_dict):
-                    # for elem in data_dict[record][item]:
-                    if 'value' not in data_dict[record][item].keys():
-                        continue
-                    
-
-                    if isinstance(data_dict[record][item]['value'], str):
-                        if data_dict[record][item]['value'] != '':
-                            v = data_dict[record][item]['value']
-                            data_dict[record][item]['value'] = {}
-                            data_dict[record][item]['value']['value'] = v # convert the string to a single-entry dict
-                    
-                    if isinstance(data_dict[record][item]['value'], dict):
-                        for header in headers[1:]:
-                            if header in data_dict[record][item]['value'].keys():
-                                value = data_dict[record][item]['value'][header]
-                            else:
-                                value = ' '
-                            output += f'<td>{value}</td>'
-                            
-
-                            # output(val, ':', data_dict[record][item][elem][m][val])
-                            # value = data_dict[record][item]["value"] if (item in data_dict[record].keys() and "value" in dict[record][item].keys()) else '' # already have blank values covered? If not then do we need a warning at this point?
-                            # value = data_dict[record][item][elem][m][val] if (m in data_dict[record][item][elem].keys() and val in data_dict[record][item].keys()) else '' # already have blank values covered? If not then do we need a warning at this point?
-                    
-                    # substitute boolean values for strings (should this be done elsewhere?):
-                    # if (type(value) == bool and value == True):
-                        # value = "Yes"
-                    # if (type(value) == bool and value == False):
-                        # value = "No"
-                    # output += f'<td>{value}</td>'
-                    # print(output)
-                # print(item, value)
-        else:
-            for i, key in enumerate(data_dict):
-                # print(key, data_dict[key])
-                if key.isupper():
-                    output += f'<tr><td><strong>{key}</strong></td>'
-                else:
-                    output += f'<tr><td>{key}</td>'
-                output += f'<td>{data_dict[key]}</td>'
-
-        output += '</table>'
-        
-        
-    except Exception as ex:
-        # exc_type, exc_obj, exc_tb = sys.exc_info()
-        # output = "Line " + str(exc_tb.tb_lineno) + ": " + exc_type 
-        
-        output = str(ex)
-        output = traceback.format_exc()
-        # LOGGER.info('Exception : ' + str(traceback.format_exc()))
-        print(output)
-        
-        # fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        # print(exc_type, fname, exc_tb.tb_lineno)
-    finally:
-        return output
-    return output
 
 
 
@@ -810,7 +692,7 @@ def get_project_files(id, plan_name, headers = {
         for file in JSON["data"]["files"]:
             if file["file_type"] == "pdf":
                 output.append(file["name"])
-                print('getting file: ' + file["name"])
+                # print('getting file: ' + file["name"])
                 if generate_locally == True:
                     request = urllib.request.Request(file["url"], headers=headers)
                     file_content = urllib.request.urlopen(request).read()
@@ -827,7 +709,7 @@ def get_project_files(id, plan_name, headers = {
             local_file_name = local_file_name.replace("13th Floor", "3rd Floor")
             local_file_name = local_file_name.replace("14th Floor", "4th Floor")
             output.append(local_file_name)
-            print('getting file: ' + file["name"], 'local: ', local_file_name)
+            # print('getting file: ' + file["name"], 'local: ', local_file_name)
             if generate_locally == True:
                 request = urllib.request.Request(file["url"], headers=headers)
                 file_content = urllib.request.urlopen(request).read()
@@ -874,9 +756,11 @@ def survey(root):
         # if (socket.gethostname()) != "PC1VXW6X":
         # print('about to get project files for ' + plan_name + " (id: " + str(id) + ")")
         ofl_filelist = get_project_files(id, plan_name, headers)
-        # print('finished getting project files')
-        # for filename in ofl_filelist:
-            # print(filename)
+        
+        print('ofl_filelist', ':', ofl_filelist)
+        print('finished getting project files')
+        for filename in ofl_filelist:
+            print(filename)
         
    
         # print('about to create (almost) empty attachment files for ' + plan_name + " (id: " + str(id) + ")")
@@ -1647,7 +1531,7 @@ def survey(root):
                                 if n not in json_val_dict['Notes (Heating)']:
                                     json_val_dict['Notes (Heating)'] += n
                                     print('Notes (Heating)', ':', json_val_dict['Notes (Heating)'])
-            print(2)
+            # print(2)
             
             if datum["symbol_name"] == json_val_dict['Secondary Heating System']:
                 for form in datum["forms"]:
@@ -2095,14 +1979,6 @@ def survey(root):
         
         
         
-
-
-            
-        # json_val_dict["Is a Major Renovation calculation necessary?*"] = True
-        # json_val_dict['Thermal Envelope - Heat loss walls, windows and doors'] = 0
-        # json_val_dict['Thermal Envelope - Heat loss floor area'] = 0
-        # json_val_dict["Reason Major Renovation calculation is not necessary?*"] = "The proportions of EWI/IWI or significantly greater than 25%"
-        # json_val_dict['Qualifying Boiler'] = 'N/A'
         
         warnings = 'Major Renovation Error:'
         print("Is a Major Renovation calculation necessary?*", ':', json_val_dict["Is a Major Renovation calculation necessary?*"])
@@ -2438,9 +2314,10 @@ def XL_2_dict_new(xl_file_path):
                         # , '3. Building | Roofs P1'
                         # , '5. Building | WindowsP1'
                         # , '5.3 Building | Doors P1'
-                        , "7. Thermal Mass P1"
-                        , "8. Ventilation P1"
-                        , "11. Lighting P1"
+
+                        # , "7. Thermal Mass P1"
+                        # , "8. Ventilation P1"
+                        # , "11. Lighting P1"
                         ]
         
         
@@ -2452,35 +2329,72 @@ def XL_2_dict_new(xl_file_path):
                             , '7.1 Referance Table'
                             ]
        
-        # multicol_tables_by_record = ['2.1 Building | Floors P1'
-                            # , '3. Building | Roofs P1'
-                            # , '5. Building | WindowsP1'
+        
+        multicol_tables = [ # use different name for these
+                            # '5.1 Windows Summary Table'
+                            '5.2 Window Schedule Table'
                             # , '5.3 Building | Doors P1'
-                            # ]
-                            
-                            
-        multicol_tables_by_value = ['5.1 Windows Summary Table'
-                            , '5.2 Window Schedule Table'
-                            , '5.3 Building | Doors P1'
+                            # , '5.4 Door Summary Table'
+                            , '5.5 Door Schedule Table'
                             , '6. Colour Area Table P1'
                             , '8.1 Ventilation Items'
                             , '11.1 Lighting Schedule'
                             ]
-        
-        multicol_tables = multicol_tables_by_value
         
         output = {}
         lookup = {}
         for sheet in wb.worksheets:
             # print(sheet.title)
             
-            # if sheet.title in multicol_tables:
-                # only need to worry about this if each new col is different value
-                # print('multicol_table', ' (by value)', ':', sheet.title)
             
             if sheet.title in output_tables:
-                output[sheet.title] = {1 : {}}
+                output[sheet.title] = {}
                 print('output_table', ':', sheet.title)
+                for i, row in enumerate(list(sheet.values)):
+                    field_name = row[1]
+                    if field_name == None:
+                        continue
+                    field_name = field_name.strip()
+                    # print('field_name', ':', field_name)
+                    
+                    field_req = row[2]
+                    if field_req == None:
+                        continue
+                    field_req = field_req.strip()
+                    field_loc = no_2_alph(2) + str(i)
+                    default_val = ''
+                    if len(row) >= 5 and row[4] != None:
+                        # print('row: ', str(i), 'col 4:', row[4])
+                        default_val = eval(row[4])
+                    # print('field_loc', ':', field_loc)
+                    output[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc, "default_val": default_val}
+                
+            elif sheet.title in multicol_tables:
+                output[sheet.title] = {}
+                print('output_table', ':', sheet.title)
+                # Do we need to take the headers?
+                if sheet.title in ['5.2 Window Schedule Table', '5.5 Door Schedule Table', '8.1 Ventilation Items', '11.1 Lighting Schedule']:
+                    headers = ['uid', 'name', 'height', 'width', 'room_name', 'room_uid', 'floor_name', 'floor_uid']
+                if sheet.title in ['6. Colour Area Table P1']:
+                    headers = ['colour']
+                if sheet.title in ['6. Colour Area Table P1']:
+                    headers = ['colour']
+                
+                headers = headers + [cell.value for cell in sheet[3]]
+                
+                print(headers)
+                
+                
+                
+                
+                
+                
+                
+                
+                output[sheet.title]["headers"] = headers
+                
+            elif sheet.title in lookup_tables:
+                lookup[sheet.title] = {}
                 for i, row in enumerate(list(sheet.values)):
                     field_name = row[1]
                     if field_name == None:
@@ -2489,25 +2403,8 @@ def XL_2_dict_new(xl_file_path):
                     
                     field_req = row[2]
                     field_loc = no_2_alph(2) + str(i)
-                    default_val = ''
-                    if len(row) >= 5 and row[4] != None:
-                        # print('row: ', str(i), 'col 4:', row[4])
-                        default_val = eval(row[4])
                     # print('field_loc', ':', field_loc)
-                    output[sheet.title][1][field_name] = {"field_req": field_req, "field_loc": field_loc, "default_val": default_val}
-                
-            elif sheet.title in lookup_tables:
-                    lookup[sheet.title] = {}
-                    for i, row in enumerate(list(sheet.values)):
-                        field_name = row[1]
-                        if field_name == None:
-                            continue
-                        # print('field_name', ':', field_name)
-                        
-                        field_req = row[2]
-                        field_loc = no_2_alph(2) + str(i)
-                        # print('field_loc', ':', field_loc)
-                        lookup[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc}
+                    lookup[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc}
                 
             
     except:
@@ -2640,7 +2537,7 @@ def XL_2_dict(
         
     return output, lookup
 
-def get_counts(project_id, headers = {
+def get_stats_data(project_id, headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
             ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
             , "customer": "63b5a4ae69c91"
@@ -2662,26 +2559,148 @@ def get_counts(project_id, headers = {
         # count_objects = ['Number of LED/CFL bulbs', 'Number of Halogen Lamp bulbs', 'Number of Halogen Lamp Low Voltage bulbs', 'Number of Incandescent/Unknown bulbs', 'Number of Linear Fluorescent bulbs']
         
         count_dict = {}
-        count_objects = ["LED/CFL", "Halogen Lamp", "Halogen LV", "Incandescent", "Linear Fluorescent"]
+        door_dict = {}
+        window_dict = {}
+        bulb_dict = {}
+        vent_dict = {}
+        colour_dict = {} # this comes from XML?
+        
+        composite_count_objects = ['Number of Intermittent Fans', 'Number of openings', 'Number of openings Draughtproofed'] # this should be a dictionary (whose structure can come from input file)
+        
+        bulbs = ["LED/CFL", "Halogen Lamp", "Halogen LV", "Incandescent", "Linear Fluorescent"]
+        bulb_ids = ["co-3a9c9ff6-2bad-4d62-9526-1df98538cbad"
+                    , "co-94486aec-b47a-4d75-aaf3-0645576bae56"
+                    , "co-b21a94da-ad62-40e5-bfe0-c1aa0b8461d5"
+                    , "co-44a1cdea-ff05-40a8-afb5-fe5b9c7f086a"
+                    , "co-497bde35-eb4a-41ec-ba91-b24e35099799"
+                    ]
+        intermittent_fans = ["Broken Cooker Hood", "Broken Mechanical Vent" "New Mechanical Vent" "Ducted Cooker Hood", "Existing Mechanical Vent"]
+        attic_hatches_draught_stripped = ["Fixed Ladder Hatch Draughtproofed", "Attic Hatch Draughtproofed", "Wall Hatch Draughtproofed"] # thermal envelope only
+        attic_hatches_not_draught_stripped = ["Fixed Ladder Hatch Not Draughtproofed", "Attic Hatch Not Draughtproofed", "Wall Hatch Not Draughtproofed"] # thermal envelope only
+        
+        windows = ['doorglass'
+                , 'doorfrench'
+                , 'doorslidingglass'
+                , 'doorbypassglass'
+                , 'doorwithwindow'
+                , '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f'
+                , '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789'
+                , '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c'
+                , '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a'
+                , '634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108'
+                , 'windowtskylight1'
+                , 'windowtskylight2'
+                , 'windowtskylight3'
+                , 'windowcasement'
+                , 'windowfrench'
+                , 'windowsliding'
+                , 'windowhung'
+                , 'windowfixed'
+                , 'windowawning'
+                , 'windowhopper'
+                , 'windowbay'
+                , 'windowbow'
+                , 'windowtriangle'
+                , 'windowtrapezoid'
+                , 'windowarched'
+                , '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57'
+                , '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a'
+                , '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592'
+                , '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74'
+                , '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e'
+                , '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e'
+                , '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111'
+                , '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f'
+                ]
+        doors = ['doorhinged'
+                , 'doordoublehinged'
+                , 'doorfolding'
+                , 'doordoublefolding'
+                , 'doorpocket'
+                , 'doordoublesliding'
+                , 'doorswing'
+                , 'doorbypass'
+                , 'doorsliding'
+                , 'arcdoor'
+                , 'doorgarage'
+                , '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49'
+                ]
+        
+        
+        openings = windows + doors + attic_hatches_draught_stripped + attic_hatches_not_draught_stripped
+        
+        # openings_draughtproofed = [windows, doors, hatches] # this info comes from Forms...
+        
+        count_objects = composite_count_objects + bulbs + intermittent_fans + openings
+        
         for co in count_objects:
             count_dict[co] = 0
         
         
+        
+        
+        
         for floor in JSON["data"]["project_statistics"]["floors"]:
-            # print(floor["name"])
-            # print(floor["uid"])
-            # print('xml_ref_dict[floor["uid"]]', ':', xml_ref_dict[floor["uid"]])
             for room in floor["rooms"]:
-                # print(room["name"])
-                # print(room["uid"])
                 for furniture in room["furnitures"]:
-                    # print(furniture["name"])
-                    # print(furniture["uid"])
+                    print('furniture["name"]', ':', furniture["name"], ' ', 'furniture["id"]', ':', furniture["id"])
                     if furniture["name"] in count_objects:
                         count_dict[furniture["name"]] += 1
+                    if furniture["id"] in bulb_ids:
+                        bulb_dict[furniture["uid"]] = {}
+                        bulb_dict[furniture["uid"]]['value'] = {}
+                        bulb_dict[furniture["uid"]]['value']["name"] = furniture["name"]
+                        bulb_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
+                        bulb_dict[furniture["uid"]]['value']["room_name"] = room["name"]
+                        bulb_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
+                        bulb_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
                 
-        output = count_dict
-    
+                for wall_item in room["wall_items"]:
+                    # print(wall_item["name"])
+                    # print(wall_item["uid"])
+                    if wall_item["name"] in count_objects:
+                        count_dict[wall_item["id"]] += 1
+                    if wall_item["id"] in doors:
+                        door_dict[wall_item["uid"]] = {}
+                        door_dict[wall_item["uid"]]['value'] = {}
+                        door_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
+                        door_dict[wall_item["uid"]]['value']["height"] = wall_item["height"]
+                        door_dict[wall_item["uid"]]['value']["width"] = wall_item["width"]
+                        door_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
+                        door_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
+                        door_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
+                        door_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
+                    if wall_item["id"] in windows:
+                        window_dict[wall_item["uid"]] = {}
+                        window_dict[wall_item["uid"]]['value'] = {}
+                        window_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
+                        window_dict[wall_item["uid"]]['value']["height"] = wall_item["height"]
+                        window_dict[wall_item["uid"]]['value']["width"] = wall_item["width"]
+                        window_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
+                        window_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
+                        window_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
+                        window_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
+                        
+                
+        for intermittent_fan in ["Broken Cooker Hood", "Broken Mechanical Vent" "New Mechanical Vent" "Ducted Cooker Hood", "Existing Mechanical Vent"]:
+            count_dict['Number of Intermittent Fans'] += count_dict[intermittent_fan]
+        
+        for opening in openings:
+            count_dict['Number of openings'] += count_dict[opening]
+        
+        # for opening in openings_draughtproofed:
+            # count_dict['Number of openings Draughtproofed'] += count_dict[opening]
+        
+        # print('door_dict', ':')
+        # pprint.pprint(door_dict)
+        
+        
+        
+        output['count_dict'] = count_dict
+        output['door_dict'] = door_dict
+        output['window_dict'] = window_dict
+        output['bulb_dict'] = bulb_dict
+
     except:
         output = traceback.format_exc()
         print(output)
@@ -2715,7 +2734,7 @@ def JSON_2_dict(project_id, headers = {
             # print('d', str(i), ':', d)
         # pprint.pprint(forms_data)
         form_val_dict = forms_data['form_val_dict']
-        forms_full_dict = forms_data['forms_full_dict']
+        # forms_full_dict = forms_data['forms_full_dict']
         # missing_vals = forms_data['missing_vals']
         
         
@@ -2723,20 +2742,26 @@ def JSON_2_dict(project_id, headers = {
         json_dict = form_val_dict
         
         
-        count_dict = get_counts(project_id
+        stats_data = get_stats_data(project_id
                                 , xml_ref_dict=xml_ref_dict # real floors/excluded rooms
                                 )
         
+        if isinstance(stats_data, str):
+            print('error?', ':', stats_data)
         # Go through Statistics?
-        # Eliminate all Floors other than -1 to 9?
-        # add counts to json_dict as strings
+        # Eliminate all Floors other than -1 to 9? - actually probably already taken care of within get_stats_data()
         
-        print(count_dict)
         
+        count_dict = stats_data['count_dict']
+        # pprint.pprint(count_dict)
+        # add counts to json_dict as strings (top-level key:value pairs - should this be happening here or is it more suited to return the table as-is and then do the output prep all together? what about multi-col tables? any counts in those? will this approach work?):
         for key in count_dict.keys():
             json_dict[key] = str(count_dict[key])
         
-        
+        # adding these two like this for now, might change depending on what is most convenient later:
+        json_dict["door_dict"] = stats_data["door_dict"]
+        json_dict["window_dict"] = stats_data["window_dict"]
+        json_dict["bulb_dict"] = stats_data["bulb_dict"]
         
         
         output = json_dict
@@ -3260,11 +3285,17 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print('xml_val_dict', ':')
         # pprint.pprint(xml_val_dict)
         
-        
-        
         json_dict = JSON_2_dict(project_id, forms_data=forms_data, xml_ref_dict=xml_ref_dict) # does this need to be project-specific?
         # print('json_dict', ':')
         # pprint.pprint(json_dict)
+        
+        
+        # We now have all the info we need to create certain floor/roof/window/door dicts...
+        # actually they are already included in json_dict
+        # add them later to the output dict after we've created it from the INPUT TEMPLATE FILE
+        
+        
+        # ************** ORIENTATION ***************
         
         # if 'Building Orientation' in json_dict['furniture'].keys():
             # json_dict["Orientation of front of building"] = json_dict['furniture']['Building Orientation']["Orientation of front of building"]
@@ -3275,71 +3306,80 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         print("Orientation of front of building", ':', json_dict["Orientation of front of building"])
         
-        
-        
+        # *****************************
+        print('************** PROJECT FILES ***************')
         
         ofl_filelist = []
         ofl_filelist = get_project_files(project_id, plan_name = project_name) # ofl_filelist is part of this function's output
         # print('finished getting project files')
         print('warning: did not get project files')
         
-        # read template "template_ber.xlsx.xlsx" from cloud (Azure for now, later SharePoint)
+        # *****************************
+        
+        # read template "template_ber.xlsx" from cloud (Azure for now, later SharePoint)
         local_xl_fp = Azure_2_Local(file_name = "template_ber.xlsx")
         # local_xl_fp = SharePoint_2_Local(url) # once we get access sorted
         
         # create dictionaries of required table/tab contents
         output_dict, lookup_dict = XL_2_dict_new(local_xl_fp)
-        
-        # print('json_dict["room"]', ':')
-        # pprint.pprint(json_dict["room"])
-        # print('json_dict', ':')
-        # pprint.pprint(json_dict)
-        
-        # print(iterate_dictionary(json_dict,"room"))
-        
-        
-        
+        # pprint.pprint(lookup_dict)
         
         # *****************************
         
-        count_dict = {}
+        count_dict = {} # use a different name
         
         # *****************************
+        if not isinstance(output_dict, dict):
+            print('not a dict:', output_dict)
         
-        
-        # count_dict['Number of LED/CFL bulbs'] = 0
-        # count_dict['Number of Halogen Lamp bulbs'] = 0
-        # count_dict['Number of Halogen Lamp Low Voltage bulbs'] = 0
-        # count_dict['Number of Incandescent/Unknown bulbs'] = 0
-        # count_dict['Number of Linear Fluorescent bulbs'] = 0
-
-        
-        
-        count_dict['Number of Light Elements'] = 0
-        count_dict['Number of Medium Elements'] = 0
-        count_dict['Number of Heavy Elements'] = 0
-        
-        for f in ['Ground Floor Mass', 'External Wall Mass', 'Separating Wall Mass', 'Internal Partition Mass']:
-            if f not in  json_dict.keys():
-                json_dict[f] = "Medium"
-        masses = [json_dict['Ground Floor Mass'], json_dict['External Wall Mass'], json_dict['Separating Wall Mass'], json_dict['Internal Partition Mass']]
-        
-        for m in masses:
-            print(m)
-            # print('masses[m]', ':', masses[m])
-            for n in m:
-                print(n)
-                val = m[n]
-            field = f'Number of {val} Elements'
-            count_dict[field] += 1
-        
-        count_dict['lmh'] = str(count_dict['Number of Light Elements']) + str(count_dict['Number of Medium Elements']) + str(count_dict['Number of Heavy Elements'])
-        
-        count_dict['Overall Thermal Mass Category'] = lookup_dict['7.1 Referance Table'][count_dict['lmh']]['field_req']
-        
+        if '7. Thermal Mass P1' in output_dict.keys():
+            count_dict['Number of Light Elements'] = 0
+            count_dict['Number of Medium Elements'] = 0
+            count_dict['Number of Heavy Elements'] = 0
+            
+            masses = [json_dict['Ground Floor Mass'], json_dict['External Wall Mass'], json_dict['Separating Wall Mass'], json_dict['Internal Partition Mass']]
+            
+            for m in masses:
+                print(m)
+                # print('masses[m]', ':', masses[m])
+                for n in m:
+                    print(n)
+                    val = m[n]
+                field = f'Number of {val} Elements'
+                count_dict[field] += 1
+            
+            count_dict['lmh'] = str(count_dict['Number of Light Elements']) + str(count_dict['Number of Medium Elements']) + str(count_dict['Number of Heavy Elements'])
+            
+            if count_dict['lmh'] in lookup_dict['7.1 Referance Table'].keys():
+                count_dict['Overall Thermal Mass Category'] = lookup_dict['7.1 Referance Table'][count_dict['lmh']]['field_req']
+            else:
+                count_dict['Overall Thermal Mass Category'] = 'not found (' + str(count_dict['lmh']) + ')'
         # *****************************
         
         # pprint.pprint(count_dict)
+        
+        # *****************************
+        
+        
+        # print("json_dict['door_dict']", ':')
+        # pprint.pprint(json_dict['door_dict'])
+        
+        # for header in output_dict['5.2 Window Schedule Table']["headers"]:
+        
+        for window in json_dict['window_dict']:
+            output_dict['5.2 Window Schedule Table'][window] = json_dict['window_dict'][window]
+        
+        for door in json_dict['door_dict']:
+            output_dict['5.5 Door Schedule Table'][door] = json_dict['door_dict'][door]
+        
+        for bulb in json_dict['bulb_dict']:
+            output_dict['11.1 Lighting Schedule'][bulb] = json_dict['bulb_dict'][bulb]
+        
+        
+        print("output_dict['11.1 Lighting Schedule']", ':')
+        pprint.pprint(output_dict['11.1 Lighting Schedule'])
+        
+        
         
         # *****************************
         
@@ -3347,64 +3387,51 @@ def BER(root, output = '', email = '', forms_data = {}):
         for sheet_name in output_dict:
             print(sheet_name, ':')
             # pprint.pprint(output_dict[sheet_name])
-            for record in output_dict[sheet_name]: # at the moment there is only one of these... there should be x: the number of bbb from json_dict which is currently single level...
-                for field in output_dict[sheet_name][record]:
-                    field_req = output_dict[sheet_name][record][field]['field_req']
-                    if field_req == None:
-                        continue
+            # for record in output_dict[sheet_name]:
+            for field in output_dict[sheet_name]:
+                if not isinstance(output_dict[sheet_name][field], dict):
+                    continue
+                if 'field_req' not in output_dict[sheet_name][field].keys():
+                    continue
+                field_req = output_dict[sheet_name][field]['field_req']
+                
+                # first check if it's Exact Text (Forms question):
+                if field_req in json_dict.keys():
+                    output_dict[sheet_name][field]['value'] = json_dict[field_req]
+                
+                # then check if it's a variable name from xml_val_dict
+                elif field_req in xml_val_dict.keys():
+                    output_dict[sheet_name][field]['value'] = xml_val_dict[field_req]
+                
+                # lookup_table
+                elif isinstance(field_req, str) and field_req[0:6] == "lookup":
+                    lu = field_req.split("|")
+                    print('eval(lu[2])', ':', eval(lu[2]))
                     
-                    # first check if it's Exact Text (Forms question):
-                    # can we check if field_req in lower level e.g. json_dict[room].keys()?
-                    # for f in json_dict["room"]:
-                        # print('f', ':', f)
-                        # print('f.keys()', ':', json_dict["room"][f].keys())
-                        # if field_req in json_dict["room"][f].keys():
-                            # print('json_dict["room"][f]', ':', json_dict["room"][f])
-                            # output_dict[sheet_name][record][field]['value'] = json_dict["room"][f][field_req]
-                    
-                    if field_req in json_dict.keys(): # check the other columns (E+) and apply logic that works even if they are empty
-                        output_dict[sheet_name][record][field]['value'] = json_dict[field_req]
-                    
-                    # then check if it's a variable name from xml_val_dict (i.e. xml_val_dict)
-                    elif field_req in xml_val_dict.keys():
-                        output_dict[sheet_name][record][field]['value'] = xml_val_dict[field_req]
-                    
-                    # lookup_table
-                    elif isinstance(field_req, str) and field_req[0:6] == "lookup":
-                        lu = field_req.split("|")
-                        output_dict[sheet_name][record][field]['value'] = str(lookup_dict[lu[record]][eval(lu[2])]['field_req'])
-                    
-                    # this is currently referred to as count_dict...
-                    elif field_req in count_dict.keys():
-                        output_dict[sheet_name][record][field]['value'] = str(count_dict[field_req])
-                    
-                    # count, need json_dict...?
-                    # elif field_req[0:5] == "count":
-                        # output_dict[sheet_name][record][field]['value'] = "COUNT"
-                    
-                    # either/or logic
-                    # elif field_req[0:5] == "logic": 
-                        # print(field_req)
-                        # lu = field_req.split("|")
-                        # print(lu)
-                        # print(eval(lu[record]))
-                        # print(eval(lu[2]))
-                        # print(lu[2])
-                        # print(lu[4])
-                        # print(eval(lu[4]))
-                        # output_dict[sheet_name][record][field]['value'] = eval(lu[record]) if json_dict[eval(lu[2])] == eval(lu[3]) else eval(lu[4])
-                    
-                    # logic is uncharted
-                    else:
-                        output_dict[sheet_name][record][field]['value'] = output_dict[sheet_name][record][field]['default_val'] if 'default_val' in output_dict[sheet_name][record][field].keys() else "NOT FOUND"
-                    
-                # print()
-                # print('field', ':', field)
-                # print('field_req', ':', field_req)
-                # print('value', ':', output_dict[sheet_name][field]['value'])
-        
-        
-        
+                    output_dict[sheet_name][field]['value'] = str(lookup_dict[lu[1]][eval(lu[2])]['field_req'])
+                
+                # this is currently referred to as count_dict...
+                elif field_req in count_dict.keys():
+                    output_dict[sheet_name][field]['value'] = str(count_dict[field_req])
+                
+                
+                # either/or logic
+                # elif field_req[0:5] == "logic": 
+                    # print(field_req)
+                    # lu = field_req.split("|")
+                    # print(lu)
+                    # print(eval(lu))
+                    # print(eval(lu[2]))
+                    # print(lu[2])
+                    # print(lu[4])
+                    # print(eval(lu[4]))
+                    # output_dict[sheet_name][field]['value'] = eval(lu) if json_dict[eval(lu[2])] == eval(lu[3]) else eval(lu[4])
+                
+                # logic is uncharted
+                else:
+                    output_dict[sheet_name][field]['value'] = output_dict[sheet_name][field]['default_val'] if 'default_val' in output_dict[sheet_name][field].keys() else "NOT FOUND"
+
+
         # *****************************
         
         # use output_dict to populate (a copy of) the Excel template and save it to be sent as an email attachment
@@ -3412,29 +3439,36 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # *****************************
         
-        
-        
         # use output_dict to generate this function's "output" HTML to serve as the body of the return email
         if output == '': # otherwise might contain error details from a function
             styling = "border=\"1\""
-            output = f"""\
-                <h1>File List</h1> \
-                {create_table_text(output_dict, headers = ['name', 'value'], styling=styling, do_not_sum=['All'], order_list = ofl_filelist)} \
-                </div>"""
-
+            
             for section in output_dict:
                 # print('section', ':', section)
                 # pprint.pprint(output_dict[section])
                 
-                headers = ['name', 'value']
-                order_list = [field for field in output_dict[section][1]] # rows should always be exactly the same for every record yes? otherwise build in loop above
-                # print('order_list', ':', order_list)
+                if 'headers' in output_dict[section].keys():
+                    headers = output_dict[section]['headers']
+                    del output_dict[section]['headers']
+                    order_list = [field for field in output_dict[section]]
+                else:
+                    headers = ['name', 'value']
+                    order_list = [field for field in output_dict[section]] # rows should always be exactly the same for every record yes? otherwise build in loop above
+                print('headers', ':', headers)
+                print('order_list', ':', order_list)
                 
                 section_output = f"""\
                                 <h1>{section}</h1> \
                                 {create_table_new(output_dict[section], headers, styling=styling, do_not_sum=['All'], order_list = order_list)} \
                                 </div>"""
                 output = output + section_output
+                
+            file_list = f"""\
+                <h1>File List</h1> \
+                {create_table_text(output_dict, headers = ['name'], styling=styling, do_not_sum=['All'], order_list = ofl_filelist)} \
+                </div>"""
+                
+            output = output + file_list
                 
             output = output + "</div>"
         
@@ -3443,6 +3477,136 @@ def BER(root, output = '', email = '', forms_data = {}):
         print(output)
     
     return output
+
+
+
+
+def create_table_new(data_dict
+                    , headers  = ['name', 'value'] # in this case headers should come from dict
+                    , do_not_sum : list[str] = []
+                    , styling: str = ""
+                    , order_list = []
+                    , title = ''
+                    ) -> str:
+    try:
+        
+        # dict is output_dict[section]
+        # top-level entry is currently Field Name
+        # To allow multi-column need to insert new top level if each new column is a record?
+        # What if each new column is an attribute? Need value_list?
+        # headers depends on whether records are columns or rows
+            # columns: headers = order_list
+            # rows: headers = value_list
+        # identify from dict top-level?
+        
+        
+        print('order_list', ':', order_list)
+        
+        print('this is the data_dict we need to use to create a multicol table:')
+        pprint.pprint(data_dict)
+        
+        output = f'<table {styling}><tr>'
+        
+        
+        
+        
+        if len(order_list) != 0:
+            for item in order_list:
+                if not isinstance(data_dict[item], dict):
+                    continue
+                print('item', ':', item)
+                # for r, record in enumerate(data_dict):
+                    # print(data_dict[record][item].keys())
+                if 'value' in list(data_dict[item].keys()):
+                    # print('type', ':', type(data_dict[record][item]['value']))
+                    e = data_dict[item]['value']
+                    if isinstance(e, dict):
+                        for key in data_dict[item]['value'].keys():
+                            print('key', ':', key)
+                            if key not in headers:
+                                headers.append(key)
+
+                        
+        replace_header = ''
+        print('headers', ':', headers)
+        if len(headers) == 3:
+            replace_header = headers[2]
+            # print('replace_header', ':', replace_header)
+            headers = headers[:-1]
+            # print('headers', ':', headers)
+        
+        for header in headers:
+            output += f'<th>{header}</th>'
+        output += '</tr>'
+        
+        
+        
+        if len(order_list) != 0:
+            for item in order_list:
+                if not isinstance(data_dict[item], dict):
+                    continue
+                # add the row (populate first column): 
+                if item.isupper():
+                    output += f'<tr><td><strong>{item}</strong></td>'
+                else:
+                    output += f'<tr><td>{item}</td>'
+                # add the cols:
+                # for r, record in enumerate(data_dict):
+                    # for elem in data_dict[record][item]:
+                if 'value' not in data_dict[item].keys():
+                    continue
+                
+                if isinstance(data_dict[item]['value'], str):
+                    if data_dict[item]['value'] != '':
+                        v = data_dict[item]['value']
+                        data_dict[item]['value'] = {}
+                        data_dict[item]['value']['value'] = v # convert the string to a single-entry dict
+                
+                if isinstance(data_dict[item]['value'], dict):
+                    if replace_header != '':
+                        if replace_header in data_dict[item]['value'].keys():
+                            data_dict[item]['value']['value'] = data_dict[item]['value'][replace_header]
+                    for header in headers[1:]:
+                        if header in data_dict[item]['value'].keys():
+                            value = data_dict[item]['value'][header]
+                        else:
+                            value = ' '
+                        output += f'<td>{value}</td>'
+                        
+
+                        # output(val, ':', data_dict[item][elem][m][val])
+                        # value = data_dict[item]["value"] if (item in data_dict.keys() and "value" in dict[item].keys()) else '' # already have blank values covered? If not then do we need a warning at this point?
+                        # value = data_dict[item][elem][m][val] if (m in data_dict[item][elem].keys() and val in data_dict[item].keys()) else '' # already have blank values covered? If not then do we need a warning at this point?
+                
+                    # substitute boolean values for strings (should this be done elsewhere?):
+                    # if (type(value) == bool and value == True):
+                        # value = "Yes"
+                    # if (type(value) == bool and value == False):
+                        # value = "No"
+                    # output += f'<td>{value}</td>'
+                    # print(output)
+                # print(item, value)
+        else:
+            for i, key in enumerate(data_dict):
+                # print(key, data_dict[key])
+                if key.isupper():
+                    output += f'<tr><td><strong>{key}</strong></td>'
+                else:
+                    output += f'<tr><td>{key}</td>'
+                output += f'<td>{data_dict[key]}</td>'
+
+        output += '</table>'
+        
+        
+    except:
+        output = traceback.format_exc()
+        print(output)
+        raise
+
+    finally:
+        return output
+    return output
+
 
 
 
@@ -3509,8 +3673,8 @@ def populate_template(project_name, template_name, data_dict = {}):
         print('created')
         
         
-        if template in ['template', 'template_mrc']:
-            output = copy_from_container(json_val_dict['plan_name'], filename)
+        # if template in ['template', 'template_mrc']:
+        output = copy_from_container(json_val_dict['plan_name'], filename)
         
         
     except:
@@ -3932,6 +4096,10 @@ def populate_template_new(json_val_dict, template):
         
         
         template_file_name = template + '.xlsx'
+        
+        if template == 'template_ber':
+            template_file_name = 'template_plc' + '.xlsx'
+        
         with open(file=instance_file_path, mode="wb") as download_file:
             download_file.write(container_client.download_blob(template_file_name).readall())
 
@@ -3957,8 +4125,8 @@ def populate_template_new(json_val_dict, template):
         print('created')
         
         
-        if template in ['template', 'template_mrc']:
-            output = copy_from_container(json_val_dict['plan_name'], filename)
+        # if template in ['template', 'template_mrc']:
+        output = copy_from_container(json_val_dict['plan_name'], filename)
         
         
     except Exception as ex:
@@ -3993,8 +4161,6 @@ def copy_from_container(plan_name
         # filename = plan_name + ' Major Renovation calculation' + '.xlsx'
         # container_name = 'attachment'
         
-        
-
         container_to = 'project-files'
         local_path_to = plan_name
 
