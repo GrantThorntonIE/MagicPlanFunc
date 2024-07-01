@@ -3787,7 +3787,9 @@ def populate_template_new(json_val_dict, template):
             print('local_path', ':', local_path)
             instance_file_path = os.path.join(local_path, filename)
             print('instance_file_path', ':', instance_file_path)
-            v= {}
+            v = {
+                'plan_name': { 'Value': '' , 'Tab': 'Sheet1' , 'Cell': 'D2'}
+                }
         
         if template == 'template':
             filename = json_val_dict['plan_name'] + '.xlsx'
