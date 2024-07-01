@@ -2315,9 +2315,9 @@ def XL_2_dict_new(xl_file_path):
                         # , '5. Building | WindowsP1'
                         # , '5.3 Building | Doors P1'
 
-                        # , "7. Thermal Mass P1"
-                        # , "8. Ventilation P1"
-                        # , "11. Lighting P1"
+                        , "7. Thermal Mass P1"
+                        , "8. Ventilation P1"
+                        , "11. Lighting P1"
                         ]
         
         
