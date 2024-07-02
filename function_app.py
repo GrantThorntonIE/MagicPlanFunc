@@ -2643,7 +2643,7 @@ def get_stats_data(project_id, headers = {
         for floor in JSON["data"]["project_statistics"]["floors"]:
             for room in floor["rooms"]:
                 for furniture in room["furnitures"]:
-                    print('furniture["name"]', ':', furniture["name"], ' ', 'furniture["id"]', ':', furniture["id"])
+                    # print('furniture["name"]', ':', furniture["name"], ' ', 'furniture["id"]', ':', furniture["id"])
                     if furniture["name"] in count_objects:
                         count_dict[furniture["name"]] += 1
                     if furniture["id"] in bulb_ids:
@@ -2734,12 +2734,18 @@ def JSON_2_dict(project_id, headers = {
             # print('d', str(i), ':', d)
         # pprint.pprint(forms_data)
         form_val_dict = forms_data['form_val_dict']
-        # forms_full_dict = forms_data['forms_full_dict']
+        forms_full_dict = forms_data['forms_full_dict']
+        forms_uid_dict = forms_data['forms_uid_dict']
+        window_detail_dict = forms_data['window_detail_dict']
         # missing_vals = forms_data['missing_vals']
+        
+        print('window_detail_dict', ':')
+        pprint.pprint(window_detail_dict) # ["plan"][]["BER Windows Details"]
         
         
         # json_dict = forms_full_dict
         json_dict = form_val_dict
+        json_uid_dict = forms_uid_dict
         
         
         stats_data = get_stats_data(project_id
@@ -2758,10 +2764,53 @@ def JSON_2_dict(project_id, headers = {
         for key in count_dict.keys():
             json_dict[key] = str(count_dict[key])
         
-        # adding these two like this for now, might change depending on what is most convenient later:
+        # adding these like this for now, might change depending on what is most convenient later:
         json_dict["door_dict"] = stats_data["door_dict"]
         json_dict["window_dict"] = stats_data["window_dict"]
         json_dict["bulb_dict"] = stats_data["bulb_dict"]
+        
+        # Now need to go through Forms extracting data to add to our furniture dicts
+        json_dict["window_dict"] = stats_append(stats_data["window_dict"], json_uid_dict)
+        
+        # Now need to process each dict individually as there are Forms specific to each
+        print('json_dict["window_dict"]', ':')
+        pprint.pprint(json_dict["window_dict"])
+        
+        for window in json_dict["window_dict"]:
+            json_dict["window_dict"][window]['value']['Room'] = json_dict["window_dict"][window]['value']['room_name']
+            json_dict["window_dict"][window]['value']['Orientation'] = json_dict["window_dict"][window]['Window Orientation']
+            json_dict["window_dict"][window]['value']['Window height (m)'] = json_dict["window_dict"][window]['value']['height']
+            json_dict["window_dict"][window]['value']['Window width (m)'] = json_dict["window_dict"][window]['value']['width']
+            json_dict["window_dict"][window]['value']['Area [m2]'] = round(json_dict["window_dict"][window]['value']['width'] * json_dict["window_dict"][window]['value']['height'],2)
+            
+            
+            
+            json_dict["window_dict"][window]['value']['Type'] = 'Window Type 1'
+            if json_dict["window_dict"][window]['Is the Window Type 1?'] == False:
+                json_dict["window_dict"][window]['value']['Type'] = json_dict["window_dict"][window]['Other Window Type']
+            
+            
+            json_dict["window_dict"][window]['value']['Description'] = window_detail_dict[json_dict["window_dict"][window]['value']['Type']]
+            json_dict["window_dict"][window]['value']['U-Value [W/m2K]'] = window_detail_dict[json_dict["window_dict"][window]['value']['Description'] + ' U-Value (W/m2K)']
+            json_dict["window_dict"][window]['value']['In roof'] = True if json_dict["window_dict"][window]['value']['name'] == 'Skylight' else False
+            
+            json_dict["window_dict"][window]['value']['No. of opes'] = 1
+            if json_dict["window_dict"][window]['Are the Number of Window Openings required to be calculated?'] == True:
+                json_dict["window_dict"][window]['value']['No. of opes'] = json_dict["window_dict"][window]['Number of Window Openings']
+            
+            json_dict["window_dict"][window]['value']['No. of opes draught- stripped'] = json_dict["window_dict"][window]['value']['No. of opes']
+            if 'Are all of the Window Openings Draught-stripped?' in json_dict["window_dict"][window].keys():
+                if json_dict["window_dict"][window]['Are all of the Window Openings Draught-stripped?'] == False:
+                    json_dict["window_dict"][window]['value']['No. of opes draught- stripped'] = 'need exact text' # json_dict["window_dict"][window]['Other Window Type']
+            
+            json_dict["window_dict"][window]['value']['Over shading'] = 'Average or unknown (20% - 60% of sky blocked by obstacles)'
+            if json_dict["window_dict"][window]['Is the Window Shading Estimated to be Average or unknown (20% - 60% of sky blocked by obstacles)?'] == False:
+                json_dict["window_dict"][window]['value']['Over shading'] = json_dict["window_dict"][window]['Other Window Shading Estimate']
+                
+
+        
+        
+        
         
         
         output = json_dict
@@ -2770,6 +2819,41 @@ def JSON_2_dict(project_id, headers = {
         output = traceback.format_exc()
         print(output)
    
+    return output
+
+
+def stats_append(stats_dict, forms_dict):
+    try:
+        # print('stats_dict', ':')
+        # pprint.pprint(stats_dict)
+        # print('forms_dict', ':')
+        # pprint.pprint(forms_dict)
+        
+        
+        for item in forms_dict:
+            if item in stats_dict.keys():
+                for field in forms_dict[item]:
+                    stats_dict[item][field] = forms_dict[item][field]
+        
+        
+        
+        
+        # op_dict = stats_dict
+        
+        
+        # for item in stats_dict:
+            # print("forms_dict[item]", ':')
+            # print(forms_dict[item])
+            # for field in forms_dict[item]:
+                # op_dict[field] = forms_dict[item][field]
+                
+            
+        
+        output = stats_dict
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output2)
+    
     return output
 
 
@@ -3110,7 +3194,9 @@ def get_forms_data(id, headers = {
         output = {}
         form_val_dict = {}
         forms_full_dict = {}
+        forms_uid_dict = {}
         missing_vals = {}
+        window_detail_dict = {}
 
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + id
         request = urllib.request.Request(json_url, headers=headers)
@@ -3118,11 +3204,15 @@ def get_forms_data(id, headers = {
         JSON = json.loads(JSON)
 
         for datum in JSON["data"]:
+            if datum["symbol_instance_id"] not in forms_uid_dict.keys():
+                forms_uid_dict[datum["symbol_instance_id"]] = {}
+                forms_uid_dict[datum["symbol_instance_id"]]["symbol_name"] = datum["symbol_name"]
             if datum["symbol_type"] not in forms_full_dict.keys():
                 forms_full_dict[datum["symbol_type"]] = {}
             if datum["symbol_name"] not in forms_full_dict[datum["symbol_type"]].keys():
                 forms_full_dict[datum["symbol_type"]][datum["symbol_name"]] = {}
             forms_full_dict[datum["symbol_type"]][datum["symbol_name"]]['uid'] = datum["symbol_instance_id"]
+                
             for form in datum["forms"]:
                 for section in form["sections"]:
                     for field in section["fields"]:
@@ -3152,13 +3242,22 @@ def get_forms_data(id, headers = {
 
                             
                         forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][im] = v
+                        forms_uid_dict[datum["symbol_instance_id"]][im] = v
                         
                         if field["is_required"] == True and field["value"]["has_value"] == False:
                             missing_vals[datum["symbol_name"]] = im
                             
+                        if form["title"] == "BER Windows Details":
+                            if im not in window_detail_dict.keys():
+                                window_detail_dict[im] = {}
+                            window_detail_dict[im] = v
+                            
+                            
         output = {}
         output['form_val_dict'] = form_val_dict
         output['forms_full_dict'] = forms_full_dict
+        output['forms_uid_dict'] = forms_uid_dict
+        output['window_detail_dict'] = window_detail_dict
         output['missing_vals'] = missing_vals
     
     except:
@@ -3454,8 +3553,8 @@ def BER(root, output = '', email = '', forms_data = {}):
                 else:
                     headers = ['name', 'value']
                     order_list = [field for field in output_dict[section]] # rows should always be exactly the same for every record yes? otherwise build in loop above
-                print('headers', ':', headers)
-                print('order_list', ':', order_list)
+                # print('headers', ':', headers)
+                # print('order_list', ':', order_list)
                 
                 section_output = f"""\
                                 <h1>{section}</h1> \
@@ -3500,10 +3599,10 @@ def create_table_new(data_dict
         # identify from dict top-level?
         
         
-        print('order_list', ':', order_list)
+        # print('order_list', ':', order_list)
         
-        print('this is the data_dict we need to use to create a multicol table:')
-        pprint.pprint(data_dict)
+        # print('this is the data_dict we need to use to create a multicol table:')
+        # pprint.pprint(data_dict)
         
         output = f'<table {styling}><tr>'
         
@@ -3514,7 +3613,7 @@ def create_table_new(data_dict
             for item in order_list:
                 if not isinstance(data_dict[item], dict):
                     continue
-                print('item', ':', item)
+                # print('item', ':', item)
                 # for r, record in enumerate(data_dict):
                     # print(data_dict[record][item].keys())
                 if 'value' in list(data_dict[item].keys()):
@@ -3522,13 +3621,13 @@ def create_table_new(data_dict
                     e = data_dict[item]['value']
                     if isinstance(e, dict):
                         for key in data_dict[item]['value'].keys():
-                            print('key', ':', key)
+                            # print('key', ':', key)
                             if key not in headers:
                                 headers.append(key)
 
                         
         replace_header = ''
-        print('headers', ':', headers)
+        # print('headers', ':', headers)
         if len(headers) == 3:
             replace_header = headers[2]
             # print('replace_header', ':', replace_header)
