@@ -2411,7 +2411,18 @@ def XL_2_dict_new(xl_file_path):
                     # print('field_loc', ':', field_loc)
                     lookup[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc}
                 
-            
+            elif sheet.title == 'Object Reference': # one-to-many
+                lookup[sheet.title] = {}
+                for i, row in enumerate(list(sheet.values)):
+                    field_category = row[0]
+                    # field_id = row[4]
+                    if row[0] not in lookup[sheet.title].keys():
+                        lookup[sheet.title][row[0]] = []
+                    lookup[sheet.title][row[0]].append(row[4])
+
+        print("lookup['Object Reference']", ':')
+        pprint.pprint(lookup['Object Reference'])
+                
     except:
         output = traceback.format_exc()
         print(output)
@@ -2666,7 +2677,7 @@ def get_stats_data(project_id, headers = {
                 for wall_item in room["wall_items"]:
                     # print(wall_item["name"])
                     # print(wall_item["uid"])
-                    if wall_item["name"] in count_objects:
+                    if wall_item["id"] in count_objects:
                         count_dict[wall_item["id"]] += 1
                     if wall_item["id"] in doors:
                         door_dict[wall_item["uid"]] = {}
@@ -2778,69 +2789,22 @@ def JSON_2_dict(project_id, headers = {
         json_dict["bulb_dict"] = stats_data["bulb_dict"]
         
         # Now need to go through Forms extracting data to add to our object dicts
-        json_dict["window_dict"] = stats_append(stats_data["window_dict"], json_uid_dict) # what is this doing? Should the processing steps below be contained in this function?
-        json_dict["door_dict"] = stats_append(stats_data["door_dict"], json_uid_dict) 
+        json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # what is this doing? Should the processing steps below be contained in this function?
+        json_dict["door_dict"] = stats_append(stats_data["door_dict"], forms_uid_dict) 
         
-        # Now need to process each dict individually as there are Forms specific to each
+        # Now need to process each dict individually as there are Forms specific to each?
         
-        for door in json_dict["door_dict"]:
-            json_dict["door_dict"][door]['value']['Room'] = json_dict["door_dict"][door]['value']['room_name']
-            json_dict["door_dict"][door]['value']['Type'] = forms_uid_dict[door]['Door Type']
-            json_dict["door_dict"][door]['value']['Draught Stripped'] = forms_uid_dict[door]['Is the Door Opening Draught Stripped?']
-            json_dict["door_dict"][door]['value']['Door height (m)'] = json_dict["door_dict"][door]['value']['height']
-            json_dict["door_dict"][door]['value']['Door width (m)'] = json_dict["door_dict"][door]['value']['width']
-            json_dict["door_dict"][door]['value']['Door Area [m2]'] = round(json_dict["door_dict"][door]['value']['width'] * json_dict["door_dict"][door]['value']['height'], 2)
-            for key in forms_uid_dict[door]:
-                if 'U-Value' in key:
-                    json_dict["door_dict"][door]['value']['U-Value [W/m2K]'] = forms_uid_dict[door][key]
-                if 'Area of glazing' in key:
-                    json_dict["door_dict"][door]['value']['Glazing Area (m²)'] = forms_uid_dict[door][key]
-                if 'Glazing Type' in key:
-                    json_dict["door_dict"][door]['value']['Glazing Type'] = forms_uid_dict[door][key]
-            json_dict["door_dict"][door]['value']['Number of openings'] = 1
-            json_dict["door_dict"][door]['value']['Number of openings draughtstripped'] = 1
+        json_dict["door_dict"] = door_forms_append(json_dict["door_dict"], forms_uid_dict)
+        json_dict["window_dict"] = window_forms_append(json_dict["window_dict"], forms_uid_dict, window_detail_dict)
+
         
         
-        
-        
-        
-        for window in json_dict["window_dict"]:
-            json_dict["window_dict"][window]['value']['Room'] = json_dict["window_dict"][window]['value']['room_name']
-            json_dict["window_dict"][window]['value']['Orientation'] = json_dict["window_dict"][window]['Window Orientation']
-            json_dict["window_dict"][window]['value']['Window height (m)'] = json_dict["window_dict"][window]['value']['height']
-            json_dict["window_dict"][window]['value']['Window width (m)'] = json_dict["window_dict"][window]['value']['width']
-            json_dict["window_dict"][window]['value']['Area [m2]'] = round(json_dict["window_dict"][window]['value']['width'] * json_dict["window_dict"][window]['value']['height'],2)
-            
-            
-            
-            json_dict["window_dict"][window]['value']['Type'] = 'Window Type 1'
-            if json_dict["window_dict"][window]['Is the Window Type 1?'] == False:
-                json_dict["window_dict"][window]['value']['Type'] = json_dict["window_dict"][window]['Other Window Type']
-            
-            
-            json_dict["window_dict"][window]['value']['Description'] = window_detail_dict[json_dict["window_dict"][window]['value']['Type']]
-            json_dict["window_dict"][window]['value']['U-Value [W/m2K]'] = window_detail_dict[json_dict["window_dict"][window]['value']['Description'] + ' U-Value (W/m2K)']
-            json_dict["window_dict"][window]['value']['In roof'] = True if json_dict["window_dict"][window]['value']['name'] == 'Skylight' else False
-            
-            json_dict["window_dict"][window]['value']['No. of opes'] = 1
-            if json_dict["window_dict"][window]['Are the Number of Window Openings required to be calculated?'] == True:
-                json_dict["window_dict"][window]['value']['No. of opes'] = json_dict["window_dict"][window]['Number of Window Openings']
-            
-            json_dict["window_dict"][window]['value']['No. of opes draught- stripped'] = json_dict["window_dict"][window]['value']['No. of opes']
-            if 'Are all of the Window Openings Draught-stripped?' in json_dict["window_dict"][window].keys():
-                if json_dict["window_dict"][window]['Are all of the Window Openings Draught-stripped?'] == False:
-                    json_dict["window_dict"][window]['value']['No. of opes draught- stripped'] = 'need exact text' # json_dict["window_dict"][window]['Other Window Type']
-            
-            json_dict["window_dict"][window]['value']['Over shading'] = 'Average or unknown (20% - 60% of sky blocked by obstacles)'
-            if json_dict["window_dict"][window]['Is the Window Shading Estimated to be Average or unknown (20% - 60% of sky blocked by obstacles)?'] == False:
-                json_dict["window_dict"][window]['value']['Over shading'] = json_dict["window_dict"][window]['Other Window Shading Estimate']
-                
-        
+
             
         # print('json_dict["window_dict"]', ':')
         # pprint.pprint(json_dict["window_dict"])
-        print('json_dict["door_dict"]', ':')
-        pprint.pprint(json_dict["door_dict"])
+        # print('json_dict["door_dict"]', ':')
+        # pprint.pprint(json_dict["door_dict"])
         
         # print('forms_uid_dict', ':')
         # pprint.pprint(forms_uid_dict)
@@ -2851,7 +2815,8 @@ def JSON_2_dict(project_id, headers = {
             
             key = ''
             for keypart in ['Type', 'Description', 'In roof', 'Over shading', 'Orientation']: # , 'No. of opes', 'No. of opes draught- stripped']:
-                key += (str(json_dict["window_dict"][window]['value'][keypart]) + '_')
+                if keypart in json_dict["window_dict"][window]['value'].keys():
+                    key += (str(json_dict["window_dict"][window]['value'][keypart]) + '_')
             key = str(hash(key))
             if key not in window_summary_dict.keys():
                 window_summary_dict[key] = {}
@@ -2859,8 +2824,9 @@ def JSON_2_dict(project_id, headers = {
                 window_summary_dict[key]['value']['Area [m2]'] = 0
                 window_summary_dict[key]['value']['Count'] = 0
             
-            for keypart in ['Type', 'Description', 'In roof', 'Over shading', 'Orientation', 'No. of opes', 'No. of opes draught- stripped', 'U-Value [W/m2K]']: # Openings? U-value?
-                window_summary_dict[key]['value'][keypart] = json_dict["window_dict"][window]['value'][keypart] 
+            for keypart in ['Type', 'Description', 'In roof', 'Over shading', 'Orientation', 'U-Value [W/m2K]']: # Openings? U-value?
+                if keypart in json_dict["window_dict"][window]['value'].keys():
+                    window_summary_dict[key]['value'][keypart] = json_dict["window_dict"][window]['value'][keypart] 
             
             
             # print("window", ':', window)
@@ -2872,8 +2838,8 @@ def JSON_2_dict(project_id, headers = {
             window_summary_dict[key]['value']['Area [m2]'] = round(window_summary_dict[key]['value']['Area [m2]'], 2)
             window_summary_dict[key]['value']['Count'] += 1
             
-        print('window_summary_dict', ':')
-        pprint.pprint(window_summary_dict)
+        # print('window_summary_dict', ':')
+        # pprint.pprint(window_summary_dict)
         
         json_dict['window_summary_dict'] = window_summary_dict
         
@@ -2908,8 +2874,8 @@ def JSON_2_dict(project_id, headers = {
             door_summary_dict[key]['value']['Total Door Area (m²)'] = round(door_summary_dict[key]['value']['Total Door Area (m²)'], 2)
             door_summary_dict[key]['value']['Count'] += 1
             
-        print('door_summary_dict', ':')
-        pprint.pprint(door_summary_dict)
+        # print('door_summary_dict', ':')
+        # pprint.pprint(door_summary_dict)
         
         json_dict['door_summary_dict'] = door_summary_dict
         
@@ -2956,6 +2922,99 @@ def stats_append(stats_dict, forms_dict):
         print('exception', ':', output2)
     
     return output
+
+def window_forms_append(object_dict, forms_uid_dict, window_detail_dict):
+    
+    try:
+        
+        for window in object_dict:
+            object_dict[window]['value']['Room'] = object_dict[window]['value']['room_name']
+            object_dict[window]['value']['Window height (m)'] = object_dict[window]['value']['height']
+            object_dict[window]['value']['Window width (m)'] = object_dict[window]['value']['width']
+            object_dict[window]['value']['Area [m2]'] = round(object_dict[window]['value']['width'] * object_dict[window]['value']['height'],2)
+            
+            if 'Window Orientation' in object_dict[window].keys():
+                object_dict[window]['value']['Orientation'] = object_dict[window]['Window Orientation']
+            
+            
+            object_dict[window]['value']['Type'] = 'Window Type 1'
+            if 'Is the Window Type 1?' in object_dict[window].keys():
+                if object_dict[window]['Is the Window Type 1?'] == False:
+                    object_dict[window]['value']['Type'] = object_dict[window]['Other Window Type']
+            
+            
+            object_dict[window]['value']['Description'] = window_detail_dict[object_dict[window]['value']['Type']]
+            if (object_dict[window]['value']['Description'] + ' U-Value (W/m2K)') in window_detail_dict.keys():
+                object_dict[window]['value']['U-Value [W/m2K]'] = window_detail_dict[object_dict[window]['value']['Description'] + ' U-Value (W/m2K)']
+            object_dict[window]['value']['In roof'] = True if object_dict[window]['value']['name'] == 'Skylight' else False
+            
+            object_dict[window]['value']['No. of opes'] = 1
+            if 'Are the Number of Window Openings required to be calculated?' in object_dict[window].keys():
+                if object_dict[window]['Are the Number of Window Openings required to be calculated?'] == True:
+                    object_dict[window]['value']['No. of opes'] = object_dict[window]['Number of Window Openings']
+            
+            object_dict[window]['value']['No. of opes draught- stripped'] = object_dict[window]['value']['No. of opes']
+            if 'Are all of the Window Openings Draught-stripped?' in object_dict[window].keys():
+                if object_dict[window]['Are all of the Window Openings Draught-stripped?'] == False:
+                    object_dict[window]['value']['No. of opes draught- stripped'] = 'need exact text' # object_dict[window]['Other Window Type']
+            
+            object_dict[window]['value']['Over shading'] = 'Average or unknown (20% - 60% of sky blocked by obstacles)'
+            if 'Is the Window Shading Estimated to be Average or unknown (20% - 60% of sky blocked by obstacles)?' in object_dict[window].keys():
+                if object_dict[window]['Is the Window Shading Estimated to be Average or unknown (20% - 60% of sky blocked by obstacles)?'] == False:
+                    object_dict[window]['value']['Over shading'] = object_dict[window]['Other Window Shading Estimate']
+                    
+        
+        
+        
+        output = object_dict
+    
+    
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output2)
+    
+    return output
+
+
+def door_forms_append(object_dict, forms_uid_dict):
+    
+    try:
+        for door in object_dict:
+            object_dict[door]['value']['Room'] = object_dict[door]['value']['room_name']
+            object_dict[door]['value']['Door height (m)'] = object_dict[door]['value']['height']
+            object_dict[door]['value']['Door width (m)'] = object_dict[door]['value']['width']
+            object_dict[door]['value']['Door Area [m2]'] = round(object_dict[door]['value']['width'] * object_dict[door]['value']['height'], 2)
+            
+            
+            if 'Door Type' in forms_uid_dict[door].keys():
+                object_dict[door]['value']['Type'] = forms_uid_dict[door]['Door Type']
+            if 'Is the Door Opening Draught Stripped?' in forms_uid_dict[door].keys():
+                object_dict[door]['value']['Draught Stripped'] = forms_uid_dict[door]['Is the Door Opening Draught Stripped?']
+            for key in forms_uid_dict[door]:
+                if 'U-Value' in key:
+                    object_dict[door]['value']['U-Value [W/m2K]'] = forms_uid_dict[door][key]
+                if 'Area of glazing' in key:
+                    object_dict[door]['value']['Glazing Area (m²)'] = forms_uid_dict[door][key]
+                if 'Glazing Type' in key:
+                    object_dict[door]['value']['Glazing Type'] = forms_uid_dict[door][key]
+            object_dict[door]['value']['Number of openings'] = 1
+            object_dict[door]['value']['Number of openings draughtstripped'] = 1
+        
+        
+        output = object_dict
+    
+    
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output2)
+    
+    return output
+
+
+
+
+
+
 
 
 def XML_2_dict_new(root, t = "floor"):
@@ -3488,7 +3547,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         json_dict = JSON_2_dict(project_id, forms_data=forms_data, xml_ref_dict=xml_ref_dict) # does this need to be project-specific?
         # print('json_dict', ':')
         # pprint.pprint(json_dict)
-        
+        if not isinstance(json_dict, dict):
+            raise Exception(json_dict)
         
         # We now have all the info we need to create certain floor/roof/window/door dicts...
         # actually they are already included in json_dict
@@ -3616,7 +3676,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                 # lookup_table
                 elif isinstance(field_req, str) and field_req[0:6] == "lookup":
                     lu = field_req.split("|")
-                    print('eval(lu[2])', ':', eval(lu[2]))
+                    # print('eval(lu[2])', ':', eval(lu[2]))
                     
                     output_dict[sheet_name][field]['value'] = str(lookup_dict[lu[1]][eval(lu[2])]['field_req'])
                 
@@ -3711,11 +3771,11 @@ def create_table_new(data_dict
         
         
         
-        print('title', ':', title)
-        print('order_list', ':', order_list)
+        print('creating table for title', ':', title)
+        # print('order_list', ':', order_list)
         
-        print('this is the data_dict we need to use to create a multicol table:')
-        pprint.pprint(data_dict)
+        # print('this is the data_dict we need to use to create a multicol table:')
+        # pprint.pprint(data_dict)
         
         output = f'<table {styling}><tr>'
         
