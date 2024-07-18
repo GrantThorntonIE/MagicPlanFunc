@@ -3469,8 +3469,8 @@ def XML_2_dict_new(root, t = "floor"):
                 # print('y', ':', y)
                 nwa_dict[ft][rt] = y
                 
-            # print('o', ':')
-            # pprint.pprint(o)
+            print('o', ':')
+            pprint.pprint(o)
             
             offset = 0
             for window in o:
@@ -3486,6 +3486,8 @@ def XML_2_dict_new(root, t = "floor"):
                 
                 
                 if o[window]['symbol'] == 'compass':
+                    continue
+                if 'x2' not in o[window].keys():
                     continue
                 try:
                     if round(float(o[window]['x2']), 2) == round(float(o[window]['x1']), 2):
