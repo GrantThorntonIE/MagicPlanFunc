@@ -3336,7 +3336,7 @@ def XML_2_dict_new(root, t = "floor"):
             # - then add any additional details available from "exploded" section (linked via "id" e.g. "W-1-5")
             # - is compass included? it is now
             # - also need to loop through each window/door in each floorRoom to associate room_x, room_y 
-        
+        wo = {}
         floors = root.findall('floor')
         for floor in floors:
             ft = floor.get('floorType')
@@ -3472,16 +3472,15 @@ def XML_2_dict_new(root, t = "floor"):
             # print('o', ':')
             # pprint.pprint(o)
             
+            offset = 0
             for window in o:
                 if o[window]['symbol'] == 'compass':
                     offset = float(o[window]['angle'])
-            # o[window]['x2'] = 'x2',
-            # 'x1': '2.462840',
-            # 'y1': 0.687396,
-            # 'y2': -0.612604
+
+
             pi = 3.14159
             
-            wo = {}
+            
             
             for window in o:
                 
@@ -3803,7 +3802,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         for window in json_dict['window_dict']:
-            json_dict['window_dict'][window]['value']['cardinal_direction'] = wo[window]
+            if window in wo.keys():
+                json_dict['window_dict'][window]['value']['cardinal_direction'] = wo[window]
         
         
         
