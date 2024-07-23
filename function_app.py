@@ -2337,6 +2337,7 @@ def XL_2_dict_new(xl_file_path):
         multicol_tables = [ # use different name for these
                             '2.3 Floor Schedule Table'
                             , '3.4 Roof Type Schedule Table'
+                            , '4.1 Wall Schedule Table'
                             , '5.1 Windows Summary Table'
                             , '5.2 Window Schedule Table'
                             # , '5.3 Building | Doors P1'
@@ -2390,8 +2391,7 @@ def XL_2_dict_new(xl_file_path):
                     headers = ['key']
                 if sheet.title in ['2.3 Floor Schedule Table', '3.4 Roof Type Schedule Table']:
                     headers = ['uid']
-                # if sheet.title in ['6. Colour Area Table P1']:
-                    # headers = ['colour']
+
 
 
                 
@@ -2400,7 +2400,7 @@ def XL_2_dict_new(xl_file_path):
                 
                 
                 
-                print(sheet.title, ':', output[sheet.title])
+                # print(sheet.title, ':', output[sheet.title])
                 
                 
                 
@@ -2585,6 +2585,8 @@ def get_stats_data(project_id, headers = {
         window_dict = {}
         bulb_dict = {}
         vent_dict = {}
+        
+        wall_dict = {} # this comes from XML? But then requires additional info from Forms
         colour_dict = {} # this comes from XML?
         
         
@@ -2758,9 +2760,10 @@ def JSON_2_dict(project_id, headers = {
             , "customer": "63b5a4ae69c91"
             , "accept": "application/json"
             }
-            , forms_data = {}
+            , forms_data = {} # more efficient to pass it in like this than to extract it again?
             , xml_ref_dict = {}
-            , xl_ref_dict = {}):
+            , xl_ref_dict = {}
+            , wall_dict={}):
     '''
     This function retrieves Forms & Statistics JSON files from MagicPlan
     Combines and filters the data to return json_dict:
@@ -2814,32 +2817,23 @@ def JSON_2_dict(project_id, headers = {
         json_dict["roof_dict"] = stats_data["roof_dict"]
         
         
-        
         # Now need to go through Forms adding fields to our object dicts by uid
+        json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
+        
         json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # forms_append?
         json_dict["door_dict"] = stats_append(stats_data["door_dict"], forms_uid_dict) 
         
-        print('about to append to roof_dict')
+        # print('about to append to roof_dict')
         json_dict["roof_dict"] =  stats_append(stats_data["roof_dict"], forms_uid_dict) 
         
         json_dict["floor_dict"] = floor_stats_append(stats_data["floor_dict"], forms_uid_dict) 
         
         
-
-        
-        
-        # print('json_dict["roof_dict"]', ':')
-        # pprint.pprint(json_dict["roof_dict"])
-        
-        
-        
-        
+        print('json_dict["wall_dict"]', ':')
+        pprint.pprint(json_dict["wall_dict"])
         
         # print('json_dict["floor_dict"]', ':')
         # pprint.pprint(json_dict["floor_dict"])
-        
-        
-        
         
         # Now need to process each dict individually as there are Forms specific to each?
         
@@ -2967,7 +2961,7 @@ def window_summary(window_dict):
         for window in window_dict:
             
             key = ''
-            for keypart in ['Type', 'Description', 'In roof', 'Over shading', 'Orientation']: # , 'No. of opes', 'No. of opes draught- stripped']:
+            for keypart in ['Type', 'Description', 'In roof', 'Over shading', 'cardinal_direction']: # , 'No. of opes', 'No. of opes draught- stripped']:
                 if keypart in window_dict[window]['value'].keys():
                     key += (str(window_dict[window]['value'][keypart]) + '_')
             key = str(hash(key))
@@ -2979,7 +2973,7 @@ def window_summary(window_dict):
                 window_summary_dict[key]['value']['No. of opes'] = 0
                 window_summary_dict[key]['value']['No. of opes draught- stripped'] = 0
             
-            for keypart in ['Type', 'Description', 'In roof', 'Over shading', 'Orientation', 'U-Value [W/m2K]']: # Openings? U-value?
+            for keypart in ['Type', 'Description', 'In roof', 'Over shading', 'cardinal_direction', 'U-Value [W/m2K]']: # Openings? U-value?
                 if keypart in window_dict[window]['value'].keys():
                     window_summary_dict[key]['value'][keypart] = window_dict[window]['value'][keypart] 
             
@@ -3120,6 +3114,7 @@ def XML_2_dict_new(root, t = "floor"):
         nwa_dict = {}
         obj_dict = {}
         xml_val_dict = {}
+        est_dict = {}
         
         xml_val_dict['project_id'] = root.get('id')
         
@@ -3151,6 +3146,7 @@ def XML_2_dict_new(root, t = "floor"):
             }
         # note MagicPlan also has a separate "Surveyor" field ("qf.34d66ce4q1") but "author" is the one used for SEAI survey purposes
         # ToDo: confirm if also the case for BER
+        
         values = root.findall('values/value')
         for mpk in MagicPlan_2_SEAI_dict:
             xml_val_dict[MagicPlan_2_SEAI_dict[mpk]] = ''
@@ -3161,15 +3157,88 @@ def XML_2_dict_new(root, t = "floor"):
             print(MagicPlan_2_SEAI_dict[mpk], ':', xml_val_dict[MagicPlan_2_SEAI_dict[mpk]])
         
         # w = {}
-        wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108', '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74', '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f', '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e', '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57', '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789', '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111', '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a', '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c', '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f', '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a', '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49', '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e', '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592', 'arcdoor', 'doorbypass', 'doorbypassglass', 'doordoublefolding', 'doordoublehinged', 'doordoublesliding', 'doorfolding', 'doorfrench', 'doorgarage', 'doorglass', 'doorhinged', 'doorpocket', 'doorsliding', 'doorslidingglass', 'doorswing', 'doorwithwindow', 'windowarched', 'windowawning', 'windowbay', 'windowbow', 'windowcasement', 'windowfixed', 'windowfrench', 'windowhopper', 'windowhung', 'windowsliding', 'windowtrapezoid', 'windowtriangle', 'windowtskylight1', 'windowtskylight2', 'windowtskylight3', 'compass']
+        wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108'
+                    , '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74'
+                    , '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f'
+                    , '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e'
+                    , '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57'
+                    , '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789'
+                    , '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111'
+                    , '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a'
+                    , '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c'
+                    , '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f'
+                    , '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a'
+                    , '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49'
+                    , '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e'
+                    , '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592'
+                    , 'arcdoor'
+                    , 'doorbypass'
+                    , 'doorbypassglass'
+                    , 'doordoublefolding'
+                    , 'doordoublehinged'
+                    , 'doordoublesliding'
+                    , 'doorfolding'
+                    , 'doorfrench'
+                    , 'doorgarage'
+                    , 'doorglass'
+                    , 'doorhinged'
+                    , 'doorpocket'
+                    , 'doorsliding'
+                    , 'doorslidingglass'
+                    , 'doorswing'
+                    , 'doorwithwindow'
+                    , 'windowarched'
+                    , 'windowawning'
+                    , 'windowbay'
+                    , 'windowbow'
+                    , 'windowcasement'
+                    , 'windowfixed'
+                    , 'windowfrench'
+                    , 'windowhopper'
+                    , 'windowhung'
+                    , 'windowsliding'
+                    , 'windowtrapezoid'
+                    , 'windowtriangle'
+                    , 'windowtskylight1'
+                    , 'windowtskylight2'
+                    , 'windowtskylight3'
+                    , 'compass'
+                    ]
+        
         xml_ref_dict['habitable_rooms'] = []
         xml_ref_dict['wet_rooms'] = []
         xml_ref_dict['exclude_rooms'] = []
-        # xml_ref_dict['include_rooms'] = []
-        xml_ref_dict['exclude_room_types'] = ['Attic', 'Balcony', 'Storage', 'Patio', 'Deck', 'Porch', 'Cellar', 'Garage', 'Furnace Room', 'Outbuilding', 'Unfinished Basement', 'Workshop']
         
-        xml_ref_dict['habitable_room_types'] = ['Kitchen', 'Dining Room', 'Living Room', 'Bedroom', 'Primary Bedroom', "Children's Bedroom", 'Study', 'Music Room']
-        xml_ref_dict['wet_room_types'] = ['Kitchen', 'Bathroom', 'Half Bathroom', 'Laundry Room', 'Toilet', 'Primary Bathroom']
+        xml_ref_dict['exclude_room_types'] = ['Attic'
+                                            , 'Balcony'
+                                            , 'Storage'
+                                            , 'Patio'
+                                            , 'Deck'
+                                            , 'Porch'
+                                            , 'Cellar'
+                                            , 'Garage'
+                                            , 'Furnace Room'
+                                            , 'Outbuilding'
+                                            , 'Unfinished Basement'
+                                            , 'Workshop'
+                                            ]
+        
+        xml_ref_dict['habitable_room_types'] = ['Kitchen'
+                                                , 'Dining Room'
+                                                , 'Living Room'
+                                                , 'Bedroom'
+                                                , 'Primary Bedroom'
+                                                , "Children's Bedroom"
+                                                , 'Study'
+                                                , 'Music Room'
+                                                ]
+        xml_ref_dict['wet_room_types'] = ['Kitchen'
+                                        , 'Bathroom'
+                                        , 'Half Bathroom'
+                                        , 'Laundry Room'
+                                        , 'Toilet'
+                                        , 'Primary Bathroom'
+                                        ]
 
         
         
@@ -3238,6 +3307,8 @@ def XML_2_dict_new(root, t = "floor"):
                     # xml_ref_dict['include_rooms'].append('floor ' + ft + " - " + room.get('type') + " - " + room.get('uid') + " (" + room.get('area') + ")")
                 
                 # print('exclude_rooms', ':', xml_ref_dict['exclude_rooms'])
+                
+                
                 
                 for value in room.findall('values/value'):
                     key = value.get('key')
@@ -3334,7 +3405,7 @@ def XML_2_dict_new(root, t = "floor"):
         # Create Object Dictionary 
             # - first get list of all objects on each floor
             # - then add any additional details available from "exploded" section (linked via "id" e.g. "W-1-5")
-            # - is compass included? it is now
+            # - is compass included? it is now but a better more rigorous solution should be found
             # - also need to loop through each window/door in each floorRoom to associate room_x, room_y 
         wo = {}
         floors = root.findall('floor')
@@ -3347,15 +3418,29 @@ def XML_2_dict_new(root, t = "floor"):
                 # print("p.get('uid')", ':', p.get('uid'))
                 if p.get('symbol') in wd_list:
                     id = p.get('id')
-                    o[id] = {}
+                    o[id] = {} # We do need id to get the other info but does it need to be the top level? See est_dict below
                     o[id]['uid'] = p.get('uid')
                     o[id]['symbol'] = p.get('symbol')
                 
+                if p.get('isEstimated') == '1':
+                    for lt in p.findall('linkedTo'):
+                        uid = lt.get('uid')
+                        est_dict[uid] = {}
+                        est_dict[uid]['floor_type'] = ft
+                        
+                        # est_dict[uid]['linked_to'].append(lt.get('uid'))
+                        for value in p.findall('values/value'):
+                            if value.get('key') == 'sku':
+                                est_dict[uid]['sku'] = value.text
+                            if value.get('key') == 'totalsurface':
+                                est_dict[uid]['total_surface'] = value.text
+                            
+                    
             
             
-            for p in floor.findall('furniture'): # currently "compass" is the only furniture included in o
+            for p in floor.findall('furniture'):
                 si = p.get('symbolInstance')
-                if si in list(o.keys()):
+                if si in list(o.keys()): # currently "compass" is the only furniture included in o
                     o[si]['angle'] = p.get('angle')
                 
             for p in floor.findall('exploded/door'):
@@ -3395,7 +3480,7 @@ def XML_2_dict_new(root, t = "floor"):
             # print('o', ':')
             # pprint.pprint(o)
             
-            obj_dict[ft] = o
+            # obj_dict[ft] = o
             
             for room in floor.findall('floorRoom'):
                 rt = room.get('type') + ' (' + room.get('uid') + ')'
@@ -3469,22 +3554,16 @@ def XML_2_dict_new(root, t = "floor"):
                 # print('y', ':', y)
                 nwa_dict[ft][rt] = y
                 
-            print('o', ':')
-            pprint.pprint(o)
+            # print('o', ':')
+            # pprint.pprint(o)
             
             offset = 0
             for window in o:
                 if o[window]['symbol'] == 'compass':
                     offset = float(o[window]['angle'])
-
-
             pi = 3.14159
             
-            
-            
             for window in o:
-                
-                
                 if o[window]['symbol'] == 'compass':
                     continue
                 if 'x2' not in o[window].keys():
@@ -3504,9 +3583,9 @@ def XML_2_dict_new(root, t = "floor"):
                     o[window]['slope'] = ''
                     print(traceback.format_exc())
                 
-                if 'slope' not in o[window].keys():
-                    print('o[' + window + ']', ':')
-                    pprint.pprint(o[window])
+                # if 'slope' not in o[window].keys():
+                    # print('o[' + window + ']', ':')
+                    # pprint.pprint(o[window])
                 
                 if o[window]['slope'] not in ['', 'infinite', 'infinite_neg']:
                     o[window]['angle'] = round(float(math.atan(o[window]['slope'])), 2)
@@ -3528,12 +3607,29 @@ def XML_2_dict_new(root, t = "floor"):
                 
                 wo[o[window]['uid']] = o[window]['cardinal_direction']
             
-            print('o', ':')
-            pprint.pprint(o)
+            # print('o', ':')
+            # pprint.pprint(o)
                     
-                
-                
-                
+
+        
+        # wall_dict = {}
+        # for floor in nwa_dict:
+            # for room in nwa_dict[floor]:
+                # for wall in nwa_dict[floor][room]:
+                    # wall_dict[wall] = {}
+                    # wall_dict[wall]['value'] = {}
+        
+        # print('wall_dict', ':')
+        # pprint.pprint(wall_dict)
+        
+        print('est_dict', ':')
+        pprint.pprint(est_dict)
+        
+        # for item in est_dict:
+            
+        
+        
+        
                 
     except Exception as ex:
         output = str(ex) + "\n\n" + traceback.format_exc()
@@ -3541,7 +3637,7 @@ def XML_2_dict_new(root, t = "floor"):
         print(output)
     
     finally:
-        return xml_ref_dict, nwa_dict, xml_val_dict, colours_dict, wo
+        return xml_ref_dict, nwa_dict, xml_val_dict, colours_dict, wo, est_dict
 
 
 def get_forms_data(id, headers = {
@@ -3745,16 +3841,30 @@ def BER(root, output = '', email = '', forms_data = {}):
         xml_val_dict = xml_dict[2]
         colours_dict = xml_dict[3]
         wo = xml_dict[4]
+        est_dict = xml_dict[5]
         
         # print('xml_val_dict', ':')
         # pprint.pprint(xml_val_dict)
         # print('colours_dict', ':')
         # pprint.pprint(colours_dict)
+        
         # print('nwa_dict', ':')
         # pprint.pprint(nwa_dict)
         
+        wall_dict = {}
+        for floor in nwa_dict:
+            for room in nwa_dict[floor]:
+                for wall in nwa_dict[floor][room]:
+                    wall_dict[wall] = {}
+                    wall_dict[wall]['value'] = {}
         
+        for item in est_dict:
+            if item in wall_dict.keys():
+                for v in est_dict[item]:
+                    wall_dict[item]['value'][v] = est_dict[item][v]
         
+        print('wall_dict', ':')
+        pprint.pprint(wall_dict)
         
         # *****************************
         
@@ -3774,7 +3884,12 @@ def BER(root, output = '', email = '', forms_data = {}):
         # *****************************
         
         
-        json_dict = JSON_2_dict(project_id, forms_data=forms_data, xml_ref_dict=xml_ref_dict, xl_ref_dict=lookup_dict['Object Reference']) # does this need to be project-specific?
+        json_dict = JSON_2_dict(project_id
+                                , forms_data=forms_data
+                                , xml_ref_dict=xml_ref_dict
+                                , xl_ref_dict=lookup_dict['Object Reference']
+                                , wall_dict=wall_dict # from xml
+                                ) # does this need to be project-specific?
         # print('json_dict', ':')
         # pprint.pprint(json_dict)
         if not isinstance(json_dict, dict):
@@ -3787,28 +3902,9 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # ************** ORIENTATION ***************
         
-        # if 'Building Orientation' in json_dict['furniture'].keys():
-            # json_dict["Orientation of front of building"] = json_dict['furniture']['Building Orientation']["Orientation of front of building"]
-            
-        for f in ["Orientation of front of building"]:
-            if f not in json_dict.keys():
-                json_dict[f] = 'NOT FOUND'
-        
-        print("Orientation of front of building", ':', json_dict["Orientation of front of building"])
-        
-        
-        print('wo', ':')
-        pprint.pprint(wo)
-        print("json_dict['window_dict']", ':')
-        pprint.pprint(json_dict['window_dict'])
-        
-        
         for window in json_dict['window_dict']:
             if window in wo.keys():
                 json_dict['window_dict'][window]['value']['cardinal_direction'] = wo[window]
-        
-        
-        
         
         # *****************************
         print('************** PROJECT FILES ***************')
@@ -3857,7 +3953,6 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print("json_dict['door_dict']", ':')
         # pprint.pprint(json_dict['door_dict'])
         
-        # for header in output_dict['5.2 Window Schedule Table']["headers"]:
         
         for door_group in json_dict['door_summary_dict']:
             output_dict['5.4 Door Summary Table'][door_group] = json_dict['door_summary_dict'][door_group]
@@ -3876,11 +3971,15 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         for vent in json_dict['vent_dict']:
             output_dict['8.1 Ventilation Items'][vent] = json_dict['vent_dict'][vent]
-
+        
         for floor in json_dict['floor_dict']:
             output_dict['2.3 Floor Schedule Table'][floor] = json_dict['floor_dict'][floor]
+        
         for roof in json_dict['roof_dict']:
             output_dict['3.4 Roof Type Schedule Table'][roof] = json_dict['roof_dict'][roof]
+        
+        for wall in json_dict['wall_dict']:
+            output_dict['4.1 Wall Schedule Table'][wall] = json_dict['wall_dict'][wall]
         
         for colour in colours_dict:
             output_dict['6. Colour Area Table P1'][colour] = colours_dict[colour]
