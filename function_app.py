@@ -371,7 +371,52 @@ def XML_2_dict(root, t = "floor"):
         
         
         # w = {}
-        wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108', '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74', '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f', '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e', '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57', '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789', '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111', '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a', '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c', '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f', '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a', '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49', '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e', '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592', 'arcdoor', 'doorbypass', 'doorbypassglass', 'doordoublefolding', 'doordoublehinged', 'doordoublesliding', 'doorfolding', 'doorfrench', 'doorgarage', 'doorglass', 'doorhinged', 'doorpocket', 'doorsliding', 'doorslidingglass', 'doorswing', 'doorwithwindow', 'windowarched', 'windowawning', 'windowbay', 'windowbow', 'windowcasement', 'windowfixed', 'windowfrench', 'windowhopper', 'windowhung', 'windowsliding', 'windowtrapezoid', 'windowtriangle', 'windowtskylight1', 'windowtskylight2', 'windowtskylight3']
+        wd_list = ['634004d284d12@edit:0063fa41-fa2d-4493-9f86-dcd0263e8108'
+                    , '634004d284d12@edit:0ecdca7d-a4c3-4692-893a-89e6eaa76e74'
+                    , '634004d284d12@edit:28960da1-84f6-4f3b-a446-7c72b9febe9f'
+                    , '634004d284d12@edit:28b0fb8c-47a4-4d9e-8ce5-2b35a1a0404e'
+                    , '634004d284d12@edit:2b72a58f-7380-4b6c-9d74-667f937a9b57'
+                    , '634004d284d12@edit:32b043c7-432a-409f-972d-a75b386b1789'
+                    , '634004d284d12@edit:60194a47-84ce-414b-8368-69ec53167111'
+                    , '634004d284d12@edit:6976cc78-3a2e-4935-99c6-6aff8011be8a'
+                    , '634004d284d12@edit:735122f1-ab8b-47e8-b5ca-d4ec4d492f1c'
+                    , '634004d284d12@edit:7d851726-6ff6-48f7-8371-9ea09bd5179f'
+                    , '634004d284d12@edit:7f6101da-4b6d-4c31-9293-d59552aeff3a'
+                    , '634004d284d12@edit:a9a0a953-0fd3-4733-b161-de4f08fe5d49'
+                    , '634004d284d12@edit:e6026a1e-3089-4fe7-9ec4-8504b001eb2e'
+                    , '634004d284d12@edit:fc02c0c5-d9d8-4679-8a77-dc75edf7f592'
+                    , 'arcdoor'
+                    , 'doorbypass'
+                    , 'doorbypassglass'
+                    , 'doordoublefolding'
+                    , 'doordoublehinged'
+                    , 'doordoublesliding'
+                    , 'doorfolding'
+                    , 'doorfrench'
+                    , 'doorgarage'
+                    , 'doorglass'
+                    , 'doorhinged'
+                    , 'doorpocket'
+                    , 'doorsliding'
+                    , 'doorslidingglass'
+                    , 'doorswing'
+                    , 'doorwithwindow'
+                    , 'windowarched'
+                    , 'windowawning'
+                    , 'windowbay'
+                    , 'windowbow'
+                    , 'windowcasement'
+                    , 'windowfixed'
+                    , 'windowfrench'
+                    , 'windowhopper'
+                    , 'windowhung'
+                    , 'windowsliding'
+                    , 'windowtrapezoid'
+                    , 'windowtriangle'
+                    , 'windowtskylight1'
+                    , 'windowtskylight2'
+                    , 'windowtskylight3'
+                    ]
         xml_ref_dict['habitable_rooms'] = []
         xml_ref_dict['wet_rooms'] = []
         xml_ref_dict['exclude_rooms'] = []
@@ -2337,7 +2382,8 @@ def XL_2_dict_new(xl_file_path):
         multicol_tables = [ # use different name for these
                             '2.3 Floor Schedule Table'
                             , '3.4 Roof Type Schedule Table'
-                            , '4.1 Wall Schedule Table'
+                            # , '4.1 Wall Schedule Table'
+                            , '4.3 Wall Summary Table'
                             , '5.1 Windows Summary Table'
                             , '5.2 Window Schedule Table'
                             # , '5.3 Building | Doors P1'
@@ -2351,7 +2397,7 @@ def XL_2_dict_new(xl_file_path):
         output = {}
         lookup = {}
         for sheet in wb.worksheets:
-            # print(sheet.title)
+            print(sheet.title)
             
             
             if sheet.title in output_tables:
@@ -2785,7 +2831,9 @@ def JSON_2_dict(project_id, headers = {
         form_val_dict = forms_data['form_val_dict']
         forms_full_dict = forms_data['forms_full_dict']
         forms_uid_dict = forms_data['forms_uid_dict']
+        
         window_detail_dict = forms_data['window_detail_dict']
+        wall_type_vals_dict = forms_data['wall_type_vals_dict']
         # missing_vals = forms_data['missing_vals']
         
         # json_dict = forms_full_dict
@@ -2809,55 +2857,89 @@ def JSON_2_dict(project_id, headers = {
             json_dict[key] = str(count_dict[key])
         
         # adding these like this for now, might change depending on what is most convenient later:
-        json_dict["door_dict"] = stats_data["door_dict"]
-        json_dict["window_dict"] = stats_data["window_dict"]
         json_dict["bulb_dict"] = stats_data["bulb_dict"]
         json_dict["vent_dict"] = stats_data["vent_dict"]
-        json_dict["floor_dict"] = stats_data["floor_dict"]
+        
+        json_dict["door_dict"] = stats_data["door_dict"]
+        json_dict["window_dict"] = stats_data["window_dict"]
         json_dict["roof_dict"] = stats_data["roof_dict"]
+        json_dict["floor_dict"] = stats_data["floor_dict"]
         
         
         # Now need to go through Forms adding fields to our object dicts by uid
-        json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
+        # json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
         
-        json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # forms_append?
         json_dict["door_dict"] = stats_append(stats_data["door_dict"], forms_uid_dict) 
-        
-        # print('about to append to roof_dict')
+        json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # forms_append?
         json_dict["roof_dict"] =  stats_append(stats_data["roof_dict"], forms_uid_dict) 
-        
         json_dict["floor_dict"] = floor_stats_append(stats_data["floor_dict"], forms_uid_dict) 
-        
-        
-        print('json_dict["wall_dict"]', ':')
-        pprint.pprint(json_dict["wall_dict"])
-        
-        # print('json_dict["floor_dict"]', ':')
-        # pprint.pprint(json_dict["floor_dict"])
-        
-        # Now need to process each dict individually as there are Forms specific to each?
         
         json_dict["door_dict"] = door_forms_append(json_dict["door_dict"], forms_uid_dict)
         json_dict["window_dict"] = window_forms_append(json_dict["window_dict"], forms_uid_dict, window_detail_dict)
         
-        # print('json_dict["window_dict"]', ':')
-        # pprint.pprint(json_dict["window_dict"])
-
+        json_dict['window_summary_dict'] = window_summary(json_dict["window_dict"])
+        json_dict['door_summary_dict'] = door_summary(json_dict["door_dict"])
         
-        # print('forms_uid_dict', ':')
-        # pprint.pprint(forms_uid_dict)
         
-        # Window Summary dict:
-        window_summary_dict = window_summary(json_dict["window_dict"])
-        # print('window_summary_dict', ':')
-        # pprint.pprint(window_summary_dict)
-        json_dict['window_summary_dict'] = window_summary_dict
+        # A lot of work to tidy up walls_type_dict...
+        wall_type_dict = {}
+        wall_type_vals_dict_2 = wall_type_vals_dict.copy()
+        for x in wall_type_vals_dict_2:
+            # x = x.lower()
+            for n in range(1,10):
+                if x == f'Is there a wall type {n}?':
+                    wall_type_dict[x] = {}
+                    wall_type_dict[x]['value'] = {}
+                    del wall_type_vals_dict[x]
+                if x == f'Wall Type {n}':
+                    wall_type_dict[x] = {}
+                    wall_type_dict[x]['value'] = {}
+                    del wall_type_vals_dict[x]
         
-        # Door Summary dict:
-        door_summary_dict = door_summary(json_dict["door_dict"])
-        # print('door_summary_dict', ':')
-        # pprint.pprint(door_summary_dict)
-        json_dict['door_summary_dict'] = door_summary_dict
+        for x in wall_type_vals_dict:
+            if x in wall_type_dict.keys():
+                continue
+            # x = x.lower()
+            # print('x', ':')
+            # print(x)
+            for n in range(1,10):
+                if f'Wall Type {n}' in x:
+                    key = 'Wall Type ' + str(n)
+                    if key in wall_type_dict.keys():
+                        # Does Wall Type 1 age band match "Age: Dwelling"?
+                        if 'age band match' in x: 
+                            # wall_type_dict[key]['value'][x.replace(key, 'wall type').strip()] = wall_type_vals_dict[x]
+                            wall_type_dict[key]['value']['age band match'] = wall_type_vals_dict[x]
+                        # Wall Type 1 Wall Insulation
+                        if 'Wall Insulation' in x: 
+                            wall_type_dict[key]['value']['insulation'] = wall_type_vals_dict[x]
+                        # Can wall type 1 U-value be substantiated?
+                        if 'U-value be substantiated?' in x: 
+                            wall_type_dict[key]['value']['can u-value be substantiated?'] = wall_type_vals_dict[x]
+                        # Wall Type 1 insulation thickness (mm)
+                        if 'insulation thickness' in x: 
+                            wall_type_dict[key]['value']['insulation thickness'] = wall_type_vals_dict[x]
+                        # Can wall type 1 thermal conductivity be substantiated?
+                        if 'thermal conductivity be substantiated' in x: 
+                            wall_type_dict[key]['value']['can thermal conductivity be substantiated?'] = wall_type_vals_dict[x]
+                        # Wall Type 1 thermal conductivity (λ)
+                        if 'thermal conductivity (λ)' in x: 
+                            wall_type_dict[key]['value']['thermal conductivity (λ)'] = wall_type_vals_dict[x]
+                        
+                
+        
+        
+        
+        
+        
+        print('wall_type_dict', ':')
+        pprint.pprint(wall_type_dict)
+        
+        json_dict['wall_type_dict'] = wall_type_dict
+        
+        
+        
+        
         
         
         output = json_dict
@@ -3423,12 +3505,20 @@ def XML_2_dict_new(root, t = "floor"):
                     o[id]['symbol'] = p.get('symbol')
                 
                 if p.get('isEstimated') == '1':
+                    for value in p.findall('values/value'):
+                        if value.get('key') == 'sku':
+                            sku = value.text
+                            est_dict[sku] = {}
+                        if value.get('key') == 'totalsurface':
+                            total_surface = value.text
+                    est_dict[sku]['total_surface'] = total_surface
+                    est_dict[sku]['floor_type'] = ft
+                    
                     for lt in p.findall('linkedTo'):
                         uid = lt.get('uid')
                         est_dict[uid] = {}
                         est_dict[uid]['floor_type'] = ft
                         
-                        # est_dict[uid]['linked_to'].append(lt.get('uid'))
                         for value in p.findall('values/value'):
                             if value.get('key') == 'sku':
                                 est_dict[uid]['sku'] = value.text
@@ -3654,6 +3744,7 @@ def get_forms_data(id, headers = {
         forms_uid_dict = {}
         missing_vals = {}
         window_detail_dict = {}
+        wall_type_vals_dict = {}
 
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + id
         request = urllib.request.Request(json_url, headers=headers)
@@ -3672,6 +3763,12 @@ def get_forms_data(id, headers = {
                 
             for form in datum["forms"]:
                 for section in form["sections"]:
+                    
+                    # if form["title"] == "BER Walls": # BER only (need section["name"] - alternative is to reconstruct later)
+                        # if section["name"] = "":
+                            # continue
+                        # wall_type_vals_dict[section["name"]] = {}
+                    
                     for field in section["fields"]:
                         im = field["label"].replace(' *', '')
                         im = im.replace('*', '')
@@ -3708,14 +3805,24 @@ def get_forms_data(id, headers = {
                             if im not in window_detail_dict.keys():
                                 window_detail_dict[im] = {}
                             window_detail_dict[im] = v
+                        if form["title"] == "BER Walls":
+                            if im not in wall_type_vals_dict.keys():
+                                wall_type_vals_dict[im] = {}
+                            wall_type_vals_dict[im] = v
                             
                             
+        print('wall_type_vals_dict', ':')
+        pprint.pprint(wall_type_vals_dict)
+        
+        
+        
         output = {}
         output['form_val_dict'] = form_val_dict
         output['forms_full_dict'] = forms_full_dict
         output['forms_uid_dict'] = forms_uid_dict
         output['window_detail_dict'] = window_detail_dict
         output['missing_vals'] = missing_vals
+        output['wall_type_vals_dict'] = wall_type_vals_dict
     
     except:
         output = traceback.format_exc()
@@ -3863,8 +3970,8 @@ def BER(root, output = '', email = '', forms_data = {}):
                 for v in est_dict[item]:
                     wall_dict[item]['value'][v] = est_dict[item][v]
         
-        print('wall_dict', ':')
-        pprint.pprint(wall_dict)
+        # print('wall_dict', ':')
+        # pprint.pprint(wall_dict)
         
         # *****************************
         
@@ -3978,8 +4085,11 @@ def BER(root, output = '', email = '', forms_data = {}):
         for roof in json_dict['roof_dict']:
             output_dict['3.4 Roof Type Schedule Table'][roof] = json_dict['roof_dict'][roof]
         
-        for wall in json_dict['wall_dict']:
-            output_dict['4.1 Wall Schedule Table'][wall] = json_dict['wall_dict'][wall]
+        # for wall in json_dict['wall_dict']:
+            # output_dict['4.1 Wall Schedule Table'][wall] = json_dict['wall_dict'][wall]
+        
+        for wall_type in json_dict['wall_type_dict']:
+            output_dict['4.3 Wall Summary Table'][wall_type] = json_dict['wall_type_dict'][wall_type]
         
         for colour in colours_dict:
             output_dict['6. Colour Area Table P1'][colour] = colours_dict[colour]
