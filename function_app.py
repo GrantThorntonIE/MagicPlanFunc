@@ -2380,7 +2380,8 @@ def XL_2_dict_new(xl_file_path):
        
         
         multicol_tables = [ # use different name for these
-                            '2.3 Floor Schedule Table'
+                            '2 Building Average Storey'
+                            , '2.3 Floor Schedule Table'
                             , '3.4 Roof Type Schedule Table'
                             # , '4.1 Wall Schedule Table'
                             , '4.3 Wall Summary Table'
@@ -2436,6 +2437,8 @@ def XL_2_dict_new(xl_file_path):
                 if sheet.title in ['5.1 Windows Summary Table', '5.4 Door Summary Table']:
                     headers = ['key']
                 if sheet.title in ['2.3 Floor Schedule Table', '3.4 Roof Type Schedule Table']:
+                    headers = ['uid']
+                if sheet.title in ['2 Building Average Storey']:
                     headers = ['uid']
 
 
@@ -3197,6 +3200,8 @@ def XML_2_dict_new(root, t = "floor"):
         obj_dict = {}
         xml_val_dict = {}
         est_dict = {}
+        storey_height_dict = {}
+        
         
         xml_val_dict['project_id'] = root.get('id')
         
@@ -3225,6 +3230,7 @@ def XML_2_dict_new(root, t = "floor"):
             , "qf.34d66ce4q4": "rating_purpose"
             , "author": "Surveyor"
             , "notes": "project_notes"
+            , "statistics.areaOfHeight": "storey_height"
             }
         # note MagicPlan also has a separate "Surveyor" field ("qf.34d66ce4q1") but "author" is the one used for SEAI survey purposes
         # ToDo: confirm if also the case for BER
@@ -3493,6 +3499,19 @@ def XML_2_dict_new(root, t = "floor"):
         floors = root.findall('floor')
         for floor in floors:
             ft = floor.get('floorType')
+            uid = floor.get('uid')
+            storey_height_dict[ft] = {}
+            storey_height_dict[ft]['value'] = {}
+            storey_height_dict[ft]['value']['uid'] = uid
+            storey_height_dict[ft]['value']['storey_height'] = xml_val_dict['storey_height']
+            
+            storey_height_dict[uid] = {}
+            storey_height_dict[uid]['value'] = {}
+            storey_height_dict[uid]['value']['floor_type'] = ft
+            storey_height_dict[uid]['value']['storey_height'] = xml_val_dict['storey_height']
+            
+            
+            
             
             o = {}
             
@@ -3573,6 +3592,17 @@ def XML_2_dict_new(root, t = "floor"):
             # obj_dict[ft] = o
             
             for room in floor.findall('floorRoom'):
+                uid = room.get('uid')
+                rt = room.get('type')
+                storey_height_dict[uid] = {}
+                storey_height_dict[uid]['value'] = {}
+                storey_height_dict[uid]['value']['room_type'] = rt
+                storey_height_dict[uid]['value']['floor_type'] = ft
+                for value in room.findall('values/value'):
+                    if value.get('key') == "ceilingHeight":
+                        storey_height_dict[uid]['value']['ceiling_height'] = value.text
+                
+                
                 rt = room.get('type') + ' (' + room.get('uid') + ')'
                 
                 w = {}
@@ -3712,8 +3742,8 @@ def XML_2_dict_new(root, t = "floor"):
         # print('wall_dict', ':')
         # pprint.pprint(wall_dict)
         
-        print('est_dict', ':')
-        pprint.pprint(est_dict)
+        # print('est_dict', ':')
+        # pprint.pprint(est_dict)
         
         # for item in est_dict:
             
@@ -3727,7 +3757,7 @@ def XML_2_dict_new(root, t = "floor"):
         print(output)
     
     finally:
-        return xml_ref_dict, nwa_dict, xml_val_dict, colours_dict, wo, est_dict
+        return xml_ref_dict, nwa_dict, xml_val_dict, colours_dict, wo, est_dict, storey_height_dict
 
 
 def get_forms_data(id, headers = {
@@ -3949,14 +3979,17 @@ def BER(root, output = '', email = '', forms_data = {}):
         colours_dict = xml_dict[3]
         wo = xml_dict[4]
         est_dict = xml_dict[5]
+        storey_height_dict = xml_dict[6]
+        
+        
         
         # print('xml_val_dict', ':')
         # pprint.pprint(xml_val_dict)
         # print('colours_dict', ':')
         # pprint.pprint(colours_dict)
         
-        # print('nwa_dict', ':')
-        # pprint.pprint(nwa_dict)
+        print('storey_height_dict', ':')
+        pprint.pprint(storey_height_dict)
         
         wall_dict = {}
         for floor in nwa_dict:
@@ -4057,8 +4090,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         # *****************************
         
         
-        # print("json_dict['door_dict']", ':')
-        # pprint.pprint(json_dict['door_dict'])
+        # print("'output_dict'", ':')
+        # pprint.pprint(output_dict)
         
         
         for door_group in json_dict['door_summary_dict']:
@@ -4093,6 +4126,9 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         for colour in colours_dict:
             output_dict['6. Colour Area Table P1'][colour] = colours_dict[colour]
+        
+        for e in storey_height_dict:
+            output_dict['2 Building Average Storey'][e] = storey_height_dict[e]
         
         # print("output_dict['11.1 Lighting Schedule']", ':')
         # pprint.pprint(output_dict['11.1 Lighting Schedule'])
@@ -4305,7 +4341,8 @@ def create_table_new(data_dict
 
         output += '</table>'
         
-        
+        output = output.replace('\u03bb', '&#955')
+        output = output.replace('\u00b2', '&#178')
     except:
         output = traceback.format_exc()
         print(output)
