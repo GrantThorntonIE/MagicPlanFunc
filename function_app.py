@@ -2635,6 +2635,9 @@ def get_stats_data(project_id, headers = {
         bulb_dict = {}
         vent_dict = {}
         
+        storey_height_dict = {}
+        
+        
         wall_dict = {} # this comes from XML? But then requires additional info from Forms
         colour_dict = {} # this comes from XML?
         
@@ -2681,7 +2684,19 @@ def get_stats_data(project_id, headers = {
         
         
         for floor in JSON["data"]["project_statistics"]["floors"]:
-
+            storey_height_dict[floor["uid"]] = {}
+            storey_height_dict[floor["uid"]]['value'] = {}
+            storey_height_dict[floor["uid"]]['value']['area'] = floor["area"]
+            storey_height_dict[floor["uid"]]['value']['height'] = floor["height"]
+            storey_height_dict[floor["uid"]]['value']['name'] = floor["name"]
+            for room in floor["rooms"]:
+                storey_height_dict[room["uid"]] = {}
+                storey_height_dict[room["uid"]]['value'] = {}
+                storey_height_dict[room["uid"]]['value']['area'] = room["area"]
+                storey_height_dict[room["uid"]]['value']['height'] = room["height"]
+                storey_height_dict[room["uid"]]['value']['name'] = room["name"]
+                storey_height_dict[room["uid"]]['value']['volume'] = float(room["area"]) * float(room["height"])
+            
             floor_dict[floor["uid"]] = {}
             floor_dict[floor["uid"]]['rooms'] = []
             floor_dict[floor["uid"]]['value'] = {}
@@ -2796,6 +2811,7 @@ def get_stats_data(project_id, headers = {
         output['vent_dict'] = vent_dict
         output['floor_dict'] = floor_dict
         output['roof_dict'] = roof_dict
+        output['storey_height_dict'] = storey_height_dict
 
     except:
         output = traceback.format_exc()
@@ -2867,6 +2883,7 @@ def JSON_2_dict(project_id, headers = {
         json_dict["window_dict"] = stats_data["window_dict"]
         json_dict["roof_dict"] = stats_data["roof_dict"]
         json_dict["floor_dict"] = stats_data["floor_dict"]
+        json_dict["storey_height_dict"] = stats_data["storey_height_dict"]
         
         
         # Now need to go through Forms adding fields to our object dicts by uid
@@ -2884,7 +2901,7 @@ def JSON_2_dict(project_id, headers = {
         json_dict['door_summary_dict'] = door_summary(json_dict["door_dict"])
         
         
-        # A lot of work to tidy up walls_type_dict...
+        # A lot of work to tidy up walls_type_dict... incorrect approach - instead build properly in get_forms_data()
         wall_type_dict = {}
         wall_type_vals_dict_2 = wall_type_vals_dict.copy()
         for x in wall_type_vals_dict_2:
@@ -3230,7 +3247,7 @@ def XML_2_dict_new(root, t = "floor"):
             , "qf.34d66ce4q4": "rating_purpose"
             , "author": "Surveyor"
             , "notes": "project_notes"
-            , "statistics.areaOfHeight": "storey_height"
+            # , "statistics.areaOfHeight": "storey_height"
             }
         # note MagicPlan also has a separate "Surveyor" field ("qf.34d66ce4q1") but "author" is the one used for SEAI survey purposes
         # ToDo: confirm if also the case for BER
@@ -3328,6 +3345,77 @@ def XML_2_dict_new(root, t = "floor"):
                                         , 'Primary Bathroom'
                                         ]
 
+        
+        
+        thermal_envelope = [
+                            'Archives'
+                            , 'Bathroom'
+                            , 'Bedroom'
+                            , 'Cafeteria'
+                            , 'Children Bedroom'
+                            , 'Closet'
+                            , 'Conference Room'
+                            , 'Den'
+                            , 'Dining Room'
+                            , 'Elevators'
+                            , 'Half Bathroom'
+                            , 'Hall'
+                            , 'Hallway'
+                            , 'Hatched Room'
+                            , 'Kitchen'
+                            , 'Kitchenette'
+                            , 'Lab'
+                            , 'Laundry Room'
+                            , 'Living Room'
+                            , 'Lounge'
+                            , 'Maintenance Room'
+                            , 'Meeting Room'
+                            , 'Music Room'
+                            , 'Open Space'
+                            , 'Other'
+                            , 'Photocopy Room'
+                            , 'Playroom'
+                            , 'Porch'
+                            , 'Primary Bathroom'
+                            , 'Primary Bedroom'
+                            , 'Private Office'
+                            , 'Reception'
+                            , 'Restrooms'
+                            , 'Server Room'
+                            , 'Shared Office'
+                            , 'Stairway'
+                            , 'Storage'
+                            , 'Study'
+                            , 'Toilet'
+                            , 'Training Room'
+                            , 'Vestibule'
+                            , 'Waiting Room'
+                            ]
+        
+        ex_thermal_envelope = [
+                                'Attic/Loft'
+                                , 'Balcony'
+                                , 'Cellar'
+                                , 'Deck'
+                                , 'Furnace Room'
+                                , 'Garage'
+                                , 'Outbuilding'
+                                , 'Patio'
+                                , 'Unfinished Basement'
+                                , 'Workshop'
+                                ]
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
@@ -3503,14 +3591,20 @@ def XML_2_dict_new(root, t = "floor"):
             storey_height_dict[ft] = {}
             storey_height_dict[ft]['value'] = {}
             storey_height_dict[ft]['value']['uid'] = uid
-            storey_height_dict[ft]['value']['storey_height'] = xml_val_dict['storey_height']
+            # storey_height_dict[ft]['value']['storey_height'] = xml_val_dict['storey_height']
             
             storey_height_dict[uid] = {}
             storey_height_dict[uid]['value'] = {}
             storey_height_dict[uid]['value']['floor_type'] = ft
-            storey_height_dict[uid]['value']['storey_height'] = xml_val_dict['storey_height']
+            # storey_height_dict[uid]['value']['storey_height'] = xml_val_dict['storey_height']
             
-            
+            for p in floor.findall('symbolInstance'):
+                if p.get('symbol') == 'floor':
+                    for value in p.findall('values/value'):
+                        if value.get('key') == 'qcustomfield.5d0165e3q1':
+                            storey_height_dict[uid]['value']['use_floor_level_height'] = value.text
+                            # if value.text == "0"
+                                # del storey_height_dict[uid]
             
             
             o = {}
@@ -3601,6 +3695,10 @@ def XML_2_dict_new(root, t = "floor"):
                 for value in room.findall('values/value'):
                     if value.get('key') == "ceilingHeight":
                         storey_height_dict[uid]['value']['ceiling_height'] = value.text
+                    if value.get('key') == "qcustomfield.2979903aq1":
+                        storey_height_dict[uid]['value']['thermal_envelope'] = value.text
+                    if value.get('key') == "qcustomfield.347f643dq1":
+                        storey_height_dict[uid]['value']['thermal_envelope'] = value.text
                 
                 
                 rt = room.get('type') + ' (' + room.get('uid') + ')'
@@ -3969,6 +4067,69 @@ def BER(root, output = '', email = '', forms_data = {}):
     # use the dicts to generate this function's "output" HTML to serve as the body of the return email
     
     try:
+        # lists of MagicPlan room names to be included/excluded by default in the thermal envelope:
+        thermal_envelope = [
+                            'Archives'
+                            , 'Bathroom'
+                            , 'Bedroom'
+                            , 'Cafeteria'
+                            , 'Children Bedroom'
+                            , 'Closet'
+                            , 'Conference Room'
+                            , 'Den'
+                            , 'Dining Room'
+                            , 'Elevators'
+                            , 'Half Bathroom'
+                            , 'Hall'
+                            , 'Hallway'
+                            , 'Hatched Room'
+                            , 'Kitchen'
+                            , 'Kitchenette'
+                            , 'Lab'
+                            , 'Laundry Room'
+                            , 'Living Room'
+                            , 'Lounge'
+                            , 'Maintenance Room'
+                            , 'Meeting Room'
+                            , 'Music Room'
+                            , 'Open Space'
+                            , 'Other'
+                            , 'Photocopy Room'
+                            , 'Playroom'
+                            , 'Porch'
+                            , 'Primary Bathroom'
+                            , 'Primary Bedroom'
+                            , 'Private Office'
+                            , 'Reception'
+                            , 'Restrooms'
+                            , 'Server Room'
+                            , 'Shared Office'
+                            , 'Stairway'
+                            , 'Storage'
+                            , 'Study'
+                            , 'Toilet'
+                            , 'Training Room'
+                            , 'Vestibule'
+                            , 'Waiting Room'
+                            ]
+        
+        ex_thermal_envelope = [
+                                'Attic/Loft'
+                                , 'Balcony'
+                                , 'Cellar'
+                                , 'Deck'
+                                , 'Furnace Room'
+                                , 'Garage'
+                                , 'Outbuilding'
+                                , 'Patio'
+                                , 'Unfinished Basement'
+                                , 'Workshop'
+                                ]
+        
+
+        
+        
+        
         project_id = root.get("id")
         project_name = root.get("name") # ToDo: are we going to pass in here xml_dict or do we need to produce a project-specific one?
         xml_dict = XML_2_dict_new(root)
@@ -3988,8 +4149,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print('colours_dict', ':')
         # pprint.pprint(colours_dict)
         
-        print('storey_height_dict', ':')
-        pprint.pprint(storey_height_dict)
+        # print('storey_height_dict', ':')
+        # pprint.pprint(storey_height_dict)
         
         wall_dict = {}
         for floor in nwa_dict:
@@ -4089,6 +4250,21 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # *****************************
         
+        print('storey_height_dict', ':')
+        pprint.pprint(storey_height_dict)
+        print("json_dict['storey_height_dict']", ':')
+        pprint.pprint(json_dict['storey_height_dict'])
+        
+        for e in storey_height_dict:
+            if e in json_dict['storey_height_dict'].keys():
+                for f in storey_height_dict[e]['value']:
+                    json_dict['storey_height_dict'][e]['value'][f] = storey_height_dict[e]['value'][f]
+        
+        
+        
+        
+        
+        
         
         # print("'output_dict'", ':')
         # pprint.pprint(output_dict)
@@ -4127,8 +4303,59 @@ def BER(root, output = '', email = '', forms_data = {}):
         for colour in colours_dict:
             output_dict['6. Colour Area Table P1'][colour] = colours_dict[colour]
         
-        for e in storey_height_dict:
-            output_dict['2 Building Average Storey'][e] = storey_height_dict[e]
+        json_dict['storey_height_dict']['floors'] = {}
+        json_dict['storey_height_dict']['rooms'] = {}
+        for e in json_dict['storey_height_dict']:
+            # print("e", ':', e)
+            # print("json_dict['storey_height_dict'][e]", ':')
+            # pprint.pprint(json_dict['storey_height_dict'][e])
+            
+            if 'value' not in json_dict['storey_height_dict'][e].keys():
+                continue
+            
+            if 'thermal_envelope' not in json_dict['storey_height_dict'][e]['value'].keys():
+                if json_dict['storey_height_dict'][e]['value']['name'] in thermal_envelope:
+                    json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 1
+                if json_dict['storey_height_dict'][e]['value']['name'] in ex_thermal_envelope:
+                    json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 0
+                    
+            if 'use_floor_level_height' in json_dict['storey_height_dict'][e]['value'].keys():
+                json_dict['storey_height_dict']['floors'][e] = json_dict['storey_height_dict'][e]
+            else:
+                json_dict['storey_height_dict']['rooms'][e] = json_dict['storey_height_dict'][e]
+            
+        
+        # Need to sum room volumes by floor_type
+        fv_dict = {}
+        for room in json_dict['storey_height_dict']['rooms']:
+            if json_dict['storey_height_dict']['rooms'][room]['value']['thermal_envelope'] == '0':
+                continue
+            f = json_dict['storey_height_dict']['rooms'][room]['value']['floor_type']
+            if f not in fv_dict.keys():
+                fv_dict[f] = 0
+            v = json_dict['storey_height_dict']['rooms'][room]['value']['volume']
+            fv_dict[f] += v
+            
+        # print("json_dict['storey_height_dict']['floors']", ':')
+        # pprint.pprint(json_dict['storey_height_dict']['floors'])
+        # print("fv_dict", ':')
+        # pprint.pprint(fv_dict)
+        
+        for fv in fv_dict:
+            for floor in json_dict['storey_height_dict']['floors']:
+                if json_dict['storey_height_dict']['floors'][floor]['value']['floor_type'] == fv:
+                    json_dict['storey_height_dict']['floors'][floor]['value']['volume'] = round(fv_dict[fv], 2)
+                    if json_dict['storey_height_dict']['floors'][floor]['value']['use_floor_level_height'] == '0':
+                        json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = round(json_dict['storey_height_dict']['floors'][floor]['value']['volume'] / json_dict['storey_height_dict']['floors'][floor]['value']['area'], 2)
+                    else:
+                        json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = json_dict['storey_height_dict']['floors'][floor]['value']['height']
+        
+        for e in json_dict['storey_height_dict']['floors']:
+            output_dict['2 Building Average Storey'][e] = json_dict['storey_height_dict'][e]
+        for e in json_dict['storey_height_dict']['rooms']:
+            output_dict['2 Building Average Storey'][e] = json_dict['storey_height_dict'][e]
+        
+        
         
         # print("output_dict['11.1 Lighting Schedule']", ':')
         # pprint.pprint(output_dict['11.1 Lighting Schedule'])
