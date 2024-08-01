@@ -2381,6 +2381,8 @@ def XL_2_dict_new(xl_file_path):
         
         multicol_tables = [ # use different name for these
                             '2 Building Average Storey'
+                            , '2 Building Average Storey (Floors)'
+                            , '2 Building Average Storey (Rooms)'
                             , '2.3 Floor Schedule Table'
                             , '3.4 Roof Type Schedule Table'
                             # , '4.1 Wall Schedule Table'
@@ -2438,13 +2440,13 @@ def XL_2_dict_new(xl_file_path):
                     headers = ['key']
                 if sheet.title in ['2.3 Floor Schedule Table', '3.4 Roof Type Schedule Table']:
                     headers = ['uid']
-                if sheet.title in ['2 Building Average Storey']:
+
+                headers = headers + [cell.value for cell in sheet[3]]
+
+                if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
                     headers = ['uid']
 
-
-
                 
-                headers = headers + [cell.value for cell in sheet[3]]
                 headers = list(filter((None).__ne__, headers))
                 
                 
@@ -4131,7 +4133,8 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 , 'Workshop'
                                 ]
         
-
+        true_floors = range(-2, 8)
+        print('true_floors', ';', true_floors)
         
         
         
@@ -4149,8 +4152,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
-        print('est_dict', ':')
-        pprint.pprint(est_dict)
+        # print('est_dict', ':')
+        # pprint.pprint(est_dict)
         # print('xml_val_dict', ':')
         # pprint.pprint(xml_val_dict)
         # print('colours_dict', ':')
@@ -4210,7 +4213,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         for wall_type in json_dict['wall_type_dict']:
-            json_dict['wall_type_dict'][wall_type]['value']['total_surface'] = est_dict[wall_type]['total_surface']
+            if wall_type in json_dict['wall_type_dict'].keys() and wall_type in est_dict.keys():
+                json_dict['wall_type_dict'][wall_type]['value']['total_surface'] = est_dict[wall_type]['total_surface']
         
         
         
@@ -4271,8 +4275,11 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         for e in storey_height_dict:
             if e in json_dict['storey_height_dict'].keys():
-                for f in storey_height_dict[e]['value']:
-                    json_dict['storey_height_dict'][e]['value'][f] = storey_height_dict[e]['value'][f]
+                if storey_height_dict[e]['value']['floor_type'] in ['20', '21', '22', '23', '24']: # see table "Floor Reference" 
+                    del json_dict['storey_height_dict'][e]
+                else:
+                    for f in storey_height_dict[e]['value']:
+                        json_dict['storey_height_dict'][e]['value'][f] = storey_height_dict[e]['value'][f]
         
         
         
@@ -4337,11 +4344,13 @@ def BER(root, output = '', email = '', forms_data = {}):
             if 'value' not in json_dict['storey_height_dict'][e].keys():
                 continue
             
-            if 'thermal_envelope' not in json_dict['storey_height_dict'][e]['value'].keys():
-                if json_dict['storey_height_dict'][e]['value']['name'] in thermal_envelope:
-                    json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 1
+            if 'thermal_envelope' not in json_dict['storey_height_dict'][e]['value'].keys(): # hasn't been determined from XML
+                # if json_dict['storey_height_dict'][e]['value']['name'] in thermal_envelope:
+                    # json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 1
                 if json_dict['storey_height_dict'][e]['value']['name'] in ex_thermal_envelope:
                     json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 0
+                else:
+                    json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 1 # this includes renamed rooms 
                     
             # if 'use_floor_level_height' in json_dict['storey_height_dict'][e]['value'].keys():
             if 'room_type' not in json_dict['storey_height_dict'][e]['value'].keys():
@@ -4353,9 +4362,11 @@ def BER(root, output = '', email = '', forms_data = {}):
         # Need to sum room volumes by floor_type
         fv_dict = {}
         for room in json_dict['storey_height_dict']['rooms']:
+            
             # print("room", ':', room)
             # print("json_dict['storey_height_dict']['rooms'][room]", ':')
             # pprint.pprint(json_dict['storey_height_dict']['rooms'][room])
+            
             
             if json_dict['storey_height_dict']['rooms'][room]['value']['thermal_envelope'] == '0':
                 continue
@@ -4380,12 +4391,57 @@ def BER(root, output = '', email = '', forms_data = {}):
                     else:
                         json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = json_dict['storey_height_dict']['floors'][floor]['value']['height']
         
+        
+        
+        # print("output_dict['2 Building Average Storey']", ':')
+        # pprint.pprint(output_dict['2 Building Average Storey'])        
+        
+        # print("json_dict['storey_height_dict']['floors']", ':')
+        # pprint.pprint(json_dict['storey_height_dict']['floors'])        
+        
+        # print("json_dict['storey_height_dict']['rooms']", ':')
+        # pprint.pprint(json_dict['storey_height_dict']['rooms'])        
+        
+        
+        # mydict = thisdict.copy()
+        output_dict['2 Building Average Storey (Floors)'] = dict(output_dict['2 Building Average Storey'])
+        output_dict['2 Building Average Storey (Rooms)'] = dict(output_dict['2 Building Average Storey'])
+        
+        # print(len(json_dict['storey_height_dict']['floors']))
         for e in json_dict['storey_height_dict']['floors']:
-            output_dict['2 Building Average Storey'][e] = json_dict['storey_height_dict'][e]
+            output_dict['2 Building Average Storey (Floors)'][e] = json_dict['storey_height_dict']['floors'][e]
+            # print('len output floors', ':', len(output_dict['2 Building Average Storey (Floors)']))
+        
         for e in json_dict['storey_height_dict']['rooms']:
-            output_dict['2 Building Average Storey'][e] = json_dict['storey_height_dict'][e]
+            output_dict['2 Building Average Storey (Rooms)'][e] = json_dict['storey_height_dict']['rooms'][e]
         
         
+        
+        
+        
+        
+        
+        
+        
+        # print('len output floors', ':', len(output_dict['2 Building Average Storey (Floors)']))
+        # for x in output_dict['2 Building Average Storey (Floors)']:
+            # print(x)
+            # if isinstance(x, dict):
+                # if 'value' in output_dict['2 Building Average Storey (Floors)'][x].keys():
+                    # if 'room_type' in output_dict['2 Building Average Storey (Floors)'][x]['value'].keys():
+                        # del output_dict['2 Building Average Storey (Floors)'][x]
+            
+        # for x in output_dict['2 Building Average Storey (Rooms)']:
+            # if isinstance(x, dict):
+                # if 'value' in output_dict['2 Building Average Storey (Rooms)'][x].keys():
+                    # if 'room_type' not in output_dict['2 Building Average Storey (Rooms)'][x]['value'].keys():
+                        # del output_dict['2 Building Average Storey (Rooms)'][x]
+        
+        # print("output_dict['2 Building Average Storey (Floors)']", ':')
+        # pprint.pprint(output_dict['2 Building Average Storey (Floors)'])
+        
+        # print("output_dict['2 Building Average Storey (Rooms)']", ':')
+        # pprint.pprint(output_dict['2 Building Average Storey (Rooms)'])
         
         # print("output_dict['11.1 Lighting Schedule']", ':')
         # pprint.pprint(output_dict['11.1 Lighting Schedule'])
