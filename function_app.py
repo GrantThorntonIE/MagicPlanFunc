@@ -2443,8 +2443,10 @@ def XL_2_dict_new(xl_file_path):
 
                 headers = headers + [cell.value for cell in sheet[3]]
 
-                if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
-                    headers = ['uid']
+                # if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
+                if 'Building Average Storey' in sheet.title:
+                    # headers = ['uid']
+                    headers = ['uid', 'height', 'name', 'floor_type', 'use_floor_level_height', 'volume', 'ceiling_height', 'room_type', 'thermal_envelope']
 
                 
                 headers = list(filter((None).__ne__, headers))
@@ -4412,10 +4414,21 @@ def BER(root, output = '', email = '', forms_data = {}):
             output_dict['2 Building Average Storey (Floors)'][e] = json_dict['storey_height_dict']['floors'][e]
             # print('len output floors', ':', len(output_dict['2 Building Average Storey (Floors)']))
         
+        floors = []
         for e in json_dict['storey_height_dict']['rooms']:
-            output_dict['2 Building Average Storey (Rooms)'][e] = json_dict['storey_height_dict']['rooms'][e]
+            # print(json_dict['storey_height_dict']['rooms'][e]['value']['floor_type'])
+            ft = json_dict['storey_height_dict']['rooms'][e]['value']['floor_type']
+            if ft not in floors:
+                floors.append(ft)
+            # print(ft)
+        print('floors', ':', floors)
         
+        for ft in floors:
+            output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'] = {}
         
+        for e in json_dict['storey_height_dict']['rooms']:
+            ft = json_dict['storey_height_dict']['rooms'][e]['value']['floor_type']
+            output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'][e] = json_dict['storey_height_dict']['rooms'][e]
         
         
         
