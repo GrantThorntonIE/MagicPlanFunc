@@ -4384,15 +4384,18 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print("fv_dict", ':')
         # pprint.pprint(fv_dict)
         
+        # *************** CALCULATE CEILING HEIGHT ***************
+        
         for fv in fv_dict:
             for floor in json_dict['storey_height_dict']['floors']:
-                if json_dict['storey_height_dict']['floors'][floor]['value']['floor_type'] == fv:
-                    json_dict['storey_height_dict']['floors'][floor]['value']['volume'] = round(fv_dict[fv], 2)
-                    if json_dict['storey_height_dict']['floors'][floor]['value']['use_floor_level_height'] == '0':
-                        json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = round(json_dict['storey_height_dict']['floors'][floor]['value']['volume'] / json_dict['storey_height_dict']['floors'][floor]['value']['area'], 2)
-                    else:
-                        json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = json_dict['storey_height_dict']['floors'][floor]['value']['height']
-        
+                if 'floor_type' in json_dict['storey_height_dict']['floors'][floor]['value'].keys():
+                    if json_dict['storey_height_dict']['floors'][floor]['value']['floor_type'] == fv:
+                        json_dict['storey_height_dict']['floors'][floor]['value']['volume'] = round(fv_dict[fv], 2)
+                        if json_dict['storey_height_dict']['floors'][floor]['value']['use_floor_level_height'] == '0':
+                            json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = round(json_dict['storey_height_dict']['floors'][floor]['value']['volume'] / json_dict['storey_height_dict']['floors'][floor]['value']['area'], 2)
+                        else:
+                            json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = json_dict['storey_height_dict']['floors'][floor]['value']['height']
+            
         
         
         # print("output_dict['2 Building Average Storey']", ':')
