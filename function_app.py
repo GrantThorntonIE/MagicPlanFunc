@@ -2438,16 +2438,67 @@ def XL_2_dict_new(xl_file_path):
                     headers = ['colour']
                 if sheet.title in ['5.1 Windows Summary Table', '5.4 Door Summary Table']:
                     headers = ['key']
-                if sheet.title in ['2.3 Floor Schedule Table', '3.4 Roof Type Schedule Table']:
-                    headers = ['uid']
+                
+                
+                
+                if sheet.title in ['2.3 Floor Schedule Table']:
+                    headers = ['uid'
+                    , 'area (m2)'
+                    , 'perimeter'
+                    
+                    , 'name'
+                    , 'is this floor being used?'
+                    , 'dwelling age band?'
+                    , 'age band'
+                    , 'underfloor heating?'
+                    , 'description'
+                    , 'U-value calculation required?'
+                    , 'calculated U-value'
+                    , "U-Value"]
 
+
+
+
+
+
+
+
+
+                # ************ INCLUDE HEADERS FROM INPUT FILE ************
+                
                 headers = headers + [cell.value for cell in sheet[3]]
+                
+                
 
+                if sheet.title in ['3.4 Roof Type Schedule Table']:
+                    headers = ['uid'
+                                ,  'roof type'
+                                ,  'name'
+                                ,  'description'
+                                ,  'roof pitch (degrees)'
+                                ,  'area (m2)'
+                                ,  'dwelling age band?'
+                                ,  'age band'
+                                ,  'insulation thickness known?'
+                                ,  'insulation thickness (mm)'
+                                ,  'thermal conductivity'
+                                ,  'U-value calculation required?'
+                                ,  'calculated U-value'
+                                ,  'U-value']
+                
                 # if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
                 if 'Building Average Storey' in sheet.title:
                     # headers = ['uid']
-                    headers = ['uid', 'height', 'name', 'floor_type', 'use_floor_level_height', 'volume', 'ceiling_height', 'room_type', 'thermal_envelope']
-
+                    headers = ['uid'
+                            ,  'height'
+                            ,  'name'
+                            ,  'floor_type'
+                            ,  'use_floor_level_height'
+                            ,  'volume'
+                            ,  'ceiling_height'
+                            ,  'room_type'
+                            ,  'thermal_envelope']
+                
                 
                 headers = list(filter((None).__ne__, headers))
                 
@@ -2862,6 +2913,11 @@ def JSON_2_dict(project_id, headers = {
         
         # json_dict = forms_full_dict
         json_dict = form_val_dict
+        
+        # print('json_dict', ':')
+        # pprint.pprint(json_dict)
+        
+        
         json_uid_dict = forms_uid_dict
         
         
@@ -2906,7 +2962,78 @@ def JSON_2_dict(project_id, headers = {
         json_dict['door_summary_dict'] = door_summary(json_dict["door_dict"])
         
         
+        
+        
+        
+        
+        
+        json_dict["floor_dict"] = condense(json_dict["floor_dict"], json_dict)
+        
+        
+        json_dict["roof_dict"] = condense(json_dict["roof_dict"], json_dict)
+        
+        
+        # print('json_dict["roof_dict"]', ':')
+        # pprint.pprint(json_dict["roof_dict"])
+        
+        # roof_dict = json_dict["roof_dict"].copy()
+        # for rt in json_dict["roof_dict"]:
+            # roof_dict[rt]['value'] = {} # why did we have to do this with wall_type_dict below?
+            # roof_dict[rt]['value_condensed'] = {}
+            # for x in roof_dict[rt]['value']:
+                # print('x', ':', x)
+                    
+                # if 'BER Roof Type' in x:
+                    # roof_dict[rt]['value_condensed']['roof type'] = roof_dict[rt]['value'][x]
+                # if 'description' in x:
+                    # roof_dict[rt]['value_condensed']['description'] = roof_dict[rt]['value'][x]
+                # if '(degrees)' in x:
+                    # roof_dict[rt]['value_condensed']['roof pitch (degrees)'] = roof_dict[rt]['value'][x]
+                # if 'age band match' in x:
+                    # roof_dict[rt]['value_condensed']['dwelling age band?'] = roof_dict[rt]['value'][x] # True or False
+                    # if roof_dict[rt]['value'][x] == True:
+                        # roof_dict[rt]['value_condensed']['age band'] = json_dict['Age: Dwelling']['value']
+                    
                 
+                # if x == 'Roof Age Band': # only ever appears if above is False
+                    # if roof_dict[rt]['value'][x] in json_dict.keys(): # e.g. "Age: Extension 1"
+                        # roof_dict[rt]['value_condensed']['age band'] = json_dict[roof_dict[rt]['value'][x]]['value']
+                    # else:
+                        # roof_dict[rt]['value_condensed']['age band'] = roof_dict[rt]['value'][x]
+                    
+                # if 'U-value calculation required?' in x:
+                    # roof_dict[rt]['value_condensed']['U-value calculation required?'] = roof_dict[rt]['value'][x]
+                # if 'Bespoke calculation U-Value [W' in x:
+                    # roof_dict[rt]['value_condensed']['calculated U-value'] = roof_dict[rt]['value'][x]
+                # if 'thickness known?' in x:
+                    # roof_dict[rt]['value_condensed']['insulation thickness known?'] = roof_dict[rt]['value'][x]
+                # if 'insulation thickness (mm)' in x:
+                    # roof_dict[rt]['value_condensed']['insulation thickness (mm)'] = roof_dict[rt]['value'][x]
+                # if 'hermal conductivity (W' in x:
+                    # roof_dict[rt]['value_condensed']['thermal conductivity'] = roof_dict[rt]['value'][x]
+                # if 'roof U-value (W/' in x:
+                    # roof_dict[rt]['value_condensed']['U-value (W/m2K)'] = roof_dict[rt]['value'][x]
+
+                # if x == 'area':
+                    # roof_dict[rt]['value_condensed']['area (m2)'] = roof_dict[rt]['value'][x]
+                # if x == 'name':
+                    # roof_dict[rt]['value_condensed']['name'] = roof_dict[rt]['value'][x]
+            
+            
+            
+            
+            
+            # roof_dict[rt]['value'] = roof_dict[rt]['value_condensed']
+        # print('roof_dict', ':')
+        # pprint.pprint(roof_dict)
+        # json_dict["roof_dict"] = roof_dict
+        
+        
+        
+        
+        
+        
+        
         for w in wall_type_dict:
             wall_type_dict[w]['value'] = {}
             for x in wall_type_dict[w]:
@@ -2956,8 +3083,8 @@ def JSON_2_dict(project_id, headers = {
         
         
         
-        print('wall_type_dict', ':')
-        pprint.pprint(wall_type_dict)
+        # print('wall_type_dict', ':')
+        # pprint.pprint(wall_type_dict)
         
         json_dict['wall_type_dict'] = wall_type_dict
         
@@ -2973,6 +3100,101 @@ def JSON_2_dict(project_id, headers = {
         print(output)
    
     return output
+
+
+def condense(old_dict, json_dict):
+    try:
+        print('old_dict', ':')
+        pprint.pprint(old_dict)
+        
+        new_dict = old_dict.copy() # is this still necessary?
+        for e in old_dict:
+            # new_dict[e]['value'] = {} # why did we have to do this with wall_type_dict below?
+            new_dict[e]['value_condensed'] = {}
+            
+            
+            
+            
+            for x in new_dict[e]['value']:
+                print('x', ':', x)
+                
+                if x == 'area':
+                    new_dict[e]['value_condensed']['area (m2)'] = new_dict[e]['value'][x]
+                if x == 'name':
+                    new_dict[e]['value_condensed']['name'] = new_dict[e]['value'][x]
+                if x == 'perimeter':
+                    new_dict[e]['value_condensed']['perimeter'] = new_dict[e]['value'][x]
+                
+                # is this floor being used ... DEAP? - probably not the right place to apply this filter
+                
+                if x == 'Floor Age Band': # year range?
+                    new_dict[e]['value_condensed']['age band'] = new_dict[e]['value'][x]
+                
+                if x == 'Is there underfloor heating?':
+                    new_dict[e]['value_condensed']['underfloor heating?'] = new_dict[e]['value'][x]
+                
+                
+                
+                if 's this floor being used' in x:
+                    new_dict[e]['value_condensed']['is this floor being used?'] = new_dict[e]['value'][x]
+                if 'description' in x:
+                    new_dict[e]['value_condensed']['description'] = new_dict[e]['value'][x]
+                
+                
+                if 'U-value calculation required?' in x:
+                    new_dict[e]['value_condensed']['U-value calculation required?'] = new_dict[e]['value'][x]
+                if 'espoke calculation U-Value [W' in x:
+                    new_dict[e]['value_condensed']['calculated U-value'] = new_dict[e]['value'][x]
+                
+                # need to identify "U-Value" field? How to differentiate from above?
+                
+                
+                if 'BER Roof Type' in x:
+                    new_dict[e]['value_condensed']['roof type'] = new_dict[e]['value'][x]
+                if '(degrees)' in x:
+                    new_dict[e]['value_condensed']['roof pitch (degrees)'] = new_dict[e]['value'][x]
+                if 'age band match' in x:
+                    new_dict[e]['value_condensed']['dwelling age band?'] = new_dict[e]['value'][x] # True or False
+                    if new_dict[e]['value'][x] == True:
+                        new_dict[e]['value_condensed']['age band'] = json_dict['Age: Dwelling']['value']
+                    
+                
+                if x == 'Roof Age Band': # e.g. "Age: Extension 1" (only ever appears if above is False)
+                    if new_dict[e]['value'][x] in json_dict.keys(): # 
+                        new_dict[e]['value_condensed']['age band'] = json_dict[new_dict[e]['value'][x]]['value']
+                    else:
+                        new_dict[e]['value_condensed']['age band'] = new_dict[e]['value'][x]
+                    
+
+
+                if 'thickness known?' in x:
+                    new_dict[e]['value_condensed']['insulation thickness known?'] = new_dict[e]['value'][x]
+                if 'insulation thickness (mm)' in x:
+                    new_dict[e]['value_condensed']['insulation thickness (mm)'] = new_dict[e]['value'][x]
+                if 'hermal conductivity (W' in x:
+                    new_dict[e]['value_condensed']['thermal conductivity'] = new_dict[e]['value'][x]
+                if 'roof U-value (W/' in x:
+                    new_dict[e]['value_condensed']['U-value (W/m2K)'] = new_dict[e]['value'][x]
+
+            
+            
+            
+            
+            new_dict[e]['value'] = new_dict[e]['value_condensed']
+        
+        
+        print('new_dict', ':')
+        pprint.pprint(new_dict)
+        
+        old_dict = new_dict
+        output = new_dict
+        
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output)
+    
+    return output
+
 
 
 def floor_stats_append(stats_dict, forms_uid_dict):
@@ -3714,9 +3936,13 @@ def XML_2_dict_new(root, t = "floor"):
                 
                 for window in room.findall('window'):
                     si = window.get('symbolInstance')
-                    o[si]['room_x'] = room_x
-                    o[si]['room_y'] = room_y
-                
+                    if si in o.keys():
+                        o[si]['room_x'] = room_x
+                        o[si]['room_y'] = room_y
+                    else:
+                        print(si, 'not found in o.keys()')
+                        # print('o', ':')
+                        # pprint.pprint(o)
                 
                 w_index = 0
                 for point in room.findall('point'): # get (x3, y3)
@@ -3926,7 +4152,8 @@ def get_forms_data(id, headers = {
                         if im not in form_val_dict.keys():
                             form_val_dict[im] = {}
                         # form_val_dict[im] = v
-                        key = datum["symbol_name"] + " (" + datum["symbol_instance_id"] + ")"
+                        # key = datum["symbol_name"] + " (" + datum["symbol_instance_id"] + ")"
+                        key = 'value'
                         if key not in form_val_dict[im].keys():
                             # form_val_dict[im][datum["symbol_instance_id"]] = {}
                             form_val_dict[im][key] = v
@@ -4213,6 +4440,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         # add them later to the output dict after we've created it from the INPUT TEMPLATE FILE
         
         
+        # ************** WALLS: ADD XML DATA TO JSON ***************
         
         for wall_type in json_dict['wall_type_dict']:
             if wall_type in json_dict['wall_type_dict'].keys() and wall_type in est_dict.keys():
