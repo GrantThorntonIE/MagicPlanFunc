@@ -2929,12 +2929,19 @@ def JSON_2_dict(project_id, headers = {
         if isinstance(stats_data, str):
             print('error?', ':', stats_data)
         
-        
-        count_dict = stats_data['count_dict']
-        # pprint.pprint(count_dict)
-        # add counts to json_dict as strings (top-level key:value pairs - should this be happening here or is it more suited to return the table as-is and then do the output prep all together? what about multi-col tables? any counts in those? if so, will this approach work?):
-        for key in count_dict.keys():
-            json_dict[key] = str(count_dict[key])
+        if 'count_dict' in stats_data.keys():
+            count_dict = stats_data['count_dict']
+            # pprint.pprint(count_dict)
+            # add counts to json_dict as strings (top-level key:value pairs - should this be happening here or is it more suited to return the table as-is and then do the output prep all together? what about multi-col tables? any counts in those? if so, will this approach work?):
+            for key in count_dict.keys():
+                json_dict[key] = str(count_dict[key])
+
+            # where should we exclude floors/ex-thermal envelope?
+            for object_uid in json_uid_dict:
+                if 'Ventilation Type' in json_uid_dict[object_uid].keys():
+                    # print('Ventilation Type', ':', json_uid_dict[object_uid]['Ventilation Type'])
+                    if json_uid_dict[object_uid]['Ventilation Type'] in count_dict.keys():
+                        count_dict[json_uid_dict[object_uid]['Ventilation Type']] += 1
         
         # adding these like this for now, might change depending on what is most convenient later:
         json_dict["bulb_dict"] = stats_data["bulb_dict"]
