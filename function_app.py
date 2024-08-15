@@ -2357,13 +2357,12 @@ def XL_2_dict_new(xl_file_path):
         
         output_tables = [
                         "1. Survey Details P1"
-                        # , '2.1 Building | Floors P1'
-                        # , '3. Building | Roofs P1'
-                        # , '5. Building | WindowsP1'
-                        # , '5.3 Building | Doors P1'
-
                         , "7. Thermal Mass P1"
                         , "8. Ventilation P1"
+                        , "9. Space Heating P4"
+                        , "9.4 Heating System Controls"
+                        , "9.4 Heating System Controls (2)"
+                        , "9.4 Pumps and Fans"
                         , "11. Lighting P1"
                         ]
         
@@ -2379,7 +2378,7 @@ def XL_2_dict_new(xl_file_path):
                             ]
        
         
-        multicol_tables = [ # use different name for these
+        multicol_tables = [ # use different name for these?
                             '2 Building Average Storey'
                             , '2 Building Average Storey (Floors)'
                             , '2 Building Average Storey (Rooms)'
@@ -2394,11 +2393,13 @@ def XL_2_dict_new(xl_file_path):
                             , '5.5 Door Schedule Table'
                             , '6. Colour Area Table P1'
                             , '8.1 Ventilation Items'
+                            , '9.3 Space Heating Category'
                             , '11.1 Lighting Schedule'
                             ]
         
         output = {}
         lookup = {}
+        print('XL_2_dict_new()', ':', 'sheets present in input file', ':')
         for sheet in wb.worksheets:
             print(sheet.title)
             
@@ -2408,6 +2409,7 @@ def XL_2_dict_new(xl_file_path):
                 # print('output_table', ':', sheet.title)
                 for i, row in enumerate(list(sheet.values)):
                     field_name = row[1]
+                    # print(field_name)
                     if field_name == None:
                         continue
                     field_name = field_name.strip()
@@ -2439,13 +2441,15 @@ def XL_2_dict_new(xl_file_path):
                 if sheet.title in ['5.1 Windows Summary Table', '5.4 Door Summary Table']:
                     headers = ['key']
                 
+
+                # ************ INCLUDE HEADERS FROM INPUT FILE ************
                 
+                headers = headers + [cell.value for cell in sheet[3]]
                 
                 if sheet.title in ['2.3 Floor Schedule Table']:
                     headers = ['uid'
                     , 'area (m2)'
                     , 'perimeter'
-                    
                     , 'name'
                     , 'is this floor being used?'
                     , 'dwelling age band?'
@@ -2455,21 +2459,7 @@ def XL_2_dict_new(xl_file_path):
                     , 'U-value calculation required?'
                     , 'calculated U-value'
                     , "U-Value"]
-
-
-
-
-
-
-
-
-
-                # ************ INCLUDE HEADERS FROM INPUT FILE ************
                 
-                headers = headers + [cell.value for cell in sheet[3]]
-                
-                
-
                 if sheet.title in ['3.4 Roof Type Schedule Table']:
                     headers = ['uid'
                                 ,  'roof type'
@@ -2499,6 +2489,40 @@ def XL_2_dict_new(xl_file_path):
                             ,  'room_type'
                             ,  'thermal_envelope']
                 
+                
+                if sheet.title in ['9.3 Space Heating Category']:
+                    headers = ["uid"
+                                , "Object Name"
+                                # ,"Primary/Secondary/Neither/Fuel Cost Comparson Required"
+                                ,"Heat Source Type on DEAP"
+                                ,"Manufacturer"
+                                ,"Model"
+                                ,"Ventilation Type"
+                                # ,"Heats Water?"
+                                ,"Does the heat source heat water?"
+                                ,"Fuel Type"
+                                , "Is there one central heating pump for this heat source?"
+                                , "Is the central heating pump inside dwelling?"
+                                # ,"Number of Central Heating Pumps"
+                                ,"Number of central heating pumps?"
+                                # ,"Number of Central Heating Pumps Inside"
+                                ,"Number of central heating pumps inside?"
+                                ,"Number of Oil Boiler Pumps"
+                                ,"Number of Oil Boiler Pumps Inside"
+                                ,"Is there a gas boiler flue fan?"
+                                ,"Number of Gas Boiler Flue Fans"
+                                # ,"Heating System category (Primary Heating System only)"
+                                , "Heating System Category"
+                                # ,"Sub Category (Primary Heating System only)"
+                                , "Sub Category"
+                                ,"Sub Category2 (Primary Heating System only)"
+                                # ,"Heating System (Primary Heating System only)"
+                                , "Heating System"
+                                ,"Delayed start thermostat present?"
+                                ,"Passive flue gas heat recovery device present?"
+                                ,"Load or weather compensation?"
+                                ,"Integrated thermal store present?"
+                                ]
                 
                 headers = list(filter((None).__ne__, headers))
                 
@@ -2535,8 +2559,10 @@ def XL_2_dict_new(xl_file_path):
                         lookup[sheet.title][row[0]] = []
                     lookup[sheet.title][row[0]].append(row[4])
 
-        # print("lookup['Object Reference']", ':')
-        # pprint.pprint(lookup['Object Reference'])
+        # print("output['8. Ventilation P1']", ':')
+        # pprint.pprint(output['8. Ventilation P1'])
+        print("lookup['Object Reference']", ':')
+        pprint.pprint(lookup['Object Reference'])
                 
     except:
         output = traceback.format_exc()
@@ -2670,6 +2696,7 @@ def get_stats_data(project_id, headers = {
             }
             , xml_ref_dict = {}
             , xl_ref_dict = {}
+            , floor_type_dict = {}
             ):
     try:
         output = {}
@@ -2682,6 +2709,7 @@ def get_stats_data(project_id, headers = {
         
         
         floor_dict = {}
+        
         roof_dict = {}
         
         count_dict = {}
@@ -2713,7 +2741,7 @@ def get_stats_data(project_id, headers = {
         
         
         composite_count_objects = ['Number of Intermittent Fans', 'Number of openings', 'Number of openings Draughtproofed'] # add column(s) to Object Reference to convey this information *KSN need to be able to control this so it shouldn't be hard coded
-        intermittent_fans = ["Broken Cooker Hood", "Broken Mechanical Vent" "New Mechanical Vent" "Ducted Cooker Hood", "Existing Mechanical Vent"] # as above
+        intermittent_fans = ["Broken Cooker Hood", "Broken Mechanical Vent", "New Mechanical Vent", "Ducted Cooker Hood", "Existing Mechanical Vent"] # as above
         
         # Hatches: all in "Roofs" category, add column to indicate Not/Draughtproofed subcategory)
         # thermal envelope only (specifiy in input tables - add column that refers to "Floor Reference" tab
@@ -2725,13 +2753,19 @@ def get_stats_data(project_id, headers = {
         attic_hatches_not_draught_stripped = ["Fixed Ladder Hatch Not Draughtproofed", "Attic Hatch Not Draughtproofed", "Wall Hatch Not Draughtproofed"]
         openings = windows + doors + attic_hatches_draught_stripped + attic_hatches_not_draught_stripped # add column (should this object be considered an opening?)
         
-        count_objects = composite_count_objects + bulbs + intermittent_fans + openings # add column
+        # need to add Chimneys and Flues to count_dict
+        # these only exist as "Ventilation Types" associated with certain Heating Objects
+        # only visible in forms
+        cond_count_objects = ["Chimney", "Flue"]
+               
+        
+        count_objects = composite_count_objects + bulbs + intermittent_fans + openings + cond_count_objects # add column
         for co in count_objects:
             count_dict[co] = 0
         
         
-        # print('xml_ref_dict', ';')
-        # pprint.pprint(xml_ref_dict)
+        # print('floor_type_dict', ';')
+        # pprint.pprint(floor_type_dict)
         
         
         
@@ -2739,6 +2773,8 @@ def get_stats_data(project_id, headers = {
         
         
         for floor in JSON["data"]["project_statistics"]["floors"]:
+            floor_uid = floor["uid"]
+            floor_name = floor["name"]
             storey_height_dict[floor["uid"]] = {}
             storey_height_dict[floor["uid"]]['value'] = {}
             storey_height_dict[floor["uid"]]['value']['area'] = floor["area"]
@@ -2751,31 +2787,37 @@ def get_stats_data(project_id, headers = {
                 storey_height_dict[room["uid"]]['value']['height'] = room["height"]
                 storey_height_dict[room["uid"]]['value']['name'] = room["name"]
                 storey_height_dict[room["uid"]]['value']['volume'] = round(float(room["area"]) * float(room["height"]), 2)
+                if room["uid"] in floor_type_dict.keys():
+                    if 'value' not in floor_type_dict[room["uid"]].keys():
+                        floor_type_dict[room["uid"]]['value'] = {}
+                    floor_type_dict[room["uid"]]['value']['area'] = room["area"]
+                    floor_type_dict[room["uid"]]['value']['name'] = room["name"]
+                    floor_type_dict[room["uid"]]['value']['floor_uid'] = floor_uid
+                    floor_type_dict[room["uid"]]['value']['floor_name'] = floor_name
             
-            floor_dict[floor["uid"]] = {}
-            floor_dict[floor["uid"]]['rooms'] = []
-            floor_dict[floor["uid"]]['value'] = {}
-            for floor_stat in floor:
-                if floor_stat in ["name", "area", "perimeter", "ground_perimeter", "area_without_walls", "area_with_interior_walls_only", "area_with_walls"]:
-                    floor_dict[floor["uid"]]['value'][floor_stat] = floor[floor_stat]
+            # floor_dict[floor["uid"]] = {}
+            # floor_dict[floor["uid"]]['rooms'] = []
+            # floor_dict[floor["uid"]]['value'] = {}
+            # for floor_stat in floor:
+                # if floor_stat in ["name", "area", "perimeter", "ground_perimeter", "area_without_walls", "area_with_interior_walls_only", "area_with_walls"]:
+                    # floor_dict[floor["uid"]]['value'][floor_stat] = floor[floor_stat]
             
-            if floor["uid"] in xml_ref_dict.keys():
-                if xml_ref_dict[floor["uid"]] == '1000':
-                    # roof_dict[floor["uid"]] = floor_dict[floor["uid"]]
-                    del floor_dict[floor["uid"]]
-            # else:
-                # print('floor["uid"]')
-                # print(floor["uid"])
-                # print('not found in')
-                # print('xml_ref_dict.keys()')
-                # print(xml_ref_dict.keys())
+            
+            
+            
+            
+            
+            
+            if floor["uid"] in xml_ref_dict.keys(): # when would it not be?
+                # if xml_ref_dict[floor["uid"]] == '1000':
+                    # del floor_dict[floor["uid"]]
                 
             
             
                 
                 for room in floor["rooms"]:
-                    if floor["uid"] in floor_dict.keys():
-                        floor_dict[floor["uid"]]['rooms'].append(room["uid"])
+                    # if floor["uid"] in floor_dict.keys():
+                        # floor_dict[floor["uid"]]['rooms'].append(room["uid"])
                     if xml_ref_dict[floor["uid"]] == '1000':
                         roof_dict[room["uid"]] = {}
                         roof_dict[room["uid"]]['value'] = {}
@@ -2842,7 +2884,10 @@ def get_stats_data(project_id, headers = {
                             window_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
                             window_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
                         
-                
+        # print('floor_type_dict (post)', ';')
+        # pprint.pprint(floor_type_dict)
+        
+        
         for intermittent_fan in intermittent_fans:
             count_dict['Number of Intermittent Fans'] += count_dict[intermittent_fan]
         
@@ -2865,6 +2910,7 @@ def get_stats_data(project_id, headers = {
         output['bulb_dict'] = bulb_dict
         output['vent_dict'] = vent_dict
         output['floor_dict'] = floor_dict
+        output['floor_type_dict'] = floor_type_dict
         output['roof_dict'] = roof_dict
         output['storey_height_dict'] = storey_height_dict
 
@@ -2883,7 +2929,9 @@ def JSON_2_dict(project_id, headers = {
             , forms_data = {} # more efficient to pass it in like this than to extract it again?
             , xml_ref_dict = {}
             , xl_ref_dict = {}
-            , wall_dict={}):
+            , wall_dict={}
+            , wo={}
+            ):
     '''
     This function retrieves Forms & Statistics JSON files from MagicPlan
     Combines and filters the data to return json_dict:
@@ -2895,47 +2943,53 @@ def JSON_2_dict(project_id, headers = {
         
         # json_dict: need to combine "forms_full_dict" and statistics (statistics_full_dict?)
         
+        # **************** GET FORMS DATA **************** 
         if forms_data == {}:
             forms_data = get_forms_data(project_id)
         
-        # print('len(forms_data)', ':', len(forms_data))
-        # for i, d in enumerate(forms_data):
-            # print('d', str(i), ':', d)
-        # pprint.pprint(forms_data)
+        
+        # print('forms_data["heating_dict"]', ':')
+        # pprint.pprint(forms_data["heating_dict"])
+        
+        
         form_val_dict = forms_data['form_val_dict']
         forms_full_dict = forms_data['forms_full_dict']
         forms_uid_dict = forms_data['forms_uid_dict']
         
-        window_detail_dict = forms_data['window_detail_dict']
-        # wall_type_vals_dict = forms_data['wall_type_vals_dict']
-        wall_type_dict = forms_data['wall_type_dict']
-        # missing_vals = forms_data['missing_vals']
-        
-        # json_dict = forms_full_dict
         json_dict = form_val_dict
-        
-        # print('json_dict', ':')
-        # pprint.pprint(json_dict)
-        
-        
         json_uid_dict = forms_uid_dict
         
+        window_detail_dict = forms_data['window_detail_dict']
+        wall_type_dict = forms_data['wall_type_dict']
+        floor_type_dict = forms_data['floor_type_dict']
+        
+        
+        # **************** GET STATS DATA **************** 
         
         stats_data = get_stats_data(project_id
                                 , xml_ref_dict=xml_ref_dict # real floors/excluded rooms
                                 , xl_ref_dict=xl_ref_dict
+                                , floor_type_dict = floor_type_dict
                                 )
         
         if isinstance(stats_data, str):
             print('error?', ':', stats_data)
+        if not isinstance(stats_data, dict):
+            raise Exception(stats_data)
         
-        if 'count_dict' in stats_data.keys():
+        
+        
+        # Need the areas of the rooms
+        
+        
+        if 'count_dict' in stats_data.keys(): # why wouldn't it be? Don't like this reliance on this condition
             count_dict = stats_data['count_dict']
+            # print('count_dict', ':')
             # pprint.pprint(count_dict)
             # add counts to json_dict as strings (top-level key:value pairs - should this be happening here or is it more suited to return the table as-is and then do the output prep all together? what about multi-col tables? any counts in those? if so, will this approach work?):
             for key in count_dict.keys():
                 json_dict[key] = str(count_dict[key])
-
+        
             # where should we exclude floors/ex-thermal envelope?
             for object_uid in json_uid_dict:
                 if 'Ventilation Type' in json_uid_dict[object_uid].keys():
@@ -2943,27 +2997,73 @@ def JSON_2_dict(project_id, headers = {
                     if json_uid_dict[object_uid]['Ventilation Type'] in count_dict.keys():
                         count_dict[json_uid_dict[object_uid]['Ventilation Type']] += 1
         
+        
         # adding these like this for now, might change depending on what is most convenient later:
         json_dict["bulb_dict"] = stats_data["bulb_dict"]
         json_dict["vent_dict"] = stats_data["vent_dict"]
-        
-        json_dict["door_dict"] = stats_data["door_dict"]
-        json_dict["window_dict"] = stats_data["window_dict"]
-        json_dict["roof_dict"] = stats_data["roof_dict"]
-        json_dict["floor_dict"] = stats_data["floor_dict"]
         json_dict["storey_height_dict"] = stats_data["storey_height_dict"]
         
         
+        
+        
+        
+        
+        
         # Now need to go through Forms adding fields to our object dicts by uid
-        # json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
+        json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
         
         json_dict["door_dict"] = stats_append(stats_data["door_dict"], forms_uid_dict) 
         json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # forms_append?
         json_dict["roof_dict"] =  stats_append(stats_data["roof_dict"], forms_uid_dict) 
         json_dict["floor_dict"] = floor_stats_append(stats_data["floor_dict"], forms_uid_dict) 
         
+        
+        
+        # ************** WINDOW ORIENTATION ***************
+        
+        for window in json_dict['window_dict']:
+            if window in wo.keys():
+                json_dict['window_dict'][window]['value']['cardinal_direction'] = wo[window]
+        
+        
+        
+        json_dict["heating_dict"] = {}
+        for ft in forms_data['heating_dict']:
+            if ft not in json_dict["heating_dict"].keys():
+                json_dict["heating_dict"][ft] = {}
+            json_dict["heating_dict"][ft]['value'] = forms_data['heating_dict'][ft]
+        
+        print('json_dict["heating_dict"]', ':')
+        pprint.pprint(json_dict["heating_dict"])
+        
+        
+        
+        json_dict["floor_type_dict"] = {}
+        for ft in forms_data['floor_type_dict']:
+            if ft not in json_dict["floor_type_dict"].keys():
+                json_dict["floor_type_dict"][ft] = {}
+            json_dict["floor_type_dict"][ft]['value'] = forms_data['floor_type_dict'][ft]
+        
+        
+        
+        for ft in stats_data['floor_type_dict']:
+            if 'value' in stats_data['floor_type_dict'][ft].keys():
+                if ft not in json_dict["floor_type_dict"].keys():
+                    json_dict["floor_type_dict"][ft] = {}
+                for v in stats_data['floor_type_dict'][ft]['value']:
+                    json_dict["floor_type_dict"][ft]['value'][v] = stats_data['floor_type_dict'][ft]['value'][v]
+                    
+        
+        
+        
+        
+        
         json_dict["door_dict"] = door_forms_append(json_dict["door_dict"], forms_uid_dict)
         json_dict["window_dict"] = window_forms_append(json_dict["window_dict"], forms_uid_dict, window_detail_dict)
+        
+        # print('json_dict["window_dict"]', ':')
+        # pprint.pprint(json_dict["window_dict"])
+        
         
         json_dict['window_summary_dict'] = window_summary(json_dict["window_dict"])
         json_dict['door_summary_dict'] = door_summary(json_dict["door_dict"])
@@ -2973,74 +3073,16 @@ def JSON_2_dict(project_id, headers = {
         
         
         
-        
+        print('about to condense floor_dict')
         json_dict["floor_dict"] = condense(json_dict["floor_dict"], json_dict)
         
+        print('about to condense floor_type_dict')
+        json_dict["floor_dict"] = condense(json_dict["floor_type_dict"], json_dict)
         
+        print('about to condense roof_dict')
         json_dict["roof_dict"] = condense(json_dict["roof_dict"], json_dict)
         
-        
-        # print('json_dict["roof_dict"]', ':')
-        # pprint.pprint(json_dict["roof_dict"])
-        
-        # roof_dict = json_dict["roof_dict"].copy()
-        # for rt in json_dict["roof_dict"]:
-            # roof_dict[rt]['value'] = {} # why did we have to do this with wall_type_dict below?
-            # roof_dict[rt]['value_condensed'] = {}
-            # for x in roof_dict[rt]['value']:
-                # print('x', ':', x)
-                    
-                # if 'BER Roof Type' in x:
-                    # roof_dict[rt]['value_condensed']['roof type'] = roof_dict[rt]['value'][x]
-                # if 'description' in x:
-                    # roof_dict[rt]['value_condensed']['description'] = roof_dict[rt]['value'][x]
-                # if '(degrees)' in x:
-                    # roof_dict[rt]['value_condensed']['roof pitch (degrees)'] = roof_dict[rt]['value'][x]
-                # if 'age band match' in x:
-                    # roof_dict[rt]['value_condensed']['dwelling age band?'] = roof_dict[rt]['value'][x] # True or False
-                    # if roof_dict[rt]['value'][x] == True:
-                        # roof_dict[rt]['value_condensed']['age band'] = json_dict['Age: Dwelling']['value']
-                    
-                
-                # if x == 'Roof Age Band': # only ever appears if above is False
-                    # if roof_dict[rt]['value'][x] in json_dict.keys(): # e.g. "Age: Extension 1"
-                        # roof_dict[rt]['value_condensed']['age band'] = json_dict[roof_dict[rt]['value'][x]]['value']
-                    # else:
-                        # roof_dict[rt]['value_condensed']['age band'] = roof_dict[rt]['value'][x]
-                    
-                # if 'U-value calculation required?' in x:
-                    # roof_dict[rt]['value_condensed']['U-value calculation required?'] = roof_dict[rt]['value'][x]
-                # if 'Bespoke calculation U-Value [W' in x:
-                    # roof_dict[rt]['value_condensed']['calculated U-value'] = roof_dict[rt]['value'][x]
-                # if 'thickness known?' in x:
-                    # roof_dict[rt]['value_condensed']['insulation thickness known?'] = roof_dict[rt]['value'][x]
-                # if 'insulation thickness (mm)' in x:
-                    # roof_dict[rt]['value_condensed']['insulation thickness (mm)'] = roof_dict[rt]['value'][x]
-                # if 'hermal conductivity (W' in x:
-                    # roof_dict[rt]['value_condensed']['thermal conductivity'] = roof_dict[rt]['value'][x]
-                # if 'roof U-value (W/' in x:
-                    # roof_dict[rt]['value_condensed']['U-value (W/m2K)'] = roof_dict[rt]['value'][x]
-
-                # if x == 'area':
-                    # roof_dict[rt]['value_condensed']['area (m2)'] = roof_dict[rt]['value'][x]
-                # if x == 'name':
-                    # roof_dict[rt]['value_condensed']['name'] = roof_dict[rt]['value'][x]
-            
-            
-            
-            
-            
-            # roof_dict[rt]['value'] = roof_dict[rt]['value_condensed']
-        # print('roof_dict', ':')
-        # pprint.pprint(roof_dict)
-        # json_dict["roof_dict"] = roof_dict
-        
-        
-        
-        
-        
-        
-        
+        # below is the third condensation operation, still separate as it is slightly different to the first two
         for w in wall_type_dict:
             wall_type_dict[w]['value'] = {}
             for x in wall_type_dict[w]:
@@ -3056,9 +3098,11 @@ def JSON_2_dict(project_id, headers = {
                     
                 if 'age band match' in x: 
                     wall_type_dict[w]['value']['dwelling age band?'] = wall_type_dict[w][x]
+                    if wall_type_dict[w][x] == True:
+                        wall_type_dict[w]['value']['age band'] = json_dict['Age: Dwelling']['value']
 
                 if x == 'Wall Age Band': 
-                    wall_type_dict[w]['value']['age band'] = wall_type_dict[w][x]
+                    wall_type_dict[w]['value']['age band'] = json_dict[wall_type_dict[w][x]]['value']
                 
                 if 'Wall Insulation' in x: 
                     wall_type_dict[w]['value']['insulation'] = wall_type_dict[w][x]
@@ -3071,9 +3115,6 @@ def JSON_2_dict(project_id, headers = {
                 
                 if 'U-value (W/m' in x: 
                     wall_type_dict[w]['value']['U-value'] = wall_type_dict[w][x]
-                
-                # if 'Other Wall Type U-value' in x: 
-                    # wall_type_dict[w]['value']['other U-value'] = wall_type_dict[w][x]
                 
                 if 'U-value be substantiated?' in x: 
                     wall_type_dict[w]['value']['can u-value be substantiated?'] = wall_type_dict[w][x]
@@ -3090,13 +3131,26 @@ def JSON_2_dict(project_id, headers = {
         
         
         
+        
+        
+        for wt in wall_type_dict:
+            if 'Semi' not in wt:
+                for header in wall_type_dict[wt].keys():
+                    wall_type_dict[wt + ' - Semi-Exposed'][header] = wall_type_dict[wt][header]
+        
+        
         # print('wall_type_dict', ':')
         # pprint.pprint(wall_type_dict)
         
+        
+        
+        
         json_dict['wall_type_dict'] = wall_type_dict
+        json_dict['count_dict'] = count_dict
         
         
-        
+        # print('json_dict["count_dict"]', ':')
+        # pprint.pprint(json_dict['count_dict'])
         
         
         
@@ -3111,8 +3165,10 @@ def JSON_2_dict(project_id, headers = {
 
 def condense(old_dict, json_dict):
     try:
-        print('old_dict', ':')
-        pprint.pprint(old_dict)
+        # print('json_dict', ':')
+        # pprint.pprint(json_dict)
+        # print('old_dict', ':')
+        # pprint.pprint(old_dict)
         
         new_dict = old_dict.copy() # is this still necessary?
         for e in old_dict:
@@ -3123,7 +3179,7 @@ def condense(old_dict, json_dict):
             
             
             for x in new_dict[e]['value']:
-                print('x', ':', x)
+                # print('x', ':', x)
                 
                 if x == 'area':
                     new_dict[e]['value_condensed']['area (m2)'] = new_dict[e]['value'][x]
@@ -3135,7 +3191,7 @@ def condense(old_dict, json_dict):
                 # is this floor being used ... DEAP? - probably not the right place to apply this filter
                 
                 if x == 'Floor Age Band': # year range?
-                    new_dict[e]['value_condensed']['age band'] = new_dict[e]['value'][x]
+                    new_dict[e]['value_condensed']['age band'] = json_dict[new_dict[e]['value'][x]]['value']
                 
                 if x == 'Is there underfloor heating?':
                     new_dict[e]['value_condensed']['underfloor heating?'] = new_dict[e]['value'][x]
@@ -3190,8 +3246,8 @@ def condense(old_dict, json_dict):
             new_dict[e]['value'] = new_dict[e]['value_condensed']
         
         
-        print('new_dict', ':')
-        pprint.pprint(new_dict)
+        # print('new_dict', ':')
+        # pprint.pprint(new_dict)
         
         old_dict = new_dict
         output = new_dict
@@ -3292,6 +3348,9 @@ def door_summary(door_dict):
 def window_summary(window_dict):
     try:
         
+        # print('window_dict', ':')
+        # pprint.pprint(window_dict)
+        
         window_summary_dict = {}
         for window in window_dict:
             
@@ -3312,7 +3371,9 @@ def window_summary(window_dict):
                 if keypart in window_dict[window]['value'].keys():
                     window_summary_dict[key]['value'][keypart] = window_dict[window]['value'][keypart] 
             
-            
+            # if 'cardinal_direction' not in window_summary_dict[key]['value'].keys():
+                # print(window_summary_dict[key]['value'])
+            # window_summary_dict[key]['value']['Orientation'] = window_summary_dict[key]['value']['cardinal_direction']
             
             window_summary_dict[key]['value']['Area [m2]'] += window_dict[window]['value']['Area [m2]']
             window_summary_dict[key]['value']['Area [m2]'] = round(window_summary_dict[key]['value']['Area [m2]'], 2)
@@ -3332,6 +3393,9 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
     
     try:
         
+        # print('object_dict', ':')
+        # pprint.pprint(object_dict)
+        
         for window in object_dict:
             object_dict[window]['value']['Room'] = object_dict[window]['value']['room_name']
             object_dict[window]['value']['Window height (m)'] = object_dict[window]['value']['height']
@@ -3344,8 +3408,10 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
             
             
             object_dict[window]['value']['Type'] = 'Window Type 1'
-            if 'Is the Window Type 1?' in object_dict[window].keys():
+            # print(window, ' is not Type 1')
+            if 'Is the Window Type 1?' in object_dict[window]['value'].keys():
                 if object_dict[window]['value']['Is the Window Type 1?'] == False:
+                    # print(window, ' is not Type 1')
                     object_dict[window]['value']['Type'] = object_dict[window]['value']['Other Window Type']
             
             
@@ -3384,6 +3450,12 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
 def door_forms_append(object_dict, forms_uid_dict): # shouldn't any part of the below that involves uid_dict be already covered by stats_append()?
     
     try:
+        object_dict_2 = object_dict.copy()
+        for door in object_dict:
+            if object_dict[door]['value']["Is this door considered a heat loss door as per BER methodology?"] == False:
+                del object_dict_2[door]
+        object_dict = object_dict_2
+            
         for door in object_dict:
             object_dict[door]['value']['Room'] = object_dict[door]['value']['room_name']
             object_dict[door]['value']['Door height (m)'] = object_dict[door]['value']['height']
@@ -3475,12 +3547,15 @@ def XML_2_dict_new(root, t = "floor"):
         
         
         MagicPlan_2_SEAI_dict = {
-            "date": "survey_date"
+            "author": "Surveyor"
+            , "date": "survey_date"
+            , "notes": "project_notes"
             , "qf.34d66ce4q3": "rating_type"
             , "qf.34d66ce4q4": "rating_purpose"
-            , "author": "Surveyor"
-            , "notes": "project_notes"
-            # , "statistics.areaOfHeight": "storey_height"
+            # , "qf.34d66ce4q6": "age_dwelling"
+            # , "qf.34d66ce4q7": "age_extension_1"
+            # , "qf.57124e1fq101": "age_dwelling_ALT"
+            # , "qf.57124e1fq102": "age_extension_1_ALT"
             }
         # note MagicPlan also has a separate "Surveyor" field ("qf.34d66ce4q1") but "author" is the one used for SEAI survey purposes
         # ToDo: confirm if also the case for BER
@@ -3541,6 +3616,7 @@ def XML_2_dict_new(root, t = "floor"):
                     , 'windowtskylight2'
                     , 'windowtskylight3'
                     , 'compass'
+                    , '634004d284d12@edit:775a214c-7656-4548-ab5d-2c490583a32b' # cloned from compass
                     ]
         
         xml_ref_dict['habitable_rooms'] = []
@@ -3637,19 +3713,6 @@ def XML_2_dict_new(root, t = "floor"):
                                 , 'Unfinished Basement'
                                 , 'Workshop'
                                 ]
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         
         
@@ -4015,7 +4078,9 @@ def XML_2_dict_new(root, t = "floor"):
             
             offset = 0
             for window in o:
-                if o[window]['symbol'] == 'compass':
+                if o[window]['symbol'] in ['compass', '634004d284d12@edit:775a214c-7656-4548-ab5d-2c490583a32b']:
+                    # print("o[window]", ':')
+                    # pprint.pprint(o[window])
                     offset = float(o[window]['angle'])
             pi = 3.14159
             
@@ -4062,30 +4127,6 @@ def XML_2_dict_new(root, t = "floor"):
                 o[window]['cardinal_direction'] = cardinal_directions[o[window]['cardinal_index']]
                 
                 wo[o[window]['uid']] = o[window]['cardinal_direction']
-            
-            # print('o', ':')
-            # pprint.pprint(o)
-                    
-
-        
-        # wall_dict = {}
-        # for floor in nwa_dict:
-            # for room in nwa_dict[floor]:
-                # for wall in nwa_dict[floor][room]:
-                    # wall_dict[wall] = {}
-                    # wall_dict[wall]['value'] = {}
-        
-        # print('wall_dict', ':')
-        # pprint.pprint(wall_dict)
-        
-        # print('est_dict', ':')
-        # pprint.pprint(est_dict)
-        
-        # print('storey_height_dict', ':')
-        # pprint.pprint(storey_height_dict)
-        
-        # for item in est_dict:
-            
         
         
         
@@ -4114,6 +4155,9 @@ def get_forms_data(id, headers = {
         missing_vals = {}
         window_detail_dict = {}
         wall_type_dict = {}
+        floor_type_dict = {} # pick up floor details from every room - then group based on [age band, ...]
+        heating_dict = {}
+        
         # wall_type_vals_dict = {}
 
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + id
@@ -4134,41 +4178,49 @@ def get_forms_data(id, headers = {
             for form in datum["forms"]:
                 for section in form["sections"]:
                     
-                    if form["title"] == "BER Walls": # BER only (need section["name"] - alternative is to reconstruct later)
+                    if form["title"] == "BER Walls": # BER only
                         if section["name"] == "":
                             continue
                         wall_type_dict[section["name"]] = {}
-                        
+                        wall_type_dict[section["name"] + ' - Semi-Exposed'] = {}
+                    
+                    if form["title"] == "BER Floor Details": # BER only
+                        # if section["name"] == "":
+                            # continue
+                        floor_type_dict[datum["symbol_instance_id"]] = {}
+                    
+                    if form["title"] == "BER Space Heating": # BER only
+                        if datum["symbol_instance_id"] not in heating_dict:
+                            heating_dict[datum["symbol_instance_id"]] = {}
+                            heating_dict[datum["symbol_instance_id"]]['Object Name'] = datum["symbol_name"]
+                        # print('Object Name', ':', datum["symbol_name"])
                     
                     for field in section["fields"]:
                         im = field["label"].replace(' *', '')
                         im = im.replace('*', '')
                         v = ''
-                        # if field["type_as_string"] == "list":
                         if field["value"]["value"] == None:
                             vals = []
-                            # print("type_as_string", ':', field["type_as_string"])
                             vals = [val["value"] for val in field["value"]["values"]]
                             for val in vals:
                                 v += val
                                 v += '<BR>'
-                            # print(v)
                         else:
                             v = field["value"]["value"]
                         
                         if im not in form_val_dict.keys():
                             form_val_dict[im] = {}
-                        # form_val_dict[im] = v
-                        # key = datum["symbol_name"] + " (" + datum["symbol_instance_id"] + ")"
                         key = 'value'
                         if key not in form_val_dict[im].keys():
-                            # form_val_dict[im][datum["symbol_instance_id"]] = {}
                             form_val_dict[im][key] = v
                         
-
-                            
                         forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][im] = v
                         forms_uid_dict[datum["symbol_instance_id"]][im] = v
+                        
+                        # if form["title"] == "BER Space Heating":
+                            # print(im, ':', v)
+                        
+                        
                         
                         if field["is_required"] == True and field["value"]["has_value"] == False:
                             missing_vals[datum["symbol_name"]] = im
@@ -4179,10 +4231,21 @@ def get_forms_data(id, headers = {
                             window_detail_dict[im] = v
                         if form["title"] == "BER Walls":
                             wall_type_dict[section["name"]][im] = v
+                        if form["title"] == "BER Floor Details":
+                            floor_type_dict[datum["symbol_instance_id"]][im] = v
+                        if form["title"] == "BER Space Heating":
+                            heating_dict[datum["symbol_instance_id"]][im] = v
+                
+                        if datum["symbol_instance_id"] == '65e0b636.65c3ebff':
+                            print('heating_dict[datum["symbol_instance_id"]]', ':')
+                            pprint.pprint(heating_dict[datum["symbol_instance_id"]])
+            
+            
                             
-                            
-        # print('wall_type_vals_dict', ':')
-        # pprint.pprint(wall_type_vals_dict)
+        # print('floor_type_dict', ':')
+        # pprint.pprint(floor_type_dict)
+        print('heating_dict', ':')
+        pprint.pprint(heating_dict)
         
         
         
@@ -4194,6 +4257,8 @@ def get_forms_data(id, headers = {
         output['missing_vals'] = missing_vals
         # output['wall_type_vals_dict'] = wall_type_vals_dict
         output['wall_type_dict'] = wall_type_dict
+        output['floor_type_dict'] = floor_type_dict
+        output['heating_dict'] = heating_dict
     
     except:
         output = traceback.format_exc()
@@ -4257,10 +4322,6 @@ def distributor_function(form, root = ''):
         print('project_id', ':', project_id)
         
         forms_data = get_forms_data(project_id)
-        # print('len(forms_data)', ':', len(forms_data))
-        # for i, d in enumerate(forms_data):
-            # print('d', str(i), ':', d)
-        # pprint.pprint(forms_data)
         if isinstance(forms_data, dict):
             if 'form_val_dict' in forms_data.keys():
                 form_val_dict = forms_data['form_val_dict']
@@ -4386,24 +4447,17 @@ def BER(root, output = '', email = '', forms_data = {}):
         est_dict = xml_dict[5]
         storey_height_dict = xml_dict[6]
         
-        
-        
-        # print('est_dict', ':')
-        # pprint.pprint(est_dict)
-        # print('xml_val_dict', ':')
-        # pprint.pprint(xml_val_dict)
-        # print('colours_dict', ':')
-        # pprint.pprint(colours_dict)
-        
-        # print('storey_height_dict', ':')
-        # pprint.pprint(storey_height_dict)
-        
         wall_dict = {}
         for floor in nwa_dict:
             for room in nwa_dict[floor]:
                 for wall in nwa_dict[floor][room]:
                     wall_dict[wall] = {}
                     wall_dict[wall]['value'] = {}
+                    # print(list(nwa_dict[floor][room][wall].keys()))
+                    wall_dict[wall]['value']['total_area'] = nwa_dict[floor][room][wall]['net_a']
+        
+        # print('est_dict', ':')
+        # pprint.pprint(est_dict)        
         
         for item in est_dict:
             if item in wall_dict.keys():
@@ -4424,6 +4478,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(lookup_dict)
         if not isinstance(output_dict, dict):
             print('not a dict:', output_dict)
+            raise Exception(output_dict)
         
         
         
@@ -4436,31 +4491,87 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 , xml_ref_dict=xml_ref_dict
                                 , xl_ref_dict=lookup_dict['Object Reference']
                                 , wall_dict=wall_dict # from xml
+                                , wo=wo
                                 ) # does this need to be project-specific?
         # print('json_dict', ':')
         # pprint.pprint(json_dict)
         if not isinstance(json_dict, dict):
             raise Exception(json_dict)
         
+        
+        
         # We now have all the info we need to create certain floor/roof/window/door dicts...
         # actually they are already included in json_dict
         # add them later to the output dict after we've created it from the INPUT TEMPLATE FILE
+        # print('json_dict["count_dict"]', ':')
+        # pprint.pprint(json_dict['count_dict'])
+        
+        
+        
+        
+        
+        
+        
+        
+        # print('json_dict["wall_type_dict"]', ':')
+        # pprint.pprint(json_dict['wall_type_dict'])
+        
         
         
         # ************** WALLS: ADD XML DATA TO JSON ***************
         
+        est_dict2 = est_dict.copy()
+        for wall_type in est_dict.keys():
+            if 'Semi exposed' in wall_type:
+                est_dict2[wall_type.replace('Semi exposed', 'Semi-Exposed')] = est_dict[wall_type]
+        est_dict = est_dict2
+        
+        
+        
+        # print('est_dict', ':')
+        # pprint.pprint(est_dict)
+        # print("json_dict['wall_type_dict']", ':')
+        # pprint.pprint(json_dict['wall_type_dict'])
+        
+        total_surface_dict = {}
         for wall_type in json_dict['wall_type_dict']:
-            if wall_type in json_dict['wall_type_dict'].keys() and wall_type in est_dict.keys():
-                json_dict['wall_type_dict'][wall_type]['value']['total_surface'] = est_dict[wall_type]['total_surface']
+            if wall_type in est_dict.keys():
+                total_surface = est_dict[wall_type]['total_surface']
+                # print('total_surface for ', wall_type, ' is ', str(total_surface))
+                # json_dict['wall_type_dict'][wall_type]['value']['total_surface'] = total_surface
+                total_surface_dict[wall_type] = total_surface
+                json_dict['wall_type_dict'][wall_type]['value']['floor_type'] = est_dict[wall_type]['floor_type']
+            
+            
+        # print("total_surface_dict", ':')
+        # pprint.pprint(total_surface_dict)
+        
+        wall_type_dict = json_dict['wall_type_dict']
+        
+        # for ts in total_surface_dict:
+            # wall_type_dict[ts]['value']['total_surface'] = total_surface_dict[ts]
+            # print('setting ', ts, ' to ', str(total_surface_dict[ts]))
+        wall_type_dict = wall_total_surface(total_surface_dict, wall_type_dict)
+        
+        # print("wall_type_dict", ':')
+        # pprint.pprint(wall_type_dict)
+        
+        json_dict['wall_type_dict'] = wall_type_dict
+        
+        # print("json_dict['wall_type_dict']", ':')
+        # pprint.pprint(json_dict['wall_type_dict'])
         
         
         
         
-        # ************** ORIENTATION ***************
         
-        for window in json_dict['window_dict']:
-            if window in wo.keys():
-                json_dict['window_dict'][window]['value']['cardinal_direction'] = wo[window]
+        
+        
+        
+        
+        
+        
+
         
         # *****************************
         print('************** PROJECT FILES ***************')
@@ -4472,39 +4583,49 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # *****************************
         
-        count_dict = {} # use a different name
+        print('************** THERMAL MASS CALC ***************')
+        tm_count_dict = {}
         
         if '7. Thermal Mass P1' in output_dict.keys():
-            count_dict['Number of Light Elements'] = 0
-            count_dict['Number of Medium Elements'] = 0
-            count_dict['Number of Heavy Elements'] = 0
+            tm_count_dict['Number of Light Elements'] = 0
+            tm_count_dict['Number of Medium Elements'] = 0
+            tm_count_dict['Number of Heavy Elements'] = 0
             
+            masses = []
             for mass_cat in ['Ground Floor Mass', 'External Wall Mass', 'Separating Wall Mass', 'Internal Partition Mass']:
                 if mass_cat in json_dict.keys():
-                    
+                    masses.append(json_dict[mass_cat])
+                # else:
+                    # print(mass_cat + ' not in json_dict.keys()')
+                    # print(list(json_dict.keys()))
             
-                    masses = [json_dict['Ground Floor Mass'], json_dict['External Wall Mass'], json_dict['Separating Wall Mass'], json_dict['Internal Partition Mass']]
-                    
-                    for m in masses:
-                        # print(m)
-                        # print('masses[m]', ':', masses[m])
-                        for n in m:
-                            # print(n)
-                            val = m[n]
-                        field = f'Number of {val} Elements'
-                        count_dict[field] += 1
-                    
-                    count_dict['lmh'] = str(count_dict['Number of Light Elements']) + str(count_dict['Number of Medium Elements']) + str(count_dict['Number of Heavy Elements'])
-                    
-                    if count_dict['lmh'] in lookup_dict['7.1 Referance Table'].keys():
-                        count_dict['Overall Thermal Mass Category'] = lookup_dict['7.1 Referance Table'][count_dict['lmh']]['field_req']
-                    else:
-                        count_dict['Overall Thermal Mass Category'] = 'not found (' + str(count_dict['lmh']) + ')'
+            # print('masses', ':', masses)
+            for m in masses:
+                # print(m)
+                # print('masses[m]', ':', masses[m])
+                for n in m:
+                    # print(n)
+                    val = m[n]
+                field = f'Number of {val} Elements'
+                tm_count_dict[field] += 1
+            
+            tm_count_dict['lmh'] = str(tm_count_dict['Number of Light Elements']) + str(tm_count_dict['Number of Medium Elements']) + str(tm_count_dict['Number of Heavy Elements'])
+            
+            if tm_count_dict['lmh'] in lookup_dict['7.1 Referance Table'].keys():
+                tm_count_dict['Overall Thermal Mass Category'] = lookup_dict['7.1 Referance Table'][tm_count_dict['lmh']]['field_req']
+            else:
+                tm_count_dict['Overall Thermal Mass Category'] = 'not found (' + str(tm_count_dict['lmh']) + ')'
+        # print('tm_count_dict', ':')
+        # pprint.pprint(tm_count_dict)
         
-        # pprint.pprint(count_dict)
+        for e in tm_count_dict:
+            json_dict[e] = str(tm_count_dict[e])
+            # print(e, ':', json_dict[e])
+        
+        # print('output_dict["7. Thermal Mass P1"]', ':')
+        # pprint.pprint(output_dict["7. Thermal Mass P1"])
         
         # *****************************
-        
         # print('storey_height_dict', ':')
         # pprint.pprint(storey_height_dict)
         # print("json_dict['storey_height_dict']", ':')
@@ -4527,6 +4648,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print("'output_dict'", ':')
         # pprint.pprint(output_dict)
         
+        print('************** POPULATING OUTPUT DICT ***************')
         
         for door_group in json_dict['door_summary_dict']:
             output_dict['5.4 Door Summary Table'][door_group] = json_dict['door_summary_dict'][door_group]
@@ -4546,30 +4668,26 @@ def BER(root, output = '', email = '', forms_data = {}):
         for vent in json_dict['vent_dict']:
             output_dict['8.1 Ventilation Items'][vent] = json_dict['vent_dict'][vent]
         
-        for floor in json_dict['floor_dict']:
-            output_dict['2.3 Floor Schedule Table'][floor] = json_dict['floor_dict'][floor]
+        # for floor in json_dict['floor_dict']:
+            # output_dict['2.3 Floor Schedule Table'][floor] = json_dict['floor_dict'][floor]
+        
+        # print("json_dict['floor_type_dict']", ':')
+        # pprint.pprint(json_dict['floor_type_dict'])
+        
+        for floor_type in json_dict['floor_type_dict']:
+            output_dict['2.3 Floor Schedule Table'][floor_type] = json_dict['floor_type_dict'][floor_type]
         
         for roof in json_dict['roof_dict']:
             output_dict['3.4 Roof Type Schedule Table'][roof] = json_dict['roof_dict'][roof]
         
-        
-        
-        
-        
-        
-        # for wall in json_dict['wall_dict']:
-            # output_dict['4.1 Wall Schedule Table'][wall] = json_dict['wall_dict'][wall]
-        
         for wall_type in json_dict['wall_type_dict']:
             output_dict['4.3 Wall Summary Table'][wall_type] = json_dict['wall_type_dict'][wall_type]
         
-        
-        
-        
-        
-        
         for colour in colours_dict:
             output_dict['6. Colour Area Table P1'][colour] = colours_dict[colour]
+        
+        for h in json_dict['heating_dict']:
+            output_dict['9.3 Space Heating Category'][h] = json_dict['heating_dict'][h]
         
         json_dict['storey_height_dict']['floors'] = {}
         json_dict['storey_height_dict']['rooms'] = {}
@@ -4669,33 +4787,18 @@ def BER(root, output = '', email = '', forms_data = {}):
             output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'][e] = json_dict['storey_height_dict']['rooms'][e]
         
         
+        if 'Chimney' in json_dict['count_dict'].keys():
+            json_dict['count_dict']['Number of Chimneys'] = json_dict['count_dict']['Chimney']
+        if 'Flue' in json_dict['count_dict'].keys():
+            json_dict['count_dict']['Number of Flues'] = json_dict['count_dict']['Flue']
+        if 'Attic Hatch Draughtproofed' in json_dict['count_dict'].keys():
+            json_dict['count_dict']['Attic Hatches Draught stripped'] = json_dict['count_dict']['Attic Hatch Draughtproofed']
+        if 'Attic Hatch Not Draughtproofed' in json_dict['count_dict'].keys():
+            json_dict['count_dict']['Attic Hatches Not Draught stripped'] = json_dict['count_dict']['Attic Hatch Not Draughtproofed']
         
         
-        
-        
-        
-        # print('len output floors', ':', len(output_dict['2 Building Average Storey (Floors)']))
-        # for x in output_dict['2 Building Average Storey (Floors)']:
-            # print(x)
-            # if isinstance(x, dict):
-                # if 'value' in output_dict['2 Building Average Storey (Floors)'][x].keys():
-                    # if 'room_type' in output_dict['2 Building Average Storey (Floors)'][x]['value'].keys():
-                        # del output_dict['2 Building Average Storey (Floors)'][x]
-            
-        # for x in output_dict['2 Building Average Storey (Rooms)']:
-            # if isinstance(x, dict):
-                # if 'value' in output_dict['2 Building Average Storey (Rooms)'][x].keys():
-                    # if 'room_type' not in output_dict['2 Building Average Storey (Rooms)'][x]['value'].keys():
-                        # del output_dict['2 Building Average Storey (Rooms)'][x]
-        
-        # print("output_dict['2 Building Average Storey (Floors)']", ':')
-        # pprint.pprint(output_dict['2 Building Average Storey (Floors)'])
-        
-        # print("output_dict['2 Building Average Storey (Rooms)']", ':')
-        # pprint.pprint(output_dict['2 Building Average Storey (Rooms)'])
-        
-        # print("output_dict['11.1 Lighting Schedule']", ':')
-        # pprint.pprint(output_dict['11.1 Lighting Schedule'])
+        # print("json_dict['count_dict']", ':')
+        # pprint.pprint(json_dict['count_dict'])
         
         
         
@@ -4707,9 +4810,14 @@ def BER(root, output = '', email = '', forms_data = {}):
             # pprint.pprint(output_dict[sheet_name])
             # for record in output_dict[sheet_name]:
             for field in output_dict[sheet_name]:
+                # if sheet_name == "7. Thermal Mass P1":
+                    # print('field_req', ':', field_req)
                 if not isinstance(output_dict[sheet_name][field], dict):
                     continue
                 if 'field_req' not in output_dict[sheet_name][field].keys():
+                    # if sheet_name == "7. Thermal Mass P1":
+                        # print('field_req', 'not found in output_dict[sheet_name][field].keys()')
+                        # print(list(output_dict[sheet_name][field].keys()))
                     continue
                 field_req = output_dict[sheet_name][field]['field_req']
                 
@@ -4728,9 +4836,9 @@ def BER(root, output = '', email = '', forms_data = {}):
                     
                     output_dict[sheet_name][field]['value'] = str(lookup_dict[lu[1]][eval(lu[2])]['field_req'])
                 
-                # this is currently referred to as count_dict...
-                elif field_req in count_dict.keys():
-                    output_dict[sheet_name][field]['value'] = str(count_dict[field_req])
+                
+                elif field_req in json_dict['count_dict'].keys():
+                    output_dict[sheet_name][field]['value'] = str(json_dict['count_dict'][field_req])
                 
                 # logic is uncharted
                 else:
@@ -4783,7 +4891,10 @@ def BER(root, output = '', email = '', forms_data = {}):
     
     return output
 
-
+def wall_total_surface(total_surface_dict, wall_type_dict):
+    for ts in total_surface_dict:
+        wall_type_dict[ts]['value']['total_surface'] = total_surface_dict[ts]
+    return wall_type_dict
 
 
 def create_table_new(data_dict
