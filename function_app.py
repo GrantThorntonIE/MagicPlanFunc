@@ -2381,7 +2381,7 @@ def XL_2_dict_new(xl_file_path):
         multicol_tables = [ # use different name for these?
                             '2 Building Average Storey'
                             , '2 Building Average Storey (Floors)'
-                            , '2 Building Average Storey (Rooms)'
+                            # , '2 Building Average Storey (Rooms)'
                             , '2.3 Floor Schedule Table'
                             , '3.4 Roof Type Schedule Table'
                             # , '4.1 Wall Schedule Table'
@@ -2561,8 +2561,8 @@ def XL_2_dict_new(xl_file_path):
 
         # print("output['8. Ventilation P1']", ':')
         # pprint.pprint(output['8. Ventilation P1'])
-        print("lookup['Object Reference']", ':')
-        pprint.pprint(lookup['Object Reference'])
+        # print("lookup['Object Reference']", ':')
+        # pprint.pprint(lookup['Object Reference'])
                 
     except:
         output = traceback.format_exc()
@@ -3033,8 +3033,8 @@ def JSON_2_dict(project_id, headers = {
                 json_dict["heating_dict"][ft] = {}
             json_dict["heating_dict"][ft]['value'] = forms_data['heating_dict'][ft]
         
-        print('json_dict["heating_dict"]', ':')
-        pprint.pprint(json_dict["heating_dict"])
+        # print('json_dict["heating_dict"]', ':')
+        # pprint.pprint(json_dict["heating_dict"])
         
         
         
@@ -4236,16 +4236,16 @@ def get_forms_data(id, headers = {
                         if form["title"] == "BER Space Heating":
                             heating_dict[datum["symbol_instance_id"]][im] = v
                 
-                        if datum["symbol_instance_id"] == '65e0b636.65c3ebff':
-                            print('heating_dict[datum["symbol_instance_id"]]', ':')
-                            pprint.pprint(heating_dict[datum["symbol_instance_id"]])
+                        # if datum["symbol_instance_id"] == '65e0b636.65c3ebff':
+                            # print('heating_dict[datum["symbol_instance_id"]]', ':')
+                            # pprint.pprint(heating_dict[datum["symbol_instance_id"]])
             
             
                             
         # print('floor_type_dict', ':')
         # pprint.pprint(floor_type_dict)
-        print('heating_dict', ':')
-        pprint.pprint(heating_dict)
+        # print('heating_dict', ':')
+        # pprint.pprint(heating_dict)
         
         
         
@@ -4439,6 +4439,15 @@ def BER(root, output = '', email = '', forms_data = {}):
         project_name = root.get("name") # ToDo: are we going to pass in here xml_dict or do we need to produce a project-specific one?
         xml_dict = XML_2_dict_new(root)
         
+        # if not isinstance(output_dict, dict):
+            # print('not a dict:', output_dict)
+            # raise Exception(output_dict)
+        
+        
+        # *****************************
+        # Update the below - let XML_dict = XML_2_dict_new() be a single dictionary instead of the current tuple of dictionaries
+        # then add Error Handling
+        
         xml_ref_dict = xml_dict[0]
         nwa_dict = xml_dict[1]
         xml_val_dict = xml_dict[2]
@@ -4446,6 +4455,9 @@ def BER(root, output = '', email = '', forms_data = {}):
         wo = xml_dict[4]
         est_dict = xml_dict[5]
         storey_height_dict = xml_dict[6]
+        
+        # *****************************
+        # Both of the below should be incorporated into XML_2_dict_new() above
         
         wall_dict = {}
         for floor in nwa_dict:
@@ -4466,6 +4478,12 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # print('wall_dict', ':')
         # pprint.pprint(wall_dict)
+        
+        # *****************************
+        
+        # At this point read in template_DEAP.xlsx
+        
+        # As was originally intended
         
         # *****************************
         
@@ -4671,11 +4689,12 @@ def BER(root, output = '', email = '', forms_data = {}):
         # for floor in json_dict['floor_dict']:
             # output_dict['2.3 Floor Schedule Table'][floor] = json_dict['floor_dict'][floor]
         
-        # print("json_dict['floor_type_dict']", ':')
-        # pprint.pprint(json_dict['floor_type_dict'])
+        print("json_dict['floor_type_dict']", ':')
+        pprint.pprint(json_dict['floor_type_dict'])
         
         for floor_type in json_dict['floor_type_dict']:
-            output_dict['2.3 Floor Schedule Table'][floor_type] = json_dict['floor_type_dict'][floor_type]
+            if json_dict['floor_type_dict'][floor_type]['value']['is this floor being used?'] == True:
+                output_dict['2.3 Floor Schedule Table'][floor_type] = json_dict['floor_type_dict'][floor_type]
         
         for roof in json_dict['roof_dict']:
             output_dict['3.4 Roof Type Schedule Table'][roof] = json_dict['roof_dict'][roof]
@@ -4688,6 +4707,11 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         for h in json_dict['heating_dict']:
             output_dict['9.3 Space Heating Category'][h] = json_dict['heating_dict'][h]
+        
+        
+        
+        
+        
         
         json_dict['storey_height_dict']['floors'] = {}
         json_dict['storey_height_dict']['rooms'] = {}
@@ -4707,12 +4731,18 @@ def BER(root, output = '', email = '', forms_data = {}):
                 else:
                     json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 1 # this includes renamed rooms 
                     
-            # if 'use_floor_level_height' in json_dict['storey_height_dict'][e]['value'].keys():
-            if 'room_type' not in json_dict['storey_height_dict'][e]['value'].keys():
+            if 'room_type' not in json_dict['storey_height_dict'][e]['value'].keys(): # i.e. floors only
                 json_dict['storey_height_dict']['floors'][e] = json_dict['storey_height_dict'][e]
             else:
                 json_dict['storey_height_dict']['rooms'][e] = json_dict['storey_height_dict'][e]
             
+            
+            
+            
+            # if 'use_floor_level_height' in json_dict['storey_height_dict'][e]['value'].keys():
+        
+        
+        
         
         # Need to sum room volumes by floor_type
         fv_dict = {}
@@ -4734,41 +4764,57 @@ def BER(root, output = '', email = '', forms_data = {}):
             
         # print("json_dict['storey_height_dict']['floors']", ':')
         # pprint.pprint(json_dict['storey_height_dict']['floors'])
-        # print("fv_dict", ':')
-        # pprint.pprint(fv_dict)
+        print("fv_dict", ':')
+        pprint.pprint(fv_dict)
         
         # *************** CALCULATE CEILING HEIGHT ***************
         
+        calc_floors = [] # list of floors for which calc is necessary
+        ch_dict = {}
         for fv in fv_dict:
             for floor in json_dict['storey_height_dict']['floors']:
                 if 'floor_type' in json_dict['storey_height_dict']['floors'][floor]['value'].keys():
                     if json_dict['storey_height_dict']['floors'][floor]['value']['floor_type'] == fv:
                         json_dict['storey_height_dict']['floors'][floor]['value']['volume'] = round(fv_dict[fv], 2)
                         if json_dict['storey_height_dict']['floors'][floor]['value']['use_floor_level_height'] == '0':
-                            json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = round(json_dict['storey_height_dict']['floors'][floor]['value']['volume'] / json_dict['storey_height_dict']['floors'][floor]['value']['area'], 2)
+                            calc_floors.append(fv)
+                            v = json_dict['storey_height_dict']['floors'][floor]['value']['volume']
+                            a = json_dict['storey_height_dict']['floors'][floor]['value']['area']
+                            ch = round(v / a, 2)
+                            json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = ch
+                            # print('v', ':', v)
+                            # print('a', ':', a)
+                            # print('ch', ':', ch)
+                            ch_dict[fv] = ch
+                            # also need to add this value to rooms dict
+                            
+                            
                         else:
                             json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = json_dict['storey_height_dict']['floors'][floor]['value']['height']
-            
+        # print('ch_dict', ':', ch_dict)
+        for room in json_dict['storey_height_dict']['rooms']:
+            ft = json_dict['storey_height_dict']['rooms'][room]['value']['floor_type']
+            # print('ft', ':', ft)
+            if ft in ch_dict.keys():
+                json_dict['storey_height_dict']['rooms'][room]['value']['Weighted Average Ceiling Height'] = ch_dict[ft]
+                # print("json_dict['storey_height_dict'][room]", ':')
+                # pprint.pprint(json_dict['storey_height_dict'][room])
         
-        
-        # print("output_dict['2 Building Average Storey']", ':')
-        # pprint.pprint(output_dict['2 Building Average Storey'])        
-        
-        # print("json_dict['storey_height_dict']['floors']", ':')
-        # pprint.pprint(json_dict['storey_height_dict']['floors'])        
-        
-        # print("json_dict['storey_height_dict']['rooms']", ':')
-        # pprint.pprint(json_dict['storey_height_dict']['rooms'])        
         
         
         # mydict = thisdict.copy()
         output_dict['2 Building Average Storey (Floors)'] = dict(output_dict['2 Building Average Storey'])
-        output_dict['2 Building Average Storey (Rooms)'] = dict(output_dict['2 Building Average Storey'])
+        # output_dict['2 Building Average Storey (Rooms)'] = dict(output_dict['2 Building Average Storey'])
         
         # print(len(json_dict['storey_height_dict']['floors']))
         for e in json_dict['storey_height_dict']['floors']:
-            output_dict['2 Building Average Storey (Floors)'][e] = json_dict['storey_height_dict']['floors'][e]
+            # if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
+            if json_dict['storey_height_dict']['floors'][e]['value']['floor_type'] in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
+                output_dict['2 Building Average Storey (Floors)'][e] = json_dict['storey_height_dict']['floors'][e]
             # print('len output floors', ':', len(output_dict['2 Building Average Storey (Floors)']))
+        
+        
+        
         
         floors = []
         for e in json_dict['storey_height_dict']['rooms']:
@@ -4777,14 +4823,34 @@ def BER(root, output = '', email = '', forms_data = {}):
             if ft not in floors:
                 floors.append(ft)
             # print(ft)
-        print('floors', ':', floors)
+        # print('floors', ':', floors)
+        # print('calc_floors', ':', calc_floors)
         
-        for ft in floors:
+        for ft in calc_floors:
             output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'] = {}
+        
+        
+        
+        # print("json_dict['storey_height_dict']['floors']", ':')
+        # pprint.pprint(json_dict['storey_height_dict']['floors'])
         
         for e in json_dict['storey_height_dict']['rooms']:
             ft = json_dict['storey_height_dict']['rooms'][e]['value']['floor_type']
-            output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'][e] = json_dict['storey_height_dict']['rooms'][e]
+            print('ft', ':', ft)
+            if ft in calc_floors:
+                # if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
+                output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'][e] = json_dict['storey_height_dict']['rooms'][e]
+                
+                
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         if 'Chimney' in json_dict['count_dict'].keys():
@@ -4852,6 +4918,35 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # *****************************
         
+        # output_dict_DEAP = output_dict.copy()
+        output_dict_DEAP = {}
+        
+        for field in output_dict:
+            output_dict_DEAP[field] = output_dict[field]
+        
+        
+        d = '1. Survey Details P1'
+        
+        efs = ['Age Band: Extension 1', 'Year of Construction: Extension 1', 'Age Band: Extension 2', 'Year of Construction: Extension 2', 'Age Band: Extension 3', 'Year of Construction: Extension 3', 'Age Band: Extension 4', 'Year of Construction: Extension 4', 'Age Band: Extension 5', 'Year of Construction: Extension 5']
+        
+        for ef in efs:
+            if output_dict[d][ef]['value'] == '':
+                del output_dict[d][ef]
+        
+        d = '2 Building Average Storey (Floors)'
+        output_dict[d]['headers'] = ['uid', 'name', 'use_floor_level_height', 'ceiling_height', 'area']
+        
+        
+        
+        d = '2.3 Floor Schedule Table'
+        output_dict[d]['headers'] = ['uid', 'area (m2)', 'dwelling age band?', 'age band', 'underfloor heating?', 'description', 'U-value calculation required?', 'calculated U-value', 'U-Value', 'description', 'Floor Type', 'name']
+        
+        
+        
+        
+        
+        # *****************************
+        
         # use output_dict to generate this function's "output" HTML to serve as the body of the return email
         if output == '': # otherwise might contain error details from a function? Need to revisit this
             styling = "border=\"1\""
@@ -4864,15 +4959,24 @@ def BER(root, output = '', email = '', forms_data = {}):
                     headers = output_dict[section]['headers']
                     del output_dict[section]['headers']
                     order_list = [field for field in output_dict[section]]
+                    # order_list = [field for field in headers]
                 else:
                     headers = ['name', 'value']
-                    order_list = [field for field in output_dict[section]] # rows should always be exactly the same for every record yes? otherwise build in loop above
+                    order_list = [field for field in output_dict[section]]
                 # print('headers', ':', headers)
                 # print('order_list', ':', order_list)
                 
+                if 'Building Average Storey (Rooms - ' in section:
+                    headers_only = True
+                
+                if section in ['2 Building Average Storey (Floors)', '2.3 Floor Schedule Table']:
+                    headers_only = True
+                else:
+                    headers_only = False
+                
                 section_output = f"""\
                                 <h1>{section}</h1> \
-                                {create_table_new(output_dict[section], headers, styling=styling, do_not_sum=['All'], order_list = order_list, title = section)} \
+                                {create_table_new(output_dict[section], headers, styling=styling, do_not_sum=['All'], order_list=order_list, title=section, headers_only=headers_only)} \
                                 </div>"""
                 output = output + section_output
                 
@@ -4903,6 +5007,7 @@ def create_table_new(data_dict
                     , styling: str = ""
                     , order_list = []
                     , title = ''
+                    , headers_only = False
                     ) -> str:
     try:
         
@@ -4930,6 +5035,8 @@ def create_table_new(data_dict
         
         if len(order_list) != 0:
             for item in order_list:
+                # if item not in data_dict.keys():
+                    # continue
                 if not isinstance(data_dict[item], dict):
                     continue
                 # print('item', ':', item)
@@ -4938,11 +5045,11 @@ def create_table_new(data_dict
                 if 'value' in list(data_dict[item].keys()):
                     # print('type', ':', type(data_dict[record][item]['value']))
                     e = data_dict[item]['value']
-                    if isinstance(e, dict):
-                        for key in data_dict[item]['value'].keys():
-                            # print('key', ':', key)
-                            if key not in headers:
-                                headers.append(key)
+                    if headers_only == False: # headers will be appended for any additional values present
+                        if isinstance(e, dict):
+                            for key in data_dict[item]['value'].keys():
+                                if key not in headers:
+                                    headers.append(key)
             
                         
         replace_header = ''
@@ -4962,6 +5069,8 @@ def create_table_new(data_dict
         
         if len(order_list) != 0:
             for item in order_list:
+                # if item not in data_dict.keys():
+                    # continue
                 if not isinstance(data_dict[item], dict):
                     continue
                 # add the row (populate first column): 
