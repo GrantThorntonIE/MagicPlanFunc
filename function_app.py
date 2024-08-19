@@ -2548,6 +2548,17 @@ def XL_2_dict_new(xl_file_path):
                     # print('field_loc', ':', field_loc)
                     lookup[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc}
                 
+            elif sheet.title == 'Floor reference': # one-to-many
+                lookup[sheet.title] = {}
+                for i, row in enumerate(list(sheet.values)):
+                    KSN_ref = row[0]
+                    MP_ref = row[1]
+                    if MP_ref == '-2 to 8':
+                        MP_ref = list(x for x in range(-2, 9))
+                    if MP_ref == '9 to 14':
+                        MP_ref = list(x for x in range(9, 15))
+                    lookup[sheet.title][KSN_ref] = MP_ref
+            
             elif sheet.title == 'Object Reference': # one-to-many
                 lookup[sheet.title] = {}
                 for i, row in enumerate(list(sheet.values)):
@@ -2563,6 +2574,8 @@ def XL_2_dict_new(xl_file_path):
         # pprint.pprint(output['8. Ventilation P1'])
         # print("lookup['Object Reference']", ':')
         # pprint.pprint(lookup['Object Reference'])
+        print("lookup['Floor reference']", ':')
+        pprint.pprint(lookup['Floor reference'])
                 
     except:
         output = traceback.format_exc()
@@ -2792,6 +2805,7 @@ def get_stats_data(project_id, headers = {
                         floor_type_dict[room["uid"]]['value'] = {}
                     floor_type_dict[room["uid"]]['value']['area'] = room["area"]
                     floor_type_dict[room["uid"]]['value']['name'] = room["name"]
+                    floor_type_dict[room["uid"]]['value']['perimeter'] = room["perimeter"]
                     floor_type_dict[room["uid"]]['value']['floor_uid'] = floor_uid
                     floor_type_dict[room["uid"]]['value']['floor_name'] = floor_name
             
@@ -2948,8 +2962,6 @@ def JSON_2_dict(project_id, headers = {
             forms_data = get_forms_data(project_id)
         
         
-        # print('forms_data["heating_dict"]', ':')
-        # pprint.pprint(forms_data["heating_dict"])
         
         
         form_val_dict = forms_data['form_val_dict']
@@ -2963,6 +2975,8 @@ def JSON_2_dict(project_id, headers = {
         wall_type_dict = forms_data['wall_type_dict']
         floor_type_dict = forms_data['floor_type_dict']
         
+        # print('forms_data["floor_type_dict"]', ':')
+        # pprint.pprint(forms_data["floor_type_dict"])
         
         # **************** GET STATS DATA **************** 
         
@@ -3082,7 +3096,7 @@ def JSON_2_dict(project_id, headers = {
         print('about to condense roof_dict')
         json_dict["roof_dict"] = condense(json_dict["roof_dict"], json_dict)
         
-        # below is the third condensation operation, still separate as it is slightly different to the first two
+        # below is the Wall Type condensation operation, still separate as it is slightly different to the first two but should be incorporated
         for w in wall_type_dict:
             wall_type_dict[w]['value'] = {}
             for x in wall_type_dict[w]:
@@ -3139,11 +3153,20 @@ def JSON_2_dict(project_id, headers = {
                     wall_type_dict[wt + ' - Semi-Exposed'][header] = wall_type_dict[wt][header]
         
         
-        # print('wall_type_dict', ':')
-        # pprint.pprint(wall_type_dict)
+        # print('json_dict["roof_dict"]', ':')
+        # pprint.pprint(json_dict["roof_dict"])
         
+        for rt in json_dict["roof_dict"]:
+            if 'roof pitch (degrees)' in json_dict["roof_dict"][rt]['value'].keys():
+                ra = json_dict["roof_dict"][rt]['value']['area (m2)']
+                rp = json_dict["roof_dict"][rt]['value']['roof pitch (degrees)']
+                if rp != '':
+                    sa = ra / cos(rp / 57.2958)
+                    # print('sa', ':', sa)
+                    json_dict["roof_dict"][rt]['value']['area (m2)'] = round(sa, 3)
         
-        
+        # print('post calc', ':')
+        # pprint.pprint(json_dict["roof_dict"])
         
         json_dict['wall_type_dict'] = wall_type_dict
         json_dict['count_dict'] = count_dict
@@ -3187,6 +3210,10 @@ def condense(old_dict, json_dict):
                     new_dict[e]['value_condensed']['name'] = new_dict[e]['value'][x]
                 if x == 'perimeter':
                     new_dict[e]['value_condensed']['perimeter'] = new_dict[e]['value'][x]
+                if x == 'Floor Type':
+                    new_dict[e]['value_condensed']['Floor Type'] = new_dict[e]['value'][x]
+                if x == 'floor_name':
+                    new_dict[e]['value_condensed']['floor_name'] = new_dict[e]['value'][x]
                 
                 # is this floor being used ... DEAP? - probably not the right place to apply this filter
                 
@@ -4242,8 +4269,8 @@ def get_forms_data(id, headers = {
             
             
                             
-        # print('floor_type_dict', ':')
-        # pprint.pprint(floor_type_dict)
+        print('floor_type_dict', ':')
+        pprint.pprint(floor_type_dict)
         # print('heating_dict', ':')
         # pprint.pprint(heating_dict)
         
@@ -4531,6 +4558,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
+        # print('json_dict["floor_type_dict"]', ':')
+        # pprint.pprint(json_dict['floor_type_dict'])
         # print('json_dict["wall_type_dict"]', ':')
         # pprint.pprint(json_dict['wall_type_dict'])
         
@@ -4689,8 +4718,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         # for floor in json_dict['floor_dict']:
             # output_dict['2.3 Floor Schedule Table'][floor] = json_dict['floor_dict'][floor]
         
-        print("json_dict['floor_type_dict']", ':')
-        pprint.pprint(json_dict['floor_type_dict'])
+        # print("json_dict['floor_type_dict']", ':')
+        # pprint.pprint(json_dict['floor_type_dict'])
         
         for floor_type in json_dict['floor_type_dict']:
             if json_dict['floor_type_dict'][floor_type]['value']['is this floor being used?'] == True:
@@ -4764,8 +4793,8 @@ def BER(root, output = '', email = '', forms_data = {}):
             
         # print("json_dict['storey_height_dict']['floors']", ':')
         # pprint.pprint(json_dict['storey_height_dict']['floors'])
-        print("fv_dict", ':')
-        pprint.pprint(fv_dict)
+        # print("fv_dict", ':')
+        # pprint.pprint(fv_dict)
         
         # *************** CALCULATE CEILING HEIGHT ***************
         
@@ -4836,7 +4865,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         for e in json_dict['storey_height_dict']['rooms']:
             ft = json_dict['storey_height_dict']['rooms'][e]['value']['floor_type']
-            print('ft', ':', ft)
+            # print('ft', ':', ft)
             if ft in calc_floors:
                 # if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
                 output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'][e] = json_dict['storey_height_dict']['rooms'][e]
@@ -4871,8 +4900,9 @@ def BER(root, output = '', email = '', forms_data = {}):
         # *****************************
         
         # populate the dicts 
+        print('output_dict', ':')
         for sheet_name in output_dict:
-            print(sheet_name, ':')
+            print(sheet_name)
             # pprint.pprint(output_dict[sheet_name])
             # for record in output_dict[sheet_name]:
             for field in output_dict[sheet_name]:
@@ -4939,7 +4969,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         d = '2.3 Floor Schedule Table'
-        output_dict[d]['headers'] = ['uid', 'area (m2)', 'dwelling age band?', 'age band', 'underfloor heating?', 'description', 'U-value calculation required?', 'calculated U-value', 'U-Value', 'description', 'Floor Type', 'name']
+        output_dict[d]['headers'] = ['uid', 'area (m2)', 'perimeter', 'dwelling age band?', 'age band', 'underfloor heating?', 'description', 'U-value calculation required?', 'calculated U-value', 'U-Value', 'Floor Type', 'floor_name']
         
         
         
