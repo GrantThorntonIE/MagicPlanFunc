@@ -23,8 +23,8 @@ import pprint
 # from dictsearch.search import iterate_dictionary
 
 
-import matplotlib.pyplot as plt
-import numpy as np
+# import matplotlib.pyplot as plt
+# import numpy as np
 
 
 
@@ -4553,10 +4553,10 @@ def BER(root, output = '', email = '', forms_data = {}):
                     b = [x2, y2]
                     point_list.append(b)
                 # print('point_list', ':', point_list)
-                l = np.array(point_list)
-                point_list = []
-                datapoints = l.T
-                plt.plot(datapoints[0], datapoints[1])
+                # l = np.array(point_list)
+                # point_list = []
+                # datapoints = l.T
+                # plt.plot(datapoints[0], datapoints[1])
             for room in nwa_dict[floor]:
                 for wall in nwa_dict[floor][room]:
                     nwa_dict[floor][room][wall]['x3'] = round(nwa_dict[floor][room][wall]['x3'], r_to)
@@ -4572,10 +4572,10 @@ def BER(root, output = '', email = '', forms_data = {}):
                     b = [x4, y4]
                     point_list.append(b)
                 # print('point_list', ':', point_list)
-                l = np.array(point_list)
-                point_list = []
-                datapoints = l.T
-                plt.plot(datapoints[0], datapoints[1])
+                # l = np.array(point_list)
+                # point_list = []
+                # datapoints = l.T
+                # plt.plot(datapoints[0], datapoints[1])
         
         
         
@@ -4662,12 +4662,12 @@ def BER(root, output = '', email = '', forms_data = {}):
                             # nwa_dict[floor][room][wall]['type'] = exploded_wall_dict[floor][ex_wall]['type']
                 
             # print('point_list', ':', point_list)
-            l = np.array(point_list)
-            datapoints = l.T
-            plt.scatter(datapoints[0], datapoints[1])
+            # l = np.array(point_list)
+            # datapoints = l.T
+            # plt.scatter(datapoints[0], datapoints[1])
             # plt.plot(datapoints[0], datapoints[1])
         
-            plt.gca().set_aspect('equal', adjustable='box')
+            # plt.gca().set_aspect('equal', adjustable='box')
             # plt.show()
         
         # print('nwa_dict["10"][obs_room]', ':')
