@@ -22,6 +22,12 @@ print(socket.gethostname())
 import pprint
 # from dictsearch.search import iterate_dictionary
 
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+
 MAX_REAL_FLOORS = 10
 
 # https://ksnmagicplanfunc3e54b9.file.core.windows.net/attachment/Survey Portal Excel Sheet_Export_Template.xlsx
@@ -292,31 +298,37 @@ def walls_general(json_val_dict):
     if json_val_dict["Is the property suitable for wall insulation? *"] == False:
         json_val_dict["No wall insulation details *"] += json_val_dict["Notes (Walls)"]
 
-def is_point_in_line_segment(x1, y1, a1, b1, a2, b2):
+def is_point_in_line_segment(x1, y1, a1, b1, a2, b2, epsilon=0.001, zeta=0.0):
     # print('checking if (' + str(x1) + ',' + str(y1) + ') is contained in (' + str(a1) + ',' + str(b1) + ') -> (' + str(a2) + ',' + str(b2) + ')')
-    epsilon = 0.001
+    
     
     cp = (y1 - b1) * (a2 - a1) - (x1 - a1) * (b2 - b1)
     if abs(cp) > epsilon:
+        # print('abs(cp)', ':', abs(cp), ' > ', 'epsilon', ':', epsilon)
         return False
     
     dp = (x1 - a1) * (a2 - a1) + (y1 - b1) * (b2 - b1)
-    if dp < 0:
+    if dp < (0 - zeta):
+        # print('dp', ':', dp, ' < ', '0 - zeta', ':', 0 - zeta)
         return False
     
-    slba = (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1)
+    slba = (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1) # pythagoras
     if dp > slba:
+        # print('dp', ':', dp, ' > ', 'slba', ':', slba)
         return False
     
     return True
 
 
 
-def linear_subset(x1, y1, x2, y2, a1, b1, a2, b2):
-    if not is_point_in_line_segment(x1, y1, a1, b1, a2, b2):
+def linear_subset(x1, y1, x2, y2, a1, b1, a2, b2, epsilon=0.001, zeta=0.0):
+    
+    # print('zeta', ':', zeta)
+    
+    if not is_point_in_line_segment(x1, y1, a1, b1, a2, b2, epsilon, zeta):
         return False
     
-    if not is_point_in_line_segment(x2, y2, a1, b1, a2, b2):
+    if not is_point_in_line_segment(x2, y2, a1, b1, a2, b2, epsilon, zeta):
         return False
     
     return True
@@ -2717,12 +2729,23 @@ def get_stats_data(project_id, headers = {
         
         json_url = "https://cloud.magicplan.app/api/v2/plans/statistics/" + str(project_id)
         request = urllib.request.Request(json_url, headers=headers)
+        print(type(request))
+        if not type(request) is urllib.request.Request:
+            raise Exception(request)
+        
+        
         JSON = urllib.request.urlopen(request).read()
+        print('type(JSON)', ':', type(JSON))
+        if not type(JSON) is bytes:
+            raise Exception(JSON)
+        
         JSON = json.loads(JSON)
+        print('type(JSON)', ':', type(JSON))
+        if not isinstance(JSON, dict):
+            raise Exception(JSON)
         
         
         floor_dict = {}
-        
         roof_dict = {}
         
         count_dict = {}
@@ -2945,6 +2968,7 @@ def JSON_2_dict(project_id, headers = {
             , xl_ref_dict = {}
             , wall_dict={}
             , wo={}
+            , nwa_dict={}
             ):
     '''
     This function retrieves Forms & Statistics JSON files from MagicPlan
@@ -2975,8 +2999,14 @@ def JSON_2_dict(project_id, headers = {
         wall_type_dict = forms_data['wall_type_dict']
         floor_type_dict = forms_data['floor_type_dict']
         
-        # print('forms_data["floor_type_dict"]', ':')
-        # pprint.pprint(forms_data["floor_type_dict"])
+        # print('wo', ':')
+        # pprint.pprint(wo)
+        # print('wall_dict', ':')
+        # pprint.pprint(wall_dict)
+        # print('wall_type_dict', ':')
+        # pprint.pprint(wall_type_dict)
+        print('forms_data["floor_type_dict"]', ':')
+        pprint.pprint(forms_data["floor_type_dict"])
         
         # **************** GET STATS DATA **************** 
         
@@ -3087,8 +3117,8 @@ def JSON_2_dict(project_id, headers = {
         
         
         
-        print('about to condense floor_dict')
-        json_dict["floor_dict"] = condense(json_dict["floor_dict"], json_dict)
+        # print('about to condense floor_dict')
+        # json_dict["floor_dict"] = condense(json_dict["floor_dict"], json_dict)
         
         print('about to condense floor_type_dict')
         json_dict["floor_dict"] = condense(json_dict["floor_type_dict"], json_dict)
@@ -4457,8 +4487,8 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 , 'Workshop'
                                 ]
         
-        true_floors = range(-2, 8)
-        print('true_floors', ';', true_floors)
+        # true_floors = range(-2, 8)
+        # print('true_floors', ';', true_floors)
         
         
         
@@ -4484,17 +4514,191 @@ def BER(root, output = '', email = '', forms_data = {}):
         storey_height_dict = xml_dict[6]
         
         # *****************************
-        # Both of the below should be incorporated into XML_2_dict_new() above
+        # All three of the below should be incorporated into XML_2_dict_new() above
+        
+        # *****************************
+        
+        # a dict where the keys are floor uids?
+        
+        # {"66bc857c.e380bbff":   "floorType" : "11"
+                                # , "compassAngle" : "6.068583"
+                                # , }
+                                
+        
+        # wt_dict['ext_wall_area_gross'], exploded_wall_dict = exterior_walls(root)
+        
+        
+        
+        
+        # print('about to get ex wa')
+        wt_dict_ewag, exploded_wall_dict = exterior_walls(root)
+        
+        r_to = 2
+        
+        
+        
+        point_list = []
+        for floor in nwa_dict:
+            # if floor != '10':
+                # continue
+            
+            for room in nwa_dict[floor]:
+                for wall in nwa_dict[floor][room]:
+                    x1 = round(nwa_dict[floor][room][wall]['x1'], r_to)
+                    y1 = round(nwa_dict[floor][room][wall]['y1'], r_to)
+                    a = [x1, y1]
+                    point_list.append(a)
+                    x2 = round(nwa_dict[floor][room][wall]['x2'], r_to)
+                    y2 = round(nwa_dict[floor][room][wall]['y2'], r_to)
+                    b = [x2, y2]
+                    point_list.append(b)
+                # print('point_list', ':', point_list)
+                l = np.array(point_list)
+                point_list = []
+                datapoints = l.T
+                plt.plot(datapoints[0], datapoints[1])
+            for room in nwa_dict[floor]:
+                for wall in nwa_dict[floor][room]:
+                    nwa_dict[floor][room][wall]['x3'] = round(nwa_dict[floor][room][wall]['x3'], r_to)
+                    nwa_dict[floor][room][wall]['y3'] = round(nwa_dict[floor][room][wall]['y3'], r_to)
+                    x3 = round(nwa_dict[floor][room][wall]['x3'], r_to)
+                    y3 = round(nwa_dict[floor][room][wall]['y3'], r_to)
+                    a = [x3, y3]
+                    point_list.append(a)
+                    nwa_dict[floor][room][wall]['x4'] = round(nwa_dict[floor][room][wall]['x4'], r_to)
+                    nwa_dict[floor][room][wall]['y4'] = round(nwa_dict[floor][room][wall]['y4'], r_to)
+                    x4 = round(nwa_dict[floor][room][wall]['x4'], r_to)
+                    y4 = round(nwa_dict[floor][room][wall]['y4'], r_to)
+                    b = [x4, y4]
+                    point_list.append(b)
+                # print('point_list', ':', point_list)
+                l = np.array(point_list)
+                point_list = []
+                datapoints = l.T
+                plt.plot(datapoints[0], datapoints[1])
+        
+        
+        
+        obs_room = 'Hall (66bc8575.a5205bff)'
+        
+        point_list = []
+        for floor in exploded_wall_dict:
+            # if floor != '10':
+                # continue
+            for ex_wall in exploded_wall_dict[floor]:
+                type_ex = exploded_wall_dict[floor][ex_wall]['type']
+                if exploded_wall_dict[floor][ex_wall]['type'] != 'exterior':
+                    continue
+                exploded_wall_dict[floor][ex_wall]['x1'] = round(exploded_wall_dict[floor][ex_wall]['x1'], r_to)
+                exploded_wall_dict[floor][ex_wall]['y1'] = round(exploded_wall_dict[floor][ex_wall]['y1'], r_to)
+                x1 = round(exploded_wall_dict[floor][ex_wall]['x1'], r_to)
+                y1 = round(exploded_wall_dict[floor][ex_wall]['y1'], r_to)
+                a = [x1, y1]
+                point_list.append(a)
+                exploded_wall_dict[floor][ex_wall]['x2'] = round(exploded_wall_dict[floor][ex_wall]['x2'], r_to)
+                exploded_wall_dict[floor][ex_wall]['y2'] = round(exploded_wall_dict[floor][ex_wall]['y2'], r_to)
+                x2 = round(exploded_wall_dict[floor][ex_wall]['x2'], r_to)
+                y2 = round(exploded_wall_dict[floor][ex_wall]['y2'], r_to)
+                b = [x2, y2]
+                point_list.append(b)
+                # print(a, '\t', b)
+                
+                for room in nwa_dict[floor]:
+                    if 'ext_perim' not in nwa_dict[floor][room].keys():
+                        nwa_dict[floor][room]['ext_perim'] = 0
+                    # print('room', ':', room)
+                    for wall in nwa_dict[floor][room]:
+                        if not isinstance(nwa_dict[floor][room][wall], dict):
+                            continue
+                        # print('wall', ':', wall)
+                        # pprint.pprint(nwa_dict[floor][room][wall])
+                        if 'loadBearingWall' in nwa_dict[floor][room][wall].keys():
+                            if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
+                                continue
+                        
+                        x3 = nwa_dict[floor][room][wall]['x3']
+                        y3 = nwa_dict[floor][room][wall]['y3']
+                        c = [x3, -y3]
+                        # print('c', ':', c)
+                        x4 = nwa_dict[floor][room][wall]['x4']
+                        y4 = nwa_dict[floor][room][wall]['y4']
+                        d = [x4, -y4]
+                        # print('d', ':', d)
+                
+                        # print(a, '\t', b, '\t', c, '\t', d)
+                        # print('room', ':', room, '\t', 'type_ex', ':', type_ex,  '\t', 'wall', ':', wall,  '\t', x1, '\t', y1, '\t', x2, '\t', y2, '\t', x3, '\t', y3, '\t', x4, '\t', y4)
+                        # print('room', ':', room, '\t', 'wall', ':', wall, '\t', x1, '\t', y1, '\t', x3, '\t', y3)
+                        # print('room', ':', room, '\t', 'wall', ':', wall, '\t', x2, '\t', y2, '\t', x4, '\t', y4)
+                        
+                        
+                        string = ('segment ' + str(ex_wall) + '\t' 
+                                            + str(x1) + '\t' 
+                                            + str(y1) + '\t' 
+                                            + str(x2) + '\t' 
+                                            + str(y2) + '\t' 
+                                            + ' is colinear with wall ' + '\t' 
+                                            + str(wall) + '\t' 
+                                            + str(x3) + '\t' 
+                                            + str(y3) + '\t' 
+                                            + str(x4) + '\t' 
+                                            + str(y4))
+                        if linear_subset(x1, y1, x2, y2, x3, y3, x4, y4, epsilon=0.05, zeta=0.05) == True:
+                            l = cart_distance((x1, y1), (x2, y2))
+                            # if room == obs_room:
+                                # print('cart_distance', ':', l)
+                            nwa_dict[floor][room][wall]['ext_perim'] = l
+                            nwa_dict[floor][room]['ext_perim'] += l
+                        else:
+                            string = string.replace('is colinear', 'is NOT colinear')
+                            
+                        # if room == obs_room:
+                            # print(string)
+                    
+                    # if room == obs_room:
+                        # print("nwa_dict[" + str(floor) + "][" + room + "]['ext_perim']", ':')
+                        # pprint.pprint(nwa_dict[floor][room]['ext_perim'])
+                        
+                        # if (x1 == x3 and y1 == y3 and x2 == x4 and y2 == y4) or (x1 == x4 and y1 == y4 and x2 == x3 and y2 == y3):
+                            # nwa_dict[floor][room][wall]['type'] = exploded_wall_dict[floor][ex_wall]['type']
+                
+            # print('point_list', ':', point_list)
+            l = np.array(point_list)
+            datapoints = l.T
+            plt.scatter(datapoints[0], datapoints[1])
+            # plt.plot(datapoints[0], datapoints[1])
+        
+            plt.gca().set_aspect('equal', adjustable='box')
+            # plt.show()
+        
+        # print('nwa_dict["10"][obs_room]', ':')
+        # pprint.pprint(nwa_dict["10"][obs_room])
+        # print('nwa_dict["10"]', ':')
+        # pprint.pprint(nwa_dict["10"])
+        # print('nwa_dict', ':')
+        # pprint.pprint(nwa_dict)
+        # print('exploded_wall_dict["10"]', ':')
+        # pprint.pprint(exploded_wall_dict["10"])
+        # print('exploded_wall_dict', ':')
+        # pprint.pprint(exploded_wall_dict)
+        
+        
+        
+        
+        
+        # *****************************
+        
+        
         
         wall_dict = {}
         for floor in nwa_dict:
             for room in nwa_dict[floor]:
                 for wall in nwa_dict[floor][room]:
-                    wall_dict[wall] = {}
-                    wall_dict[wall]['value'] = {}
-                    # print(list(nwa_dict[floor][room][wall].keys()))
-                    wall_dict[wall]['value']['total_area'] = nwa_dict[floor][room][wall]['net_a']
-        
+                    if wall != 'ext_perim':
+                        wall_dict[wall] = {}
+                        wall_dict[wall]['value'] = {}
+                        # print(list(nwa_dict[floor][room][wall].keys()))
+                        wall_dict[wall]['value']['total_area'] = nwa_dict[floor][room][wall]['net_a']
+            
         # print('est_dict', ':')
         # pprint.pprint(est_dict)        
         
@@ -4552,16 +4756,22 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(json_dict['count_dict'])
         
         
+        # *****************************
+        
+        print('json_dict["floor_type_dict"]', ':')
+        pprint.pprint(json_dict['floor_type_dict'])
+        print('nwa_dict', ':')
+        pprint.pprint(nwa_dict)
+        
+        for room_uid in json_dict["floor_type_dict"]:
+            for floor in nwa_dict:
+                for room in nwa_dict[floor]:
+                    if room_uid in room:
+                        if 'ext_perim' in nwa_dict[floor][room].keys():
+                            json_dict["floor_type_dict"][room_uid]['value']['perimeter'] = round(nwa_dict[floor][room]['ext_perim'], 2)
         
         
         
-        
-        
-        
-        # print('json_dict["floor_type_dict"]', ':')
-        # pprint.pprint(json_dict['floor_type_dict'])
-        # print('json_dict["wall_type_dict"]', ':')
-        # pprint.pprint(json_dict['wall_type_dict'])
         
         
         
@@ -4625,8 +4835,16 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         ofl_filelist = []
         ofl_filelist = get_project_files(project_id, plan_name = project_name) # ofl_filelist is part of this function's output
+        
+        if not isinstance(ofl_filelist, list):
+            raise Exception(ofl_filelist)
+        
+        
         # print('finished getting project files')
         print('warning: did not get project files')
+        
+        
+        
         
         # *****************************
         
@@ -5827,79 +6045,86 @@ def lot(output_dict):
 
 
 def exterior_walls(root):
-    ext_wall_area_gross = 0
-    plan_name = root.get('name')
-    interior_wall_width = root.get('interiorWallWidth') # always available?
-    exteriorWallWidth = float(root.get('exteriorWallWidth')) # always available?
-    extern_width_offset = interior_wall_width * 4
-    extern_perim = 0
-    exploded_wall_dict = {}
-    
-    floors = root.findall('interiorRoomPoints/floor')
-    # floors = root.findall('floor')
-    # print('len(floors)', ':', len(floors))
-    for floor in floors:
-        floor_type = floor.get('floorType')
-        ft = floor_type
-        if floor_type not in ['10', '11', '12', '13']:
-            continue
-        exterior_walls = [] # {} 
-        # print('floor_type', ':', floor_type)
-        walls = floor.findall('exploded/wall')
-        exploded_wall_dict[ft] = {}
-        for i, wall in enumerate(walls):
-            exploded_wall_dict[ft][i] = {}
-            w_type = wall.find('type').text
-            points = wall.findall('point') 
-            p1, p2, *rest = points
-            x1 = float(p1.get('x'))
-            y1 = -float(p1.get('y'))
-            x2 = float(p2.get('x'))
-            y2 = -float(p2.get('y'))
-            length = cart_distance((x1, y1), (x2, y2)) - (0.25 * exteriorWallWidth)
-            # print(length)
-            # wall_height = (float(p1.get('height')) + float(p2.get('height'))) / 2
-            if floor_type == '10':
-                wall_height = 2.4
-            if floor_type == '11':
-                wall_height = 2.7
-            if floor_type in ['12', '13']:
-                wall_height = 2
-                
-            area = wall_height * length
-            # print('length ' + str(i) , ':', length)
-            # print('wall_height ' + str(i) , ':', wall_height)
-            # print('area ' + str(i) , ':', area)
-            
-            (x1, y1), (x2, y2)
-            
-            
-            exploded_wall_dict[ft][i]['x1'] = x1
-            exploded_wall_dict[ft][i]['y1'] = y1
-            exploded_wall_dict[ft][i]['x2'] = x2
-            exploded_wall_dict[ft][i]['y2'] = y2
-            exploded_wall_dict[ft][i]['type'] = w_type
-            
-            if w_type == 'exterior':
-                ext_wall_area_gross += wall_height * length
-                extern_perim += length
-                # print(w_type, x1, y1, x2, y2, wall_height)
-                # print(w)
-                # exterior_walls.append(w)
-        # print(exterior_walls)
+    try:
+        print('ex_wa')
         
-    
-    
-            # extern_perim -= extern_width_offset
-            # floors_perims.append(extern_perim)
-            # wall_height = wall_height/nwalls if nwalls != 0 else wall_height
-            # floors_heights.append(wall_height)
+        ext_wall_area_gross = 0
+        plan_name = root.get('name')
+        interior_wall_width = root.get('interiorWallWidth') # always available?
+        exteriorWallWidth = float(root.get('exteriorWallWidth')) # always available?
+        extern_width_offset = interior_wall_width * 4
+        extern_perim = 0
+        exploded_wall_dict = {}
+        
+        floors = root.findall('interiorRoomPoints/floor')
+        # floors = root.findall('floor')
+        print('no of floors', ':', len(floors))
+        for floor in floors:
+            floor_type = floor.get('floorType')
+            print('floor_type', ':', floor_type)
+            if floor_type not in ['10', '11', '12', '13']:
+                continue
+            ft = floor_type
+            exterior_walls = [] # {} 
+            walls = floor.findall('exploded/wall')
+            print('no of walls', ':', len(walls))
             
+            exploded_wall_dict[ft] = {}
+            for i, wall in enumerate(walls):
+                exploded_wall_dict[ft][i] = {}
+                w_type = wall.find('type').text
+                points = wall.findall('point') 
+                p1, p2, *rest = points
+                x1 = float(p1.get('x'))
+                y1 = -float(p1.get('y'))
+                x2 = float(p2.get('x'))
+                y2 = -float(p2.get('y'))
+                length = cart_distance((x1, y1), (x2, y2)) - (0.25 * exteriorWallWidth)
+                # print(length)
+                # wall_height = (float(p1.get('height')) + float(p2.get('height'))) / 2
+                if floor_type == '10':
+                    wall_height = 2.4
+                if floor_type == '11':
+                    wall_height = 2.7
+                if floor_type in ['12', '13']:
+                    wall_height = 2
+                    
+                area = wall_height * length
+                print('length ' + str(i) , ':', length)
+                # print('wall_height ' + str(i) , ':', wall_height)
+                # print('area ' + str(i) , ':', area)
+                
+                # (x1, y1), (x2, y2)
+                
+                
+                exploded_wall_dict[ft][i]['x1'] = x1
+                exploded_wall_dict[ft][i]['y1'] = y1
+                exploded_wall_dict[ft][i]['x2'] = x2
+                exploded_wall_dict[ft][i]['y2'] = y2
+                exploded_wall_dict[ft][i]['type'] = w_type
+                exploded_wall_dict[ft][i]['length'] = round(length, 2)
+                
+                if w_type == 'exterior':
+                    ext_wall_area_gross += wall_height * length
+                    extern_perim += length
+                    # print(w_type, x1, y1, x2, y2, wall_height)
+                    # print(w)
+                    # exterior_walls.append(w)
+            # print(exterior_walls)
+            
+        
+        
+                # extern_perim -= extern_width_offset
+                # floors_perims.append(extern_perim)
+                # wall_height = wall_height/nwalls if nwalls != 0 else wall_height
+                # floors_heights.append(wall_height)
+                
 
-            # ext_wall_area_gross -= wall_types['Party Wall Area'][floor_index_adj] if 'Party Wall Area' in wall_types else 0
-            # ext_wall_area_gross -= wall_types['Internal Wall Area'][floor_index_adj] if 'Internal Wall Area' in wall_types else 0
+                # ext_wall_area_gross -= wall_types['Party Wall Area'][floor_index_adj] if 'Party Wall Area' in wall_types else 0
+                # ext_wall_area_gross -= wall_types['Internal Wall Area'][floor_index_adj] if 'Internal Wall Area' in wall_types else 0
 
-            # walls_area_gross.append(wall_area_gross)
-        # print('ext_wall_area_gross', ':', str(ext_wall_area_gross))
-        # print('extern_perim', ':', str(extern_perim))
-    return ext_wall_area_gross, exploded_wall_dict
+                # walls_area_gross.append(wall_area_gross)
+            # print('ext_wall_area_gross', ':', str(ext_wall_area_gross))
+            # print('extern_perim', ':', str(extern_perim))
+    finally:
+        return ext_wall_area_gross, exploded_wall_dict
