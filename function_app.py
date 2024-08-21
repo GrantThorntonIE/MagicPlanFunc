@@ -3005,8 +3005,8 @@ def JSON_2_dict(project_id, headers = {
         # pprint.pprint(wall_dict)
         # print('wall_type_dict', ':')
         # pprint.pprint(wall_type_dict)
-        print('forms_data["floor_type_dict"]', ':')
-        pprint.pprint(forms_data["floor_type_dict"])
+        # print('forms_data["floor_type_dict"]', ':')
+        # pprint.pprint(forms_data["floor_type_dict"])
         
         # **************** GET STATS DATA **************** 
         
@@ -3472,9 +3472,9 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
                     object_dict[window]['value']['Type'] = object_dict[window]['value']['Other Window Type']
             
             
-            object_dict[window]['value']['Description'] = window_detail_dict[object_dict[window]['value']['Type']]
-            if (object_dict[window]['value']['Description'] + ' U-Value (W/m2K)') in window_detail_dict.keys():
-                object_dict[window]['value']['U-Value [W/m2K]'] = window_detail_dict[object_dict[window]['value']['Description'] + ' U-Value (W/m2K)']
+            # object_dict[window]['value']['Description'] = window_detail_dict[object_dict[window]['value']['Type']]
+            if (object_dict[window]['value']['Type'] + ' U-Value (W/m2K)') in window_detail_dict.keys():
+                object_dict[window]['value']['U-Value [W/m2K]'] = window_detail_dict[object_dict[window]['value']['Type'] + ' U-Value (W/m2K)']
             object_dict[window]['value']['In roof'] = True if object_dict[window]['value']['name'] == 'Skylight' else False
             
             object_dict[window]['value']['No. of opes'] = 1
@@ -4299,8 +4299,8 @@ def get_forms_data(id, headers = {
             
             
                             
-        print('floor_type_dict', ':')
-        pprint.pprint(floor_type_dict)
+        # print('floor_type_dict', ':')
+        # pprint.pprint(floor_type_dict)
         # print('heating_dict', ':')
         # pprint.pprint(heating_dict)
         
@@ -4758,10 +4758,10 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # *****************************
         
-        print('json_dict["floor_type_dict"]', ':')
-        pprint.pprint(json_dict['floor_type_dict'])
-        print('nwa_dict', ':')
-        pprint.pprint(nwa_dict)
+        # print('json_dict["floor_type_dict"]', ':')
+        # pprint.pprint(json_dict['floor_type_dict'])
+        # print('nwa_dict', ':')
+        # pprint.pprint(nwa_dict)
         
         for room_uid in json_dict["floor_type_dict"]:
             for floor in nwa_dict:
