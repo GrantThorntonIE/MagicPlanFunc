@@ -2444,12 +2444,6 @@ def XL_2_dict_new(xl_file_path):
                 output[sheet.title] = {}
                 # print('output_table', ':', sheet.title)
                 # Do we need to take the headers?
-                if sheet.title in ['11.1 Lighting Schedule']:
-                    headers = ['uid', 'name', 'height', 'width', 'room_name', 'room_uid', 'floor_name', 'floor_uid']
-                if sheet.title in ['5.2 Window Schedule Table']:
-                    headers.append('cardinal_direction')
-                if sheet.title in ['6. Colour Area Table P1']:
-                    headers = ['colour']
                 if sheet.title in ['5.1 Windows Summary Table', '5.4 Door Summary Table']:
                     headers = ['key']
                 
@@ -2515,53 +2509,117 @@ def XL_2_dict_new(xl_file_path):
                 if sheet.title in ['5.5 Door Schedule Table']:
                     headers = [
                             'uid'
-                            , 'floor_name'
                             , 'Room'
                             , 'Type'
                             , 'Description'
                             , 'Draught Stripped'
-                            , 'Door height (m)'
-                            , 'Door width (m)'
                             , 'Door Area [m2]'
                             , 'U-Value [W/m2K]'
+                            , 'floor_name'
                             , 'Glazing Area (m²)'
                             , 'Glazing Type'
                             , 'Number of openings'
                             , 'Number of openings draughtstripped'
+                            , 'Door height (m)'
+                            , 'Door width (m)'
                             ]
                 
                 
                 
                 
                 if sheet.title in ['2.3 Floor Schedule Table']:
-                    headers = ['uid'
-                    , 'area (m2)'
-                    , 'perimeter'
-                    , 'name'
-                    , 'is this floor being used?'
-                    , 'dwelling age band?'
-                    , 'age band'
-                    , 'underfloor heating?'
-                    , 'description'
-                    , 'U-value calculation required?'
-                    , 'calculated U-value'
-                    , "U-Value"]
+                    headers = [
+                            'uid'
+                            , 'floor_name'
+                            , 'Floor Type'
+                            , 'description'
+                            , 'underfloor heating?'
+                            , 'age band'
+                            , 'perimeter'
+                            , 'area (m2)'
+                            , 'U-value calculation required?'
+                            , 'calculated U-value'
+                            , 'U-Value'
+                            
+                            # , 'dwelling age band?'
+                            ]
                 
                 if sheet.title in ['3.4 Roof Type Schedule Table']:
-                    headers = ['uid'
+                    headers = [
+                                'uid'
                                 ,  'roof type'
-                                ,  'name'
                                 ,  'description'
-                                ,  'roof pitch (degrees)'
-                                ,  'area (m2)'
-                                ,  'dwelling age band?'
-                                ,  'age band'
-                                ,  'insulation thickness known?'
                                 ,  'insulation thickness (mm)'
-                                ,  'thermal conductivity'
-                                ,  'U-value calculation required?'
+                                ,  'age band'
+                                ,  'area (m2)'
                                 ,  'calculated U-value'
-                                ,  'U-value']
+                                ,  'thermal conductivity'
+                                ,  'roof pitch (degrees)'
+                                ,  'insulation thickness known?'
+                                
+                                # ,  'name'
+                                # ,  'dwelling age band?'
+                                # ,  'U-value calculation required?'
+                                # ,  'U-value'
+                                ]
+                
+                
+                if sheet.title in ['4.3 Wall Summary Table']:
+                    headers = [
+                                'sku'
+                                , 'total_surface'
+                                , 'wall type'
+                                , 'description'
+                                , 'Is semi exposed'
+                                , 'age band'
+                                , 'other U-value'
+                                , 'U-value'
+                                , 'insulation thickness'
+                                , 'thermal conductivity (λ)'
+                                
+                                # , 'other wall type'
+                                # , 'dwelling age band?'
+                                # , 'insulation'
+                                # , 'explanation'
+                                # , 'default U-value?'
+                                # , 'can u-value be substantiated?'
+                                # , 'can thermal conductivity be substantiated?'
+                                ]
+                
+                
+                if sheet.title in ['5.1 Windows Summary Table']:
+                    headers = [
+                                'key'
+                                , 'Count of the common windows'
+                                , 'Type'
+                                , 'Description'
+                                , 'No. of opes'
+                                , 'No. of opes draught- stripped'
+                                , 'In roof'
+                                , 'Over shading'
+                                , 'cardinal_direction'
+                                , 'Area [m2]'
+                                , 'U-Value [W/m2K]'
+                                , 'Orientation'
+                                ]
+                
+                if sheet.title in ['5.4 Door Summary Table']:
+                    headers = [
+                                'key'
+                                , 'Count'
+                                , 'Type'
+                                , 'Door Description'
+                                , 'Draught Stripped'
+                                
+                                # , 'Number of openings'
+                                # , 'Number of openings draught stripped'
+                                # , 'Glazing Area (m²)'
+                                # , 'Glazing Area (%)'
+                                # , 'Glazing Type'
+                                # , 'Door U-Value (Wm2K)'
+                                # , 'Total Door Area (m²)'
+                                # , 'Door Type'
+                                ]
                 
                 # if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
                 if 'Building Average Storey' in sheet.title:
@@ -3075,10 +3133,6 @@ def JSON_2_dict(project_id, headers = {
         
         # print('wo', ':')
         # pprint.pprint(wo)
-        # print('wall_dict', ':')
-        # pprint.pprint(wall_dict)
-        # print('wall_type_dict', ':')
-        # pprint.pprint(wall_type_dict)
         # print('forms_data["floor_type_dict"]', ':')
         # pprint.pprint(forms_data["floor_type_dict"])
         
@@ -3089,16 +3143,9 @@ def JSON_2_dict(project_id, headers = {
                                 , xl_ref_dict=xl_ref_dict
                                 , floor_type_dict = floor_type_dict
                                 )
-        
-        if isinstance(stats_data, str):
-            print('error?', ':', stats_data)
         if not isinstance(stats_data, dict):
             raise Exception(stats_data)
         
-        # print('stats_data["floor_dict"]', ':')
-        # pprint.pprint(stats_data['floor_dict'])
-        
-        # Need the areas of the rooms
         
         
         if 'count_dict' in stats_data.keys(): # why wouldn't it be? Don't like this reliance on this condition
@@ -3122,14 +3169,12 @@ def JSON_2_dict(project_id, headers = {
         json_dict["vent_dict"] = stats_data["vent_dict"]
         json_dict["storey_height_dict"] = stats_data["storey_height_dict"]
         
-        
-        
-        
-        
-        
-        
         # Now need to go through Forms adding fields to our object dicts by uid
-        json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
+        print('wall_dict', ':')
+        pprint.pprint(wall_dict)
+        print('wall_type_dict', ':')
+        pprint.pprint(wall_type_dict)
+        # json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
         
         json_dict["door_dict"] = stats_append(stats_data["door_dict"], forms_uid_dict) 
         json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # forms_append?
@@ -3444,7 +3489,7 @@ def door_summary(door_dict):
             # print("json_dict['door_dict'][door]['value']", ':')
             # pprint.pprint(door_dict[door]['value'])
             key = ''
-            for keypart in ['Type']:
+            for keypart in ['Type', 'Draught Stripped']:
                 if keypart in door_dict[door]['value'].keys():
                     key += (str(door_dict[door]['value'][keypart]) + '_')
             key = str(hash(key))
@@ -4300,8 +4345,17 @@ def get_forms_data(id, headers = {
 
         json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + id
         request = urllib.request.Request(json_url, headers=headers)
+        
         JSON = urllib.request.urlopen(request).read()
+        print('type(JSON)', ':', type(JSON))
+        if not type(JSON) is bytes:
+            raise Exception(JSON)
+        
         JSON = json.loads(JSON)
+        print('type(JSON)', ':', type(JSON))
+        if not isinstance(JSON, dict):
+            raise Exception(JSON)
+        
 
         for datum in JSON["data"]:
             if datum["symbol_instance_id"] not in forms_uid_dict.keys():
@@ -4314,9 +4368,9 @@ def get_forms_data(id, headers = {
             forms_full_dict[datum["symbol_type"]][datum["symbol_name"]]['uid'] = datum["symbol_instance_id"]
                 
             for form in datum["forms"]:
+                print(form["title"])
                 for section in form["sections"]:
-                    
-                    if form["title"] == "BER Walls": # BER only
+                    if form["title"] == "b. Building | Walls": # BER only
                         if section["name"] == "":
                             continue
                         wall_type_dict[section["name"]] = {}
@@ -4363,11 +4417,11 @@ def get_forms_data(id, headers = {
                         if field["is_required"] == True and field["value"]["has_value"] == False:
                             missing_vals[datum["symbol_name"]] = im
                             
-                        if form["title"] == "BER Windows Details":
+                        if form["title"] == "c. Building | Windows":
                             if im not in window_detail_dict.keys():
                                 window_detail_dict[im] = {}
                             window_detail_dict[im] = v
-                        if form["title"] == "BER Walls":
+                        if form["title"] == "b. Building | Walls":
                             wall_type_dict[section["name"]][im] = v
                         if form["title"] == "BER Floor Details":
                             floor_type_dict[datum["symbol_instance_id"]][im] = v
@@ -4380,8 +4434,8 @@ def get_forms_data(id, headers = {
             
             
                             
-        # print('floor_type_dict', ':')
-        # pprint.pprint(floor_type_dict)
+        print('wall_type_dict', ':')
+        pprint.pprint(wall_type_dict)
         # print('heating_dict', ':')
         # pprint.pprint(heating_dict)
         
@@ -5364,8 +5418,22 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
-        d = '2.3 Floor Schedule Table'
-        output_dict[d]['headers'] = ['uid', 'area (m2)', 'perimeter', 'dwelling age band?', 'age band', 'underfloor heating?', 'description', 'U-value calculation required?', 'calculated U-value', 'U-Value', 'Floor Type', 'floor_name']
+        # d = '2.3 Floor Schedule Table'
+        # output_dict[d]['headers'] = [
+                                    # 'uid'
+                                    # , 'floor_name'
+                                    # , 'Floor Type'
+                                    # , 'description'
+                                    # , 'underfloor heating?'
+                                    # , 'age band'
+                                    # , 'perimeter'
+                                    # , 'area (m2)'
+                                    # , 'U-value calculation required?'
+                                    # , 'calculated U-value'
+                                    # , 'U-Value'
+                                    
+                                    # , 'dwelling age band?'
+                                    # ]
         
         
         
@@ -5378,7 +5446,32 @@ def BER(root, output = '', email = '', forms_data = {}):
             styling = "border=\"1\""
             
             for section in output_dict:
-                # print('section', ':', section)
+                print('output_dict section', ':', section)
+            
+            output_table_list = [
+                                '1. Survey Details P1'
+                                , '2 Building Average Storey (Floors)'
+                                # , '2 Building Average Storey (Rooms - Floor 16)'
+                                , '2.3 Floor Schedule Table'
+                                , '3.4 Roof Type Schedule Table'
+                                , '4.3 Wall Summary Table'
+                                , '5.5 Door Schedule Table'
+                                , '5.1 Windows Summary Table'
+                                , '6. Colour Area Table P1'
+                                , '7. Thermal Mass P1'
+                                , '8. Ventilation P1'
+                                , '8.1 Ventilation Items'
+                                , '11. Lighting P1'
+                                , '11.1 Lighting Schedule'
+                                # 9. Space Heating P4
+                                # 9.3 Space Heating Category
+                                # 9.4 Heating System Controls
+                                # 9.4 Heating System Controls (2)
+                                # 9.4 Pumps and Fans
+                                ]
+            
+            for section in output_table_list:
+                print('output_table_list section', ':', section)
                 # pprint.pprint(output_dict[section])
                 
                 if 'headers' in output_dict[section].keys():
