@@ -5436,14 +5436,19 @@ def BER(root, output = '', email = '', forms_data = {}):
         if output == '': # otherwise might contain error details from a function? Need to revisit this
             styling = "border=\"1\""
             
-            for section in output_dict:
-                print('output_dict section', ':', section)
-            
             output_table_list = [
                                 '1. Survey Details P1'
                                 , '2 Building Average Storey (Floors)'
-                                # , '2 Building Average Storey (Rooms - Floor 16)'
-                                , '2.3 Floor Schedule Table'
+                                ]
+            
+            for section in output_dict:
+                print('output_dict section', ':', section)
+                if '2 Building Average Storey (Rooms - Floor' in section:
+                    output_table_list.append(section)
+                    
+            
+            output_table_list_2 = [
+                                '2.3 Floor Schedule Table'
                                 , '3.4 Roof Type Schedule Table'
                                 , '4.3 Wall Summary Table'
                                 , '5.5 Door Schedule Table'
@@ -5462,7 +5467,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 # 9.4 Heating System Controls (2)
                                 # 9.4 Pumps and Fans
                                 ]
-            
+                                
             for section in output_table_list:
                 print('output_table_list section', ':', section)
                 # pprint.pprint(output_dict[section])
