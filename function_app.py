@@ -3117,7 +3117,15 @@ def JSON_2_dict(project_id, headers = {
         if forms_data == {}:
             forms_data = get_forms_data(project_id)
         
-        
+        wall_type_dict = {}
+        for wt in forms_data['wall_type_dict']:
+            for key in forms_data['wall_type_dict'][wt].keys():
+                if 'Is there a' in key or wt == 'Wall Type 1':
+                    if forms_data['wall_type_dict'][wt][key] == True or wt == 'Wall Type 1':
+                        wall_type_dict[wt] = forms_data['wall_type_dict'][wt]
+                        wall_type_dict[wt + ' - Semi-Exposed'] = forms_data['wall_type_dict'][wt + ' - Semi-Exposed']
+                        wall_type_dict[wt + ' - Semi-Exposed']['Is semi exposed'] = 'Yes'
+                        # print("wall_type_dict[wt + ' - Semi-Exposed']['Is semi exposed']", ':', wall_type_dict[wt + ' - Semi-Exposed']['Is semi exposed'])
         
         
         form_val_dict = forms_data['form_val_dict']
@@ -3128,7 +3136,6 @@ def JSON_2_dict(project_id, headers = {
         json_uid_dict = forms_uid_dict
         
         window_detail_dict = forms_data['window_detail_dict']
-        wall_type_dict = forms_data['wall_type_dict']
         floor_type_dict = forms_data['floor_type_dict']
         
         # print('wo', ':')
@@ -3301,6 +3308,7 @@ def JSON_2_dict(project_id, headers = {
             if 'Semi' not in wt:
                 for header in wall_type_dict[wt].keys():
                     wall_type_dict[wt + ' - Semi-Exposed'][header] = wall_type_dict[wt][header]
+                wall_type_dict[wt + ' - Semi-Exposed']['Is semi exposed'] = 'Yes'
         
         
         # print('json_dict["roof_dict"]', ':')
@@ -3540,7 +3548,7 @@ def window_summary(window_dict):
                 window_summary_dict[key] = {}
                 window_summary_dict[key]['value'] = {}
                 window_summary_dict[key]['value']['Area [m2]'] = 0
-                window_summary_dict[key]['value']['Count'] = 0
+                window_summary_dict[key]['value']['Count of the common windows'] = 0
                 window_summary_dict[key]['value']['No. of opes'] = 0
                 window_summary_dict[key]['value']['No. of opes draught- stripped'] = 0
             
@@ -3554,7 +3562,7 @@ def window_summary(window_dict):
             
             window_summary_dict[key]['value']['Area [m2]'] += window_dict[window]['value']['Area [m2]']
             window_summary_dict[key]['value']['Area [m2]'] = round(window_summary_dict[key]['value']['Area [m2]'], 2)
-            window_summary_dict[key]['value']['Count'] += 1
+            window_summary_dict[key]['value']['Count of the common windows'] += 1
             window_summary_dict[key]['value']['No. of opes'] += int(window_dict[window]['value']['No. of opes'])
             window_summary_dict[key]['value']['No. of opes draught- stripped'] += int(window_dict[window]['value']['No. of opes draught- stripped'])
         
@@ -5418,23 +5426,6 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
-        # d = '2.3 Floor Schedule Table'
-        # output_dict[d]['headers'] = [
-                                    # 'uid'
-                                    # , 'floor_name'
-                                    # , 'Floor Type'
-                                    # , 'description'
-                                    # , 'underfloor heating?'
-                                    # , 'age band'
-                                    # , 'perimeter'
-                                    # , 'area (m2)'
-                                    # , 'U-value calculation required?'
-                                    # , 'calculated U-value'
-                                    # , 'U-Value'
-                                    
-                                    # , 'dwelling age band?'
-                                    # ]
-        
         
         
         
@@ -5456,6 +5447,8 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 , '3.4 Roof Type Schedule Table'
                                 , '4.3 Wall Summary Table'
                                 , '5.5 Door Schedule Table'
+                                , '5.4 Door Summary Table'
+                                , '5.2 Window Schedule Table'
                                 , '5.1 Windows Summary Table'
                                 , '6. Colour Area Table P1'
                                 , '7. Thermal Mass P1'
