@@ -5468,6 +5468,10 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 # 9.4 Pumps and Fans
                                 ]
                                 
+            
+            output_table_list = output_table_list + output_table_list_2
+            
+            
             for section in output_table_list:
                 print('output_table_list section', ':', section)
                 # pprint.pprint(output_dict[section])
