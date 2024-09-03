@@ -2444,8 +2444,8 @@ def XL_2_dict_new(xl_file_path):
                 output[sheet.title] = {}
                 # print('output_table', ':', sheet.title)
                 # Do we need to take the headers?
-                if sheet.title in ['5.1 Windows Summary Table', '5.4 Door Summary Table']:
-                    headers = ['key']
+                # if sheet.title in ['5.1 Windows Summary Table', '5.4 Door Summary Table']:
+                    # headers = ['key']
                 
 
                 # ************ INCLUDE HEADERS FROM INPUT FILE ************
@@ -2457,7 +2457,6 @@ def XL_2_dict_new(xl_file_path):
                 
                 if sheet.title in ['6. Colour Area Table P1']:
                     headers = ['colour', 'vv']
-                    # for 
                 
                 if sheet.title in ['8.1 Ventilation Items']:
                     headers = [
@@ -2622,15 +2621,31 @@ def XL_2_dict_new(xl_file_path):
                                 ]
                 
                 # if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
-                if 'Building Average Storey' in sheet.title:
+                
+                if sheet.title in ['2 Building Average Storey (Floors)']: # does this sheet title even exist yet? Maybe none of this should be here
+                    headers = ['uid'
+                            , 'number'
+                            ,  'name'
+                            # ,  'floor_type'
+                            ,  'use_floor_level_height'
+                            # ,  'volume'
+                            # ,  'room_type'
+                            ,  'ceiling_height'
+                            # ,  'thermal_envelope'
+                            , 'area'
+                            , 'Living Area (m2)'
+                            ]
+                    
+                    
+                    
+                if 'Building Average Storey (Rooms' in sheet.title:
                     # headers = ['uid']
                     headers = ['uid'
-                            ,  'height'
+                            ,  'ceiling_height'
                             ,  'name'
                             ,  'floor_type'
                             ,  'use_floor_level_height'
                             ,  'volume'
-                            ,  'ceiling_height'
                             ,  'room_type'
                             ,  'thermal_envelope']
                 
@@ -5213,9 +5228,8 @@ def BER(root, output = '', email = '', forms_data = {}):
                 # print("json_dict['storey_height_dict'][room]", ':')
                 # pprint.pprint(json_dict['storey_height_dict'][room])
         
-        # mydict = thisdict.copy()
         output_dict['2 Building Average Storey (Floors)'] = dict(output_dict['2 Building Average Storey'])
-        # output_dict['2 Building Average Storey (Rooms)'] = dict(output_dict['2 Building Average Storey'])
+        
         
         # print(len(json_dict['storey_height_dict']['floors']))
         for e in json_dict['storey_height_dict']['floors']:
@@ -5223,6 +5237,13 @@ def BER(root, output = '', email = '', forms_data = {}):
             if json_dict['storey_height_dict']['floors'][e]['value']['floor_type'] in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
                 output_dict['2 Building Average Storey (Floors)'][e] = json_dict['storey_height_dict']['floors'][e]
             # print('len output floors', ':', len(output_dict['2 Building Average Storey (Floors)']))
+            
+        
+        print("output_dict['2 Building Average Storey (Floors)']", ':')
+        pprint.pprint(output_dict['2 Building Average Storey (Floors)'])
+        
+        
+        
         
         floors = []
         for e in json_dict['storey_height_dict']['rooms']:
@@ -5341,6 +5362,10 @@ def BER(root, output = '', email = '', forms_data = {}):
         for ef in efs:
             if output_dict[d][ef]['value'] == '':
                 del output_dict[d][ef]
+            else:
+                if output_dict[d][ef]['value']['value'] == '':
+                    del output_dict[d][ef]
+                # print(ef, ':', output_dict[d][ef])
         
         d = '7. Thermal Mass P1'
         
@@ -5422,12 +5447,11 @@ def BER(root, output = '', email = '', forms_data = {}):
                         del output_dict[d][ef]
             
         d = '2 Building Average Storey (Floors)'
-        output_dict[d]['headers'] = ['uid', 'name', 'use_floor_level_height', 'ceiling_height', 'area']
+        output_dict[d]['headers'] = ['uid', 'number', 'name', 'use_floor_level_height', 'ceiling_height', 'area', 'Living Area (m2)']
         
         
-        
-        
-        
+        # 2 Building Average Storey (Rooms - Floor 
+        # output_dict[d]['headers'] = ['uid', 'area', 'ceiling_height', 'volume', 'room_type', 'thermal_envelope']
         
         
         # *****************************
@@ -5452,7 +5476,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 , '3.4 Roof Type Schedule Table'
                                 , '4.3 Wall Summary Table'
                                 , '5.5 Door Schedule Table'
-                                , '5.4 Door Summary Table'
+                                # , '5.4 Door Summary Table'
                                 , '5.2 Window Schedule Table'
                                 , '5.1 Windows Summary Table'
                                 , '6. Colour Area Table P1'
