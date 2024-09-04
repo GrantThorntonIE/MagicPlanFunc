@@ -2582,8 +2582,9 @@ def XL_2_dict_new(xl_file_path):
                                 ,  'description'
                                 ,  'insulation thickness (mm)'
                                 ,  'age band'
-                                ,  'area (m2)'
+                                # ,  'area (m2)'
                                 ,  'U-value'
+                                ,  'Total roof type Area (m²)'
                                 ]
                 
                 
@@ -3549,7 +3550,7 @@ def roof_summary(roof_dict):
                 # roof_summary_dict[key]['value']['Number of openings'] = 0
                 # roof_summary_dict[key]['value']['Number of openings draughtstripped'] = 0
             
-            for keypart in ['roof type', 'description', 'insulation thickness (mm)', 'age band', 'area (m2)', 'U-value', 'Description', '']:
+            for keypart in ['roof type', 'description', 'insulation thickness (mm)', 'age band', 'U-value']:
                 if keypart in roof_dict[roof]['value'].keys():
                     roof_summary_dict[key]['value'][keypart] = roof_dict[roof]['value'][keypart] 
             
@@ -4743,8 +4744,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         est_dict = xml_dict[5]
         storey_height_dict = xml_dict[6]
         
-        # print('nwa_dict["11"]', ':')
-        # pprint.pprint(nwa_dict["11"])
+        print('nwa_dict["11"]', ':')
+        pprint.pprint(nwa_dict["11"])
         
         
         
@@ -5590,7 +5591,7 @@ def BER(root, output = '', email = '', forms_data = {}):
             output_table_list_2 = [
                                 '2.3 Floor Schedule Table'
                                 , '3.4 Roof Type Schedule Table'
-                                # , '3.5 Roof Type Summary Table'
+                                , '3.5 Roof Type Summary Table'
                                 , '4.3 Wall Summary Table'
                                 , '5.5 Door Schedule Table'
                                 # , '5.4 Door Summary Table'
@@ -5632,7 +5633,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                 
                 
                 
-                if section in ['2 Building Average Storey (Floors)', '2.3 Floor Schedule Table', '5.2 Window Schedule Table', '5.5 Door Schedule Table', '8.1 Ventilation Items', '11.1 Lighting Schedule']:
+                if section in ['2 Building Average Storey (Floors)', '2.3 Floor Schedule Table', '3.5 Roof Type Summary Table', '5.2 Window Schedule Table', '5.5 Door Schedule Table', '8.1 Ventilation Items', '11.1 Lighting Schedule']:
                     headers_only = True
                 else:
                     headers_only = False
