@@ -4744,8 +4744,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         est_dict = xml_dict[5]
         storey_height_dict = xml_dict[6]
         
-        print('nwa_dict["11"]', ':')
-        pprint.pprint(nwa_dict["11"])
+        # print('nwa_dict["11"]', ':')
+        # pprint.pprint(nwa_dict["11"])
         
         
         
