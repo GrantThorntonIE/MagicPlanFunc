@@ -3036,7 +3036,7 @@ def get_stats_data(project_id, headers = {
                             window_dict[furniture["uid"]] = {}
                             window_dict[furniture["uid"]]['value'] = {}
                             window_dict[furniture["uid"]]['value']["name"] = furniture["name"]
-                            window_dict[furniture["uid"]]['value']["height"] = furniture["height"]
+                            window_dict[furniture["uid"]]['value']["height"] = furniture["depth"] # note difference for roof lights
                             window_dict[furniture["uid"]]['value']["width"] = furniture["width"]
                             window_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
                             window_dict[furniture["uid"]]['value']["room_name"] = room["name"]
@@ -3103,7 +3103,14 @@ def get_stats_data(project_id, headers = {
                                 window_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
                                 window_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
                                 window_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
-                            
+                
+                for w in window_dict:
+                    room_uid = window_dict[w]['value']["room_uid"]
+                    if room_uid in roof_dict.keys():
+                        a = window_dict[w]['value']["height"] * window_dict[w]['value']["width"] # note this calculation is also performed later in window_forms_append()
+                        roof_dict[room_uid]['value']['area'] -= a
+                
+                
         # print('floor_type_dict (post)', ';')
         # pprint.pprint(floor_type_dict)
         
@@ -3248,8 +3255,8 @@ def JSON_2_dict(project_id, headers = {
         json_dict["storey_height_dict"] = stats_data["storey_height_dict"]
         
         # Now need to go through Forms adding fields to our object dicts by uid
-        # print('wall_dict', ':')
-        # pprint.pprint(wall_dict)
+        # print('stats_data["door_dict"]', ':')
+        # pprint.pprint(stats_data["door_dict"])
         # print('wall_type_dict', ':')
         # pprint.pprint(wall_type_dict)
         # json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
@@ -3258,6 +3265,11 @@ def JSON_2_dict(project_id, headers = {
         json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # forms_append?
         json_dict["roof_dict"] =  stats_append(stats_data["roof_dict"], forms_uid_dict) 
         
+        # print('json_dict["door_dict"]', ':')
+        # pprint.pprint(json_dict["door_dict"])
+        
+        
+        # 66d588c8.6ad3e7ff
         
         json_dict["floor_name_dict"] = stats_data["floor_dict"]
 
@@ -3548,8 +3560,8 @@ def stats_append(stats_dict, forms_dict):
     try:
         # print('stats_dict', ':')
         # pprint.pprint(stats_dict)
-        # print('forms_dict', ':')
-        # pprint.pprint(forms_dict)
+        print('forms_dict', ':')
+        pprint.pprint(forms_dict)
         
         
         for item in stats_dict:
@@ -3803,7 +3815,8 @@ def door_forms_append(object_dict, forms_uid_dict): # shouldn't any part of the 
             object_dict[door]['value']['Door Area [m2]'] = round(object_dict[door]['value']['width'] * object_dict[door]['value']['height'], 2)
             
             
-            for f in ['Type', 'Description', 'Draught Stripped', 'U-Value [W/m2K]', 'Glazing Area (m²)', 'Glazing Type']:
+            # for f in ['Type', 'Description', 'Draught Stripped', 'U-Value [W/m2K]', 'Glazing Area (m²)', 'Glazing Type']:
+            for f in ['Type', 'Draught Stripped', 'U-Value [W/m2K]', 'Glazing Area (m²)', 'Glazing Type']:
                 object_dict[door]['value'][f] = ''
             
             
@@ -3814,8 +3827,8 @@ def door_forms_append(object_dict, forms_uid_dict): # shouldn't any part of the 
             for key in object_dict[door]['value']:
                 if 'Door Type' in key:
                     object_dict[door]['value']['Type'] = object_dict[door]['value'][key]
-                if 'Description' in key:
-                    object_dict[door]['value']['Description'] = object_dict[door]['value'][key]
+                # if 'Description' in key:
+                    # object_dict[door]['value']['Description'] = object_dict[door]['value'][key]
                 if 'Is the Door Opening Draught Stripped?' in key:
                     object_dict[door]['value']['Draught Stripped'] = object_dict[door]['value'][key]
                 if 'U-Value' in key:
@@ -5249,8 +5262,9 @@ def BER(root, output = '', email = '', forms_data = {}):
             output_dict['3.4 Roof Type Schedule Table'][roof] = json_dict['roof_dict'][roof]
         
         for wall_type in json_dict['wall_type_dict']:
-            # if json_dict['wall_type_dict'][wall_type]
-            output_dict['4.3 Wall Summary Table'][wall_type] = json_dict['wall_type_dict'][wall_type]
+            if 'total_surface' in json_dict['wall_type_dict'][wall_type].keys():
+                if json_dict['wall_type_dict'][wall_type]['total_surface'] != '':
+                    output_dict['4.3 Wall Summary Table'][wall_type] = json_dict['wall_type_dict'][wall_type]
         
         for colour in colours_dict:
             output_dict['6. Colour Area Table P1'][colour] = colours_dict[colour]
@@ -5288,10 +5302,11 @@ def BER(root, output = '', email = '', forms_data = {}):
             else:
                 json_dict['storey_height_dict']['rooms'][e] = json_dict['storey_height_dict'][e]
                 if json_dict['storey_height_dict'][e]['value']['room_type'] == 'Living Room':
-                    # ft = json_dict['storey_height_dict'][e]['value']['floor_type']
-                    la = json_dict['storey_height_dict'][e]['value']['area']
-                    if la > la_max:
-                        la_max = la
+                    ft = json_dict['storey_height_dict'][e]['value']['floor_type']
+                    if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
+                        la = json_dict['storey_height_dict'][e]['value']['area']
+                        if la > la_max:
+                            la_max = la
         
         json_dict['largest_living_area'] = str(la_max)
         
@@ -5328,7 +5343,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # *************** CALCULATE CEILING HEIGHT ***************
         
-        calc_floors = [] # list of floors for which calc is necessary
+        calc_floors = [] # list of floors for which calc is necessary (output will include a table for each of these)
         ch_dict = {}
         for fv in fv_dict:
             for floor in json_dict['storey_height_dict']['floors']:
@@ -5342,6 +5357,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                             a = fa_dict[fv]
                             ch = round(v / a, 2)
                             json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = ch
+                            print('fv', ':', fv)
                             print('v', ':', v)
                             print('a', ':', a)
                             print('ch', ':', ch)
@@ -5364,22 +5380,13 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         # print(len(json_dict['storey_height_dict']['floors']))
-        fn = 1
+        fn = 0
         for e in json_dict['storey_height_dict']['floors']:
-            # if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
             ft = json_dict['storey_height_dict']['floors'][e]['value']['floor_type']
-            # if ft in la_dict.keys():
-                # json_dict['storey_height_dict']['floors'][e]['value']['Living Area (m2)'] = la_dict[ft]
-            
             if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
-                # json_dict['storey_height_dict']['floors'][e]['value']['number'] = str(fn)
                 fn += 1
                 output_dict['2 Building Average Storey (Floors)'][e] = json_dict['storey_height_dict']['floors'][e]
-            # print('len output floors', ':', len(output_dict['2 Building Average Storey (Floors)']))
         json_dict['no_of_stories'] = str(fn)
-        
-        # print("output_dict['2 Building Average Storey (Floors)']", ':')
-        # pprint.pprint(output_dict['2 Building Average Storey (Floors)'])
         
         
         
@@ -5391,8 +5398,8 @@ def BER(root, output = '', email = '', forms_data = {}):
             if ft not in floors:
                 floors.append(ft)
             # print(ft)
-        # print('floors', ':', floors)
-        # print('calc_floors', ':', calc_floors)
+        print('floors', ':', floors)
+        print('calc_floors', ':', calc_floors)
         
         for ft in calc_floors:
             output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'] = {}
@@ -5407,6 +5414,10 @@ def BER(root, output = '', email = '', forms_data = {}):
             # print('ft', ':', ft)
             if ft in calc_floors:
                 # if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
+                print("json_dict['storey_height_dict']['rooms'][e]", ':')
+                pprint.pprint(json_dict['storey_height_dict']['rooms'][e])
+                if 'ceiling_height' not in json_dict['storey_height_dict']['rooms'][e].keys():
+                    json_dict['storey_height_dict']['rooms'][e]['value']['ceiling_height'] = json_dict['storey_height_dict']['rooms'][e]['value']['height']
                 output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'][e] = json_dict['storey_height_dict']['rooms'][e]
                 
                 
