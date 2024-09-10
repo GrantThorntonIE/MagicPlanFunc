@@ -69,7 +69,8 @@ def create_table(dict : dict[str, list[float]], headers : list,
 
 def create_table_text(dict, headers : list,
                   do_not_sum : list[str] = [], 
-                  styling: str = "", order_list = []) -> str:
+                  styling: str = "", colour_table : bool = False
+                  , order_list = []) -> str:
     try:
         
         # print(dict)
@@ -101,6 +102,8 @@ def create_table_text(dict, headers : list,
                 # print(key, dict[key])
                 if key.isupper():
                     output += f'<tr><td><strong>{key}</strong></td>'
+                elif colour_table:
+                    output += f'<tr><td><font color="{key[:len(key)-2]}"><b>Colour {i}</b></font></td>'
                 else:
                     output += f'<tr><td>{key}</td>'
                 output += f'<td>{dict[key]}</td>'
@@ -2415,7 +2418,23 @@ def XL_2_dict_new(xl_file_path):
                             , '5.4 Door Summary Table'
                             , '5.5 Door Schedule Table'
                             , '6. Colour Area Table P1'
-                            , '8.1 Ventilation Items'
+                            # , '8.1 Attic Hatches'
+                            # , '8.2 Ventilation Items'
+                            
+
+                            #, '10. Water Heating P3'
+                            #, '10.3 Showers and Baths Table'
+                            #, '10.4 Solar Thermal Table'
+                            #, '12. Renewables P5'
+                            #, '12.1 Renewables Table'
+                            #, '9. Space Heating'
+                            #, '9.1 Space Heating Schedule'
+                            #, '9.2 Space Heating Category'
+                            #, '9.5 Pumps and Fans'
+
+                            
+                            
+                            
                             , '9.3 Space Heating Category'
                             , '11.1 Lighting Schedule'
                             ]
@@ -2467,7 +2486,7 @@ def XL_2_dict_new(xl_file_path):
                 
                 
                 if sheet.title in ['6. Colour Area Table P1']:
-                    headers = ['colour', 'vv']
+                    headers = ['colour', 'value']
                 
                 if sheet.title in ['8.1 Ventilation Items']:
                     headers = [
@@ -2645,6 +2664,25 @@ def XL_2_dict_new(xl_file_path):
                                 # , 'Door U-Value (Wm2K)'
                                 # , 'Total Door Area (m²)'
                                 # , 'Door Type'
+                                ]
+                
+                #, '10. Water Heating P3'
+                #, '10.3 Showers and Baths Table'
+                #, '10.4 Solar Thermal Table'
+                #, '12. Renewables P5'
+                #, '12.1 Renewables Table'
+                #, '9. Space Heating'
+                #, '9.1 Space Heating Schedule'
+                #, '9.2 Space Heating Category'
+                #, '9.5 Pumps and Fans'
+                            
+                if sheet.title in ['8.1 Attic Hatches']:
+                    headers = [
+                                'Type'
+                                , 'Room'
+                                , 'Description'
+                                , 'Count'
+                                
                                 ]
                 
                 # if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
@@ -3560,8 +3598,8 @@ def stats_append(stats_dict, forms_dict):
     try:
         # print('stats_dict', ':')
         # pprint.pprint(stats_dict)
-        print('forms_dict', ':')
-        pprint.pprint(forms_dict)
+        # print('forms_dict', ':')
+        # pprint.pprint(forms_dict)
         
         
         for item in stats_dict:
@@ -3716,8 +3754,8 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
     
     try:
         
-        print('object_dict', ':')
-        pprint.pprint(object_dict)
+        # print('object_dict', ':')
+        # pprint.pprint(object_dict)
         
         for window in object_dict:
             object_dict[window]['value']['Room'] = object_dict[window]['value']['room_name']
@@ -3820,8 +3858,8 @@ def door_forms_append(object_dict, forms_uid_dict): # shouldn't any part of the 
                 object_dict[door]['value'][f] = ''
             
             
-            print("object_dict[door]['value']", ':')
-            pprint.pprint(object_dict[door]['value'])
+            # print("object_dict[door]['value']", ':')
+            # pprint.pprint(object_dict[door]['value'])
             
             
             for key in object_dict[door]['value']:
@@ -4105,7 +4143,7 @@ def XML_2_dict_new(root, t = "floor"):
                 area = float(room.get('area'))
                 if colour in colour_hex_2_name_dict.keys():
                     colour = colour_hex_2_name_dict[colour]
-                print('colour', ':', colour)
+                # print('colour', ':', colour)
                 if colour not in colours_dict:
                     colours_dict[colour] = {}
                     colours_dict[colour]['value'] = {}
@@ -4230,6 +4268,22 @@ def XML_2_dict_new(root, t = "floor"):
         # print("xml_ref_dict['exclude_rooms']", ':', str(xml_ref_dict['exclude_rooms']))
         # print("xml_ref_dict['include_rooms']", ':', str(xml_ref_dict['include_rooms']))
         
+        
+        pi = 3.14159
+        offset = 0
+        for floor in floors:
+            ft = floor.get("floorType")
+            if ft == "0":
+                for si in floor.findall("symbolInstance"):
+                    s = si.get("symbol")
+                    if s in ['compass', '634004d284d12@edit:775a214c-7656-4548-ab5d-2c490583a32b']:
+                        siid = si.get("id")
+                        for f in floor.findall("furniture"):
+                            si2 = f.get("symbolInstance")
+                            if si2 == siid:
+                                offset = f.get("angle")
+        
+        # print('offset', ':', offset)
         
         
         
@@ -4442,13 +4496,14 @@ def XML_2_dict_new(root, t = "floor"):
             # print('o', ':')
             # pprint.pprint(o)
             
-            offset = 0
-            for window in o:
-                if o[window]['symbol'] in ['compass', '634004d284d12@edit:775a214c-7656-4548-ab5d-2c490583a32b']:
+            # pi = 3.14159
+            # offset = 0
+            # for window in o:
+                # if o[window]['symbol'] in ['compass', '634004d284d12@edit:775a214c-7656-4548-ab5d-2c490583a32b']:
                     # print("o[window]", ':')
                     # pprint.pprint(o[window])
-                    offset = float(o[window]['angle'])
-            pi = 3.14159
+                    # offset = float(o[window]['angle'])
+                    # print('offset', ':', offset)
             
             for window in o:
                 if o[window]['symbol'] == 'compass':
@@ -5096,8 +5151,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(json_dict['count_dict'])
         
         
-        print('colours_dict', ':')
-        pprint.pprint(colours_dict)
+        print("json_dict['count_dict']", ':')
+        pprint.pprint(json_dict['count_dict'])
         
         colours_dict_2 = {}
         for c in colours_dict:
@@ -5109,8 +5164,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         colours_dict = colours_dict_2
         
-        print('colours_dict', ':')
-        pprint.pprint(colours_dict)
+        # print('colours_dict', ':')
+        # pprint.pprint(colours_dict)
         
         
         # *****************************
@@ -5310,7 +5365,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         json_dict['largest_living_area'] = str(la_max)
         
-        print("json_dict['largest_living_area']", ':', json_dict['largest_living_area'])
+        # print("json_dict['largest_living_area']", ':', json_dict['largest_living_area'])
         
         
         # Need to sum room volumes by floor_type
@@ -5357,10 +5412,10 @@ def BER(root, output = '', email = '', forms_data = {}):
                             a = fa_dict[fv]
                             ch = round(v / a, 2)
                             json_dict['storey_height_dict']['floors'][floor]['value']['ceiling_height'] = ch
-                            print('fv', ':', fv)
-                            print('v', ':', v)
-                            print('a', ':', a)
-                            print('ch', ':', ch)
+                            # print('fv', ':', fv)
+                            # print('v', ':', v)
+                            # print('a', ':', a)
+                            # print('ch', ':', ch)
                             ch_dict[fv] = ch
                             # also need to add this value to rooms dict
                             
@@ -5414,8 +5469,8 @@ def BER(root, output = '', email = '', forms_data = {}):
             # print('ft', ':', ft)
             if ft in calc_floors:
                 # if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
-                print("json_dict['storey_height_dict']['rooms'][e]", ':')
-                pprint.pprint(json_dict['storey_height_dict']['rooms'][e])
+                # print("json_dict['storey_height_dict']['rooms'][e]", ':')
+                # pprint.pprint(json_dict['storey_height_dict']['rooms'][e])
                 if 'ceiling_height' not in json_dict['storey_height_dict']['rooms'][e].keys():
                     json_dict['storey_height_dict']['rooms'][e]['value']['ceiling_height'] = json_dict['storey_height_dict']['rooms'][e]['value']['height']
                 output_dict['2 Building Average Storey (Rooms - Floor ' + ft + ')'][e] = json_dict['storey_height_dict']['rooms'][e]
@@ -5442,8 +5497,8 @@ def BER(root, output = '', email = '', forms_data = {}):
             json_dict['count_dict']['Attic Hatches Not Draught stripped'] = json_dict['count_dict']['Attic Hatch Not Draughtproofed']
         
         
-        # print("json_dict['count_dict']", ':')
-        # pprint.pprint(json_dict['count_dict'])
+        print("json_dict['count_dict']", ':')
+        pprint.pprint(json_dict['count_dict'])
         
         
         
@@ -5632,8 +5687,8 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 , '5.1 Windows Summary Table'
                                 , '6. Colour Area Table P1'
                                 , '7. Thermal Mass P1'
-                                , '8. Ventilation P1'
-                                , '8.1 Ventilation Items'
+                                # , '8. Ventilation P1'
+                                # , '8.1 Ventilation Items'
                                 , '11. Lighting P1'
                                 , '11.1 Lighting Schedule'
                                 # 9. Space Heating P4
@@ -5674,10 +5729,15 @@ def BER(root, output = '', email = '', forms_data = {}):
                 if '2 Building Average Storey (Rooms' in section:
                     headers_only = True
                 
+                colour_table = False
+                if section == '6. Colour Area Table P1':
+                    colour_table = True
+                    order_list = []
+                
                 
                 section_output = f"""\
                                 <h1>{section}</h1> \
-                                {create_table_new(output_dict[section], headers, styling=styling, do_not_sum=['All'], order_list=order_list, title=section, headers_only=headers_only)} \
+                                {create_table_new(output_dict[section], headers, styling=styling, do_not_sum=['All'], order_list=order_list, title=section, headers_only=headers_only, colour_table=colour_table)} \
                                 </div>"""
                 output = output + section_output
                 
@@ -5718,6 +5778,7 @@ def create_table_new(data_dict
                     , order_list = []
                     , title = ''
                     , headers_only = False
+                    , colour_table = False
                     ) -> str:
     try:
         
@@ -5830,6 +5891,8 @@ def create_table_new(data_dict
                 # print(key, data_dict[key])
                 if key.isupper():
                     output += f'<tr><td><strong>{key}</strong></td>'
+                elif colour_table:
+                    output += f'<tr><td><font color="{key[:len(key)-2]}"><b>Colour {i}</b></font></td>'
                 else:
                     output += f'<tr><td>{key}</td>'
                 output += f'<td>{data_dict[key]}</td>'
