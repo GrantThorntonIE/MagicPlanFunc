@@ -3040,20 +3040,8 @@ def get_stats_data(project_id, headers = {
                     floor_type_dict[room["uid"]]['value']['floor_uid'] = floor_uid
                     floor_type_dict[room["uid"]]['value']['floor_name'] = floor_name
             
-            # floor_dict[floor["uid"]] = {}
-            # floor_dict[floor["uid"]]['rooms'] = []
-            # floor_dict[floor["uid"]]['value'] = {}
-            # for floor_stat in floor:
-                # if floor_stat in ["name", "area", "perimeter", "ground_perimeter", "area_without_walls", "area_with_interior_walls_only", "area_with_walls"]:
-                    # floor_dict[floor["uid"]]['value'][floor_stat] = floor[floor_stat]
             
-            
-            
-            
-            
-            
-            
-            if floor["uid"] in xml_ref_dict.keys(): # when would it not be?
+            if floor["uid"] in xml_ref_dict.keys(): # when would it not be? why is this condition necessary here?
                 # if xml_ref_dict[floor["uid"]] == '1000':
                     # del floor_dict[floor["uid"]]
                 
@@ -3145,8 +3133,10 @@ def get_stats_data(project_id, headers = {
                 for w in window_dict:
                     room_uid = window_dict[w]['value']["room_uid"]
                     if room_uid in roof_dict.keys():
-                        a = window_dict[w]['value']["height"] * window_dict[w]['value']["width"] # note this calculation is also performed later in window_forms_append()
-                        roof_dict[room_uid]['value']['area'] -= a
+                        a = window_dict[w]['value']["height"] * window_dict[w]['value']["width"] # note this calculation is performed again later in window_forms_append()
+                        if 'rooflight_area' not in roof_dict[room_uid]['value'].keys():
+                            roof_dict[room_uid]['value']['rooflight_area'] = 0
+                        roof_dict[room_uid]['value']['rooflight_area'] += a
                 
                 
         # print('floor_type_dict (post)', ';')
@@ -3380,7 +3370,10 @@ def JSON_2_dict(project_id, headers = {
                     sa = ra / cos(rp / 57.2958)
                     # print('sa', ':', sa)
                     json_dict["roof_dict"][rt]['value']['area (m2)'] = round(sa, 3)
-        
+            
+            if 'rooflight_area' in json_dict["roof_dict"][rt]['value'].keys():
+                json_dict["roof_dict"][rt]['value']['area (m2)'] -= json_dict["roof_dict"][rt]['value']['rooflight_area']
+            
         # print('post calc', ':')
         # pprint.pprint(json_dict["roof_dict"])
         
@@ -5318,7 +5311,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         for wall_type in json_dict['wall_type_dict']:
             if 'total_surface' in json_dict['wall_type_dict'][wall_type].keys():
-                if json_dict['wall_type_dict'][wall_type]['total_surface'] != '':
+                if json_dict['wall_type_dict'][wall_type]['total_surface'] != '' or 'Semi-Exposed' not in json_dict['wall_type_dict'][wall_type]:
                     output_dict['4.3 Wall Summary Table'][wall_type] = json_dict['wall_type_dict'][wall_type]
         
         for colour in colours_dict:
@@ -5652,7 +5645,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                         del output_dict[d][ef]
             
         d = '2 Building Average Storey (Floors)'
-        output_dict[d]['headers'] = ['uid', 'name', 'use_floor_level_height', 'ceiling_height', 'area']
+        output_dict[d]['headers'] = ['uid', 'name', 'use_floor_level_height', 'ceiling_height']
         
         for d in list(output_dict.keys()):
             if '2 Building Average Storey (Rooms' in d:
