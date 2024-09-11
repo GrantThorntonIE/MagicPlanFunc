@@ -2418,8 +2418,8 @@ def XL_2_dict_new(xl_file_path):
                             , '5.4 Door Summary Table'
                             , '5.5 Door Schedule Table'
                             , '6. Colour Area Table P1'
-                            # , '8.1 Attic Hatches'
-                            # , '8.2 Ventilation Items'
+                            , '8.1 Attic Hatches'
+                            , '8.2 Ventilation Items'
                             
 
                             #, '10. Water Heating P3'
@@ -2486,18 +2486,25 @@ def XL_2_dict_new(xl_file_path):
                 
                 
                 if sheet.title in ['6. Colour Area Table P1']:
-                    headers = ['colour', 'value']
+                    headers = ['colour', 'floor: area']
                 
-                if sheet.title in ['8.1 Ventilation Items']:
+                if sheet.title in ['8.1 Attic Hatches']:
                     headers = [
-                            'uid'
-                            , 'name'
-                            , 'room_name'
-                            , 'floor_name'
-                            , 'Count'
+                            'Room'
                             , 'Type'
+                            , 'Count'
                             , 'Description'
                             ]
+                
+                if sheet.title in ['8.2 Ventilation Items']:
+                    headers = [
+                            'Room'
+                            , 'Type'
+                            , 'Count'
+                            , 'Description'
+                            ]
+                
+                
                 
                 if sheet.title in ['11.1 Lighting Schedule']:
                     headers = [
@@ -2676,14 +2683,6 @@ def XL_2_dict_new(xl_file_path):
                 #, '9.2 Space Heating Category'
                 #, '9.5 Pumps and Fans'
                             
-                if sheet.title in ['8.1 Attic Hatches']:
-                    headers = [
-                                'Type'
-                                , 'Room'
-                                , 'Description'
-                                , 'Count'
-                                
-                                ]
                 
                 # if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
                 
@@ -2999,6 +2998,7 @@ def get_stats_data(project_id, headers = {
                
         
         count_objects = composite_count_objects + bulbs + intermittent_fans + openings + cond_count_objects # add column
+        print('count_objects', ':', count_objects)
         for co in count_objects:
             count_dict[co] = 0
         
@@ -3046,8 +3046,8 @@ def get_stats_data(project_id, headers = {
                     # del floor_dict[floor["uid"]]
                 
                 for room in floor["rooms"]:
-                    # if floor["uid"] in floor_dict.keys():
-                        # floor_dict[floor["uid"]]['rooms'].append(room["uid"])
+                    room_uid = room["uid"]
+                    
                     if xml_ref_dict[floor["uid"]] == '1000':
                         roof_dict[room["uid"]] = {}
                         roof_dict[room["uid"]]['value'] = {}
@@ -3056,9 +3056,9 @@ def get_stats_data(project_id, headers = {
                                 roof_dict[room["uid"]]['value'][room_stat] = room[room_stat]
                         
                     
-                    # Need special one for roof/skylights - furnitures on a non-true-floor that need to appear in window table
+                    # Need special one for roof/skylights - furnitures on a non-true-floor (1000? could this loop be tabbed right under the above umbrella?) that need to appear in window table
                     for furniture in room["furnitures"]:
-                        if furniture["id"] in windows:
+                        if furniture["id"] in windows: # can this only happen on floor 1000?
                             window_dict[furniture["uid"]] = {}
                             window_dict[furniture["uid"]]['value'] = {}
                             window_dict[furniture["uid"]]['value']["name"] = furniture["name"]
@@ -3070,12 +3070,18 @@ def get_stats_data(project_id, headers = {
                             window_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
                     
                     
-                    if floor_uid in xml_ref_dict['true_floors']:
+                    if floor_uid in xml_ref_dict['true_floors'] and room_uid in xml_ref_dict['thermal_envelope_uids']:
+                        if room_uid not in count_dict.keys():
+                            count_dict[room_uid] = {}
                     
                         for furniture in room["furnitures"]:
                             # print('furniture["name"]', ':', furniture["name"], ' ', 'furniture["id"]', ':', furniture["id"])
                             if furniture["name"] in count_objects:
                                 count_dict[furniture["name"]] += 1
+                                if furniture["name"] not in count_dict[room_uid].keys():
+                                    count_dict[room_uid][furniture["name"]] = 0
+                                count_dict[room_uid][furniture["name"]] += 1
+                            
                             if furniture["id"] in bulbs:
                                 bulb_dict[furniture["uid"]] = {}
                                 bulb_dict[furniture["uid"]]['value'] = {}
@@ -3099,7 +3105,10 @@ def get_stats_data(project_id, headers = {
                             # print(wall_item["uid"])
                             if wall_item["id"] in count_objects:
                                 count_dict[wall_item["id"]] += 1
-                        
+                                if wall_item["id"] not in count_dict[room_uid].keys():
+                                    count_dict[room_uid][wall_item["id"]] = 0
+                                count_dict[room_uid][wall_item["id"]] += 1
+                                
                             if wall_item["id"] in vents:
                                 vent_dict[wall_item["uid"]] = {}
                                 vent_dict[wall_item["uid"]]['value'] = {}
@@ -3130,6 +3139,7 @@ def get_stats_data(project_id, headers = {
                                 window_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
                                 window_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
                 
+                # Get "rooflight_area" (to be subtracted later after slope calculations)
                 for w in window_dict:
                     room_uid = window_dict[w]['value']["room_uid"]
                     if room_uid in roof_dict.keys():
@@ -3139,6 +3149,8 @@ def get_stats_data(project_id, headers = {
                         roof_dict[room_uid]['value']['rooflight_area'] += a
                 
                 
+        # print('roof_dict', ';')
+        # pprint.pprint(roof_dict)
         # print('floor_type_dict (post)', ';')
         # pprint.pprint(floor_type_dict)
         
@@ -3263,8 +3275,8 @@ def JSON_2_dict(project_id, headers = {
         
         if 'count_dict' in stats_data.keys(): # why wouldn't it be? Don't like this reliance on this condition
             count_dict = stats_data['count_dict']
-            # print('count_dict', ':')
-            # pprint.pprint(count_dict)
+            print('count_dict', ':')
+            pprint.pprint(count_dict)
             # add counts to json_dict as strings (top-level key:value pairs - should this be happening here or is it more suited to return the table as-is and then do the output prep all together? what about multi-col tables? any counts in those? if so, will this approach work?):
             for key in count_dict.keys():
                 json_dict[key] = str(count_dict[key])
@@ -3483,6 +3495,8 @@ def condense(old_dict, json_dict):
                 
                 if x == 'area':
                     new_dict[e]['value_condensed']['area (m2)'] = new_dict[e]['value'][x]
+                if x == 'rooflight_area':
+                    new_dict[e]['value_condensed']['rooflight_area'] = new_dict[e]['value'][x]
                 if x == 'name':
                     new_dict[e]['value_condensed']['name'] = new_dict[e]['value'][x]
                 if x == 'perimeter':
@@ -4044,64 +4058,6 @@ def XML_2_dict_new(root, t = "floor"):
 
         
         
-        thermal_envelope = [
-                            # 'Archives'
-                            # , 'Bathroom'
-                            # , 'Bedroom'
-                            # , 'Cafeteria'
-                            # , 'Children Bedroom'
-                            # , 'Closet'
-                            # , 'Conference Room'
-                            # , 'Den'
-                            # , 'Dining Room'
-                            # , 'Elevators'
-                            # , 'Half Bathroom'
-                            # , 'Hall'
-                            # , 'Hallway'
-                            # , 'Hatched Room'
-                            # , 'Kitchen'
-                            # , 'Kitchenette'
-                            # , 'Lab'
-                            # , 'Laundry Room'
-                            # , 'Living Room'
-                            # , 'Lounge'
-                            # , 'Maintenance Room'
-                            # , 'Meeting Room'
-                            # , 'Music Room'
-                            # , 'Open Space'
-                            # , 'Other'
-                            # , 'Photocopy Room'
-                            # , 'Playroom'
-                            # , 'Porch'
-                            # , 'Primary Bathroom'
-                            # , 'Primary Bedroom'
-                            # , 'Private Office'
-                            # , 'Reception'
-                            # , 'Restrooms'
-                            # , 'Server Room'
-                            # , 'Shared Office'
-                            # , 'Stairway'
-                            # , 'Storage'
-                            # , 'Study'
-                            # , 'Toilet'
-                            # , 'Training Room'
-                            # , 'Vestibule'
-                            # , 'Waiting Room'
-                            ]
-        
-        ex_thermal_envelope = [
-                                # 'Attic/Loft'
-                                # , 'Balcony'
-                                # , 'Cellar'
-                                # , 'Deck'
-                                # , 'Furnace Room'
-                                # , 'Garage'
-                                # , 'Outbuilding'
-                                # , 'Patio'
-                                # , 'Unfinished Basement'
-                                # , 'Workshop'
-                                ]
-        
         
         
         colours_dict : dict[str, list[float]] = {}
@@ -4145,7 +4101,7 @@ def XML_2_dict_new(root, t = "floor"):
                     colours_dict[colour]['value'][floor_uid] = 0.00
                 
                 colours_dict[colour]['value'][floor_uid] += area
-            
+                colours_dict[colour]['value'][floor_uid] = round(colours_dict[colour]['value'][floor_uid], 2)
             
             for room in floor.findall('floorRoom'):
                 if room.get('type') not in xml_ref_dict.keys():
@@ -4795,7 +4751,7 @@ def BER(root, output = '', email = '', forms_data = {}):
     
     try:
         # lists of MagicPlan room names to be included/excluded by default in the thermal envelope:
-        thermal_envelope = [
+        thermal_envelope = [ # do we need this? We can just assume anything not on the other list is on this one (unless explicitly told otherwise, since the default is "included")
                             'Archives'
                             , 'Bathroom'
                             , 'Bedroom'
@@ -4882,19 +4838,34 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print('nwa_dict["11"]', ':')
         # pprint.pprint(nwa_dict["11"])
         
+        # *****************************
+        
+        # All four of the below should probably be incorporated into XML_2_dict_new() above
+        
+        # 1. thermal_envelope_uids
+        # 2. ext_perim - matching of walls to exploded walls
+        # 3. walls - total_area = net_a (not sure this is required?)
+        # 4. est_dict - assigning of values to wall_dict
         
         
         # *****************************
-        # All three of the below should be incorporated into XML_2_dict_new() above
+        
+        
+        # print('storey_height_dict', ':')
+        # pprint.pprint(storey_height_dict)
+        
+        
+        thermal_envelope_uids = []
+        for e in storey_height_dict:
+            if 'room_type' in storey_height_dict[e]['value'].keys():
+                # print(storey_height_dict[e]['value'])
+                if storey_height_dict[e]['value']['room_type'] not in ex_thermal_envelope:
+                    thermal_envelope_uids.append(e)
+        # print(thermal_envelope_uids)
+        xml_ref_dict['thermal_envelope_uids'] = thermal_envelope_uids
         
         # *****************************
         
-        # a dict where the keys are floor uids?
-        
-        # {"66bc857c.e380bbff":   "floorType" : "11"
-                                # , "compassAngle" : "6.068583"
-                                # , }
-                                
         
         # print('about to get ex wa')
         wt_dict_ewag, exploded_wall_dict = exterior_walls(root)
@@ -5088,10 +5059,14 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(wall_dict)
         
         # *****************************
+        # *****************************
+        # *****************************
         
         # At this point read in template_DEAP.xlsx
         
         # As was originally intended
+        
+        # Maybe we should read XL first, then XML?
         
         # *****************************
         
@@ -5101,7 +5076,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # create dictionaries of required table/tab contents
         output_dict, lookup_dict = XL_2_dict_new(local_xl_fp) # is lookup_dict being returned here? we have a better way yes?
-        # pprint.pprint(lookup_dict)
+        # print('output_dict', ':')
+        # pprint.pprint(output_dict)
         if not isinstance(output_dict, dict):
             print('not a dict:', output_dict)
             raise Exception(output_dict)
@@ -5293,8 +5269,12 @@ def BER(root, output = '', email = '', forms_data = {}):
         for bulb in json_dict['bulb_dict']:
             output_dict['11.1 Lighting Schedule'][bulb] = json_dict['bulb_dict'][bulb]
         
+        json_dict['attic_hatch_dict'] = {}
+        for attic_hatch in json_dict['attic_hatch_dict']:
+            output_dict['8.1 Attic Hatches'][attic_hatch] = json_dict['attic_hatch_dict'][attic_hatch]
+        
         for vent in json_dict['vent_dict']:
-            output_dict['8.1 Ventilation Items'][vent] = json_dict['vent_dict'][vent]
+            output_dict['8.2 Ventilation Items'][vent] = json_dict['vent_dict'][vent]
         
         # for floor in json_dict['floor_dict']:
             # output_dict['2.3 Floor Schedule Table'][floor] = json_dict['floor_dict'][floor]
@@ -5325,7 +5305,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
-        
+
         
         json_dict['storey_height_dict']['floors'] = {}
         json_dict['storey_height_dict']['rooms'] = {}
@@ -5344,6 +5324,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                     json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 0
                 else:
                     json_dict['storey_height_dict'][e]['value']['thermal_envelope'] = 1 # this includes renamed rooms 
+                    
                     
             if 'room_type' not in json_dict['storey_height_dict'][e]['value'].keys(): # i.e. floors only
                 json_dict['storey_height_dict']['floors'][e] = json_dict['storey_height_dict'][e]
@@ -5585,35 +5566,46 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print(d)
         # pprint.pprint(output_dict[d])
         
-        efs = ['Positive input ventilation from outside Specific Fan Power [W/[l/s]]'
-                , 'Positive input ventilation from outside Default Specific Fan Power [W/[l/s]]'
-                , 'Whole-house extract ventilation Specific Fan Power [W/[l/s]]'
-                , 'Whole-house extract ventilation Default Specific Fan Power [W/[l/s]]'
-                , 'Balanced whole-house mechanical ventilation, no heat recovery Specific Fan Power [W/[l/s]]'
-                , 'Balanced whole-house mechanical ventilation, no heat recovery Default Specific Fan Power [W/[l/s]]'
-                , 'Balanced whole-house mechanical ventilation with heat recovery Specific Fan Power [W/[l/s]]'
-                , 'Balanced whole-house mechanical ventilation with heat recovery Default Specific Fan Power [W/[l/s]]'
-                , 'Balanced whole-house mechanical ventilation with heat recovery Heat Exchanger Efficiency [%]'
-                , 'Balanced whole-house mechanical ventilation with heat recovery Default Heat Exchanger Efficiency [%]'
-                , 'Is there uninsulated ducting on MVHR system outside dwelling envelope? (Non-Default)'
-                , 'Is there uninsulated ducting on MVHR system outside dwelling envelope?'
-                , 'Exhaust Air Heat Pump Specific Fan Power [W/[l/s]]'
-                , 'Exhaust Air Heat Pump Default Specific Fan Power [W/[l/s]]'
-                , 'Exhaust Air Flow Rate [m3/h]'
-                , 'Default Exhaust Air Flow Rate [m3/h]'
-                , 'Manufacturer/Model'
-                , 'Manufactur Model'
-                , 'Is the ventilation ducting flexible/rigid/both?'
-                ]
+        # print(list(output_dict[d].keys()))
+        
+        efs = list(output_dict[d].keys())
+        
+        # efs = ['Positive input ventilation from outside Specific Fan Power [W/[l/s]]'
+                # , 'Positive input ventilation from outside Default Specific Fan Power [W/[l/s]]'
+                # , 'Whole-house extract ventilation Specific Fan Power [W/[l/s]]'
+                # , 'Whole-house extract ventilation Default Specific Fan Power [W/[l/s]]'
+                # , 'Balanced whole-house mechanical ventilation, no heat recovery Specific Fan Power [W/[l/s]]'
+                # , 'Balanced whole-house mechanical ventilation, no heat recovery Default Specific Fan Power [W/[l/s]]'
+                # , 'Balanced whole-house mechanical ventilation with heat recovery Specific Fan Power [W/[l/s]]'
+                # , 'Balanced whole-house mechanical ventilation with heat recovery Default Specific Fan Power [W/[l/s]]'
+                # , 'Balanced whole-house mechanical ventilation with heat recovery Heat Exchanger Efficiency [%]'
+                # , 'Balanced whole-house mechanical ventilation with heat recovery Default Heat Exchanger Efficiency [%]'
+                # , 'Is there uninsulated ducting on MVHR system outside dwelling envelope? (Non-Default)'
+                # , 'Is there uninsulated ducting on MVHR system outside dwelling envelope?'
+                # , 'Exhaust Air Heat Pump Specific Fan Power [W/[l/s]]'
+                # , 'Exhaust Air Heat Pump Default Specific Fan Power [W/[l/s]]'
+                # , 'Exhaust Air Flow Rate [m3/h]'
+                # , 'Default Exhaust Air Flow Rate [m3/h]'
+                # , 'Manufacturer/Model'
+                # , 'Manufactur Model'
+                # , 'Is the ventilation ducting flexible/rigid/both?'
+                # ]
         
         for ef in efs:
-            if output_dict[d][ef]['value'] == '':
-                del output_dict[d][ef]
-            else:
-                if 'value' in output_dict[d][ef]['value'].keys():
-                    if output_dict[d][ef]['value']['value'] == '':
-                        del output_dict[d][ef]
-            
+            if ef in output_dict[d].keys():
+                # print("output_dict[d][ef]['value']")
+                # pprint.pprint(output_dict[d][ef]['value'])
+                if output_dict[d][ef]['value'] == '':
+                    del output_dict[d][ef]
+                else:
+                    if isinstance(output_dict[d][ef]['value'], dict):
+                        if 'value' in output_dict[d][ef]['value'].keys():
+                            if output_dict[d][ef]['value']['value'] == '':
+                                del output_dict[d][ef]
+                
+        
+        
+        
         d = '11. Lighting P1'
         
         # print(d)
@@ -5680,8 +5672,9 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 , '5.1 Windows Summary Table'
                                 , '6. Colour Area Table P1'
                                 , '7. Thermal Mass P1'
-                                # , '8. Ventilation P1'
-                                # , '8.1 Ventilation Items'
+                                , '8. Ventilation P1'
+                                , '8.1 Attic Hatches'
+                                , '8.2 Ventilation Items'
                                 , '11. Lighting P1'
                                 , '11.1 Lighting Schedule'
                                 # 9. Space Heating P4
@@ -5885,7 +5878,10 @@ def create_table_new(data_dict
                 if key.isupper():
                     output += f'<tr><td><strong>{key}</strong></td>'
                 elif colour_table:
-                    output += f'<tr><td><font color="{key[:len(key)-2]}"><b>Colour {i}</b></font></td>'
+                    print(key[:len(key)-2])
+                    print(data_dict[key])
+                    output += f'<tr><td><font color={key[:len(key)-2]}><b>Colour {i}</b></font></td>'
+                    data_dict[key] = data_dict[key]['value']
                 else:
                     output += f'<tr><td>{key}</td>'
                 output += f'<td>{data_dict[key]}</td>'
