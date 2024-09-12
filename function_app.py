@@ -2508,15 +2508,16 @@ def XL_2_dict_new(xl_file_path):
                 
                 if sheet.title in ['11.1 Lighting Schedule']:
                     headers = [
-                            'uid'
+                            # 'uid'
+                            'key'
                             , 'name'
                             , 'room_name'
-                            , 'floor_name'
+                            # , 'floor_name'
                             , 'Count'
-                            , 'Type'
+                            # , 'Type'
                             , 'Description'
-                            , 'Bulb Type'
-                            , 'Efficiency [lm/W]'
+                            # , 'Bulb Type'
+                            # , 'Efficiency [lm/W]'
                             ]
                 
                 if sheet.title in ['5.2 Window Schedule Table']:
@@ -2780,17 +2781,25 @@ def XL_2_dict_new(xl_file_path):
             
             elif sheet.title == 'Object Reference': # one-to-many
                 lookup[sheet.title] = {}
+                lookup[sheet.title + ' alt'] = {}
                 for i, row in enumerate(list(sheet.values)):
                     field_category = row[0]
+                    field_name = row[1]
                     field_id = row[4]
                     if field_category == None or field_id == None:
                         continue
                     if row[0] not in lookup[sheet.title].keys():
-                        lookup[sheet.title][row[0]] = []
-                    lookup[sheet.title][row[0]].append(row[4])
+                        lookup[sheet.title][field_category] = []
+                    lookup[sheet.title][field_category].append(field_id)
+                    if field_category not in lookup[sheet.title + ' alt'].keys():
+                        lookup[sheet.title + ' alt'][field_category] = {}
+                    lookup[sheet.title + ' alt'][field_category][field_id] = field_name
+                    lookup[sheet.title + ' alt'][field_category][field_name] = field_id
 
         
         lookup['Object Reference']['Floor Reference'] = lookup['Floor reference']
+        lookup['Object Reference']['alt'] = lookup['Object Reference alt']
+        
         
         # print("output['8. Ventilation P1']", ':')
         # pprint.pprint(output['8. Ventilation P1'])
@@ -2971,6 +2980,7 @@ def get_stats_data(project_id, headers = {
         
         # colour_dict = {} 
         
+        # below are lists of ids but statistics file uses names:
         doors = xl_ref_dict['Door']
         windows = xl_ref_dict['Windows']
         bulbs = xl_ref_dict['Lighting']
@@ -2979,6 +2989,9 @@ def get_stats_data(project_id, headers = {
         
         
         composite_count_objects = ['Number of Intermittent Fans', 'Number of openings', 'Number of openings Draughtproofed'] # add column(s) to Object Reference to convey this information *KSN need to be able to control this so it shouldn't be hard coded
+        
+        
+        
         intermittent_fans = ["Broken Cooker Hood", "Broken Mechanical Vent", "New Mechanical Vent", "Ducted Cooker Hood", "Existing Mechanical Vent"] # as above
         
         # Hatches: all in "Roofs" category, add column to indicate Not/Draughtproofed subcategory)
@@ -2996,11 +3009,19 @@ def get_stats_data(project_id, headers = {
         # only visible in forms
         cond_count_objects = ["Chimney", "Flue"]
                
+        # print("xl_ref_dict", ':')
+        # pprint.pprint(xl_ref_dict)
         
         count_objects = composite_count_objects + bulbs + intermittent_fans + openings + cond_count_objects # add column
         print('count_objects', ':', count_objects)
-        for co in count_objects:
-            count_dict[co] = 0
+        for co_id in count_objects:
+            for category in xl_ref_dict['alt'].keys():
+                # print(category.keys())
+                if co_id in xl_ref_dict['alt'][category].keys():
+                    co_name = xl_ref_dict['alt'][category][co_id]
+                    count_dict[co_name] = 0
+                
+            # count_dict[co_id] = 0
         
         
         # print('floor_type_dict', ';')
@@ -3076,7 +3097,8 @@ def get_stats_data(project_id, headers = {
                     
                         for furniture in room["furnitures"]:
                             # print('furniture["name"]', ':', furniture["name"], ' ', 'furniture["id"]', ':', furniture["id"])
-                            if furniture["name"] in count_objects:
+                            if furniture["id"] in count_objects:
+                                furniture["name"] = furniture["name"].strip()
                                 count_dict[furniture["name"]] += 1
                                 if furniture["name"] not in count_dict[room_uid].keys():
                                     count_dict[room_uid][furniture["name"]] = 0
@@ -3104,10 +3126,10 @@ def get_stats_data(project_id, headers = {
                             # print(wall_item["name"])
                             # print(wall_item["uid"])
                             if wall_item["id"] in count_objects:
-                                count_dict[wall_item["id"]] += 1
-                                if wall_item["id"] not in count_dict[room_uid].keys():
-                                    count_dict[room_uid][wall_item["id"]] = 0
-                                count_dict[room_uid][wall_item["id"]] += 1
+                                count_dict[wall_item["name"]] += 1
+                                if wall_item["name"] not in count_dict[room_uid].keys():
+                                    count_dict[room_uid][wall_item["name"]] = 0
+                                count_dict[room_uid][wall_item["name"]] += 1
                                 
                             if wall_item["id"] in vents:
                                 vent_dict[wall_item["uid"]] = {}
@@ -3156,10 +3178,16 @@ def get_stats_data(project_id, headers = {
         
         
         for intermittent_fan in intermittent_fans:
-            count_dict['Number of Intermittent Fans'] += count_dict[intermittent_fan]
+            if 'Number of Intermittent Fans' not in count_dict.keys():
+                count_dict['Number of Intermittent Fans'] = 0
+            if intermittent_fan in count_dict.keys():
+                count_dict['Number of Intermittent Fans'] += count_dict[intermittent_fan]
         
         for opening in openings:
-            count_dict['Number of openings'] += count_dict[opening]
+            if 'Number of openings' not in count_dict.keys():
+                count_dict['Number of openings'] = 0
+            if opening in count_dict.keys():
+                count_dict['Number of openings'] += count_dict[opening]
         
         # for opening in openings_draughtproofed:
             # count_dict['Number of openings Draughtproofed'] += count_dict[opening]
@@ -3275,8 +3303,8 @@ def JSON_2_dict(project_id, headers = {
         
         if 'count_dict' in stats_data.keys(): # why wouldn't it be? Don't like this reliance on this condition
             count_dict = stats_data['count_dict']
-            print('count_dict', ':')
-            pprint.pprint(count_dict)
+            # print('count_dict', ':')
+            # pprint.pprint(count_dict)
             # add counts to json_dict as strings (top-level key:value pairs - should this be happening here or is it more suited to return the table as-is and then do the output prep all together? what about multi-col tables? any counts in those? if so, will this approach work?):
             for key in count_dict.keys():
                 json_dict[key] = str(count_dict[key])
@@ -3361,6 +3389,13 @@ def JSON_2_dict(project_id, headers = {
         
         json_dict['window_summary_dict'] = window_summary(json_dict["window_dict"])
         json_dict['door_summary_dict'] = door_summary(json_dict["door_dict"])
+        json_dict['bulb_summary_dict'] = bulb_summary(json_dict["bulb_dict"])
+        
+        print('json_dict["bulb_summary_dict"]', ':')
+        pprint.pprint(json_dict["bulb_summary_dict"])
+        
+        
+        
         
         # print('about to condense floor_dict')
         # json_dict["floor_dict"] = condense(json_dict["floor_dict"], json_dict)
@@ -3746,6 +3781,41 @@ def window_summary(window_dict):
             window_summary_dict[key]['value']['No. of opes draught- stripped'] += int(window_dict[window]['value']['No. of opes draught- stripped'])
         
         output = window_summary_dict
+        
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output)
+    
+    return output
+
+
+def bulb_summary(bulb_dict):
+    try:
+        
+        print('bulb_dict', ':')
+        pprint.pprint(bulb_dict)
+        
+        bulb_summary_dict = {}
+        for bulb in bulb_dict:
+            
+            key = ''
+            for keypart in ['room_uid', 'name']: 
+                if keypart in bulb_dict[bulb]['value'].keys():
+                    key += (str(bulb_dict[bulb]['value'][keypart]) + '_')
+            key = str(hash(key))
+            if key not in bulb_summary_dict.keys():
+                bulb_summary_dict[key] = {}
+                bulb_summary_dict[key]['value'] = {}
+                bulb_summary_dict[key]['value']['Count'] = 0
+            
+            # for keypart in ['Count', 'Room', 'Type', 'Description']:
+            for keypart in ['Count', 'room_name', 'name', 'Description']:
+                if keypart in bulb_dict[bulb]['value'].keys():
+                    bulb_summary_dict[key]['value'][keypart] = bulb_dict[bulb]['value'][keypart] 
+            
+            bulb_summary_dict[key]['value']['Count'] += 1
+            
+        output = bulb_summary_dict
         
     except:
         output = traceback.format_exc()
@@ -5120,8 +5190,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(json_dict['count_dict'])
         
         
-        print("json_dict['count_dict']", ':')
-        pprint.pprint(json_dict['count_dict'])
+        # print("json_dict['count_dict']", ':')
+        # pprint.pprint(json_dict['count_dict'])
         
         colours_dict_2 = {}
         for c in colours_dict:
@@ -5253,9 +5323,12 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         for door_group in json_dict['door_summary_dict']:
             output_dict['5.4 Door Summary Table'][door_group] = json_dict['door_summary_dict'][door_group]
-            
+        
         for window_group in json_dict['window_summary_dict']:
             output_dict['5.1 Windows Summary Table'][window_group] = json_dict['window_summary_dict'][window_group]
+        
+        for bulb_group in json_dict['bulb_summary_dict']:
+            output_dict['11.1 Lighting Schedule'][bulb_group] = json_dict['bulb_summary_dict'][bulb_group]
         
         for group in json_dict['roof_summary_dict']:
             output_dict['3.5 Roof Type Summary Table'][group] = json_dict['roof_summary_dict'][group]
@@ -5266,8 +5339,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         for door in json_dict['door_dict']:
             output_dict['5.5 Door Schedule Table'][door] = json_dict['door_dict'][door]
         
-        for bulb in json_dict['bulb_dict']:
-            output_dict['11.1 Lighting Schedule'][bulb] = json_dict['bulb_dict'][bulb]
+        # for bulb in json_dict['bulb_dict']:
+            # output_dict['11.1 Lighting Schedule'][bulb] = json_dict['bulb_dict'][bulb]
         
         json_dict['attic_hatch_dict'] = {}
         for attic_hatch in json_dict['attic_hatch_dict']:
@@ -5475,6 +5548,24 @@ def BER(root, output = '', email = '', forms_data = {}):
         pprint.pprint(json_dict['count_dict'])
         
         
+        # json_dict['Number of LED/CFL bulbs'] = json_dict['count_dict']['LED/CFL']
+        # json_dict['Number of Halogen Lamp bulbs'] = json_dict['count_dict']['Halogen Lamp']
+        # json_dict['Number of Halogen Lamp Low Voltage bulbs'] = json_dict['count_dict']['Halogen LV']
+        # json_dict['Number of Incandescent/Unknown bulbs'] = json_dict['count_dict']['Incandescent']
+        # json_dict['Number of Linear Fluorescent bulbs'] = json_dict['count_dict']['Linear Fluorescent']
+        
+        json_dict['LED/CFL'] = json_dict['count_dict']['LED/CFL']
+        json_dict['Halogen Lamp'] = json_dict['count_dict']['Halogen Lamp']
+        json_dict['Halogen LV'] = json_dict['count_dict']['Halogen LV']
+        json_dict['Incandescent'] = json_dict['count_dict']['Incandescent']
+        json_dict['Linear Fluorescent'] = json_dict['count_dict']['Linear Fluorescent']
+        
+        print("json_dict['bulb_dict']", ';')
+        pprint.pprint(json_dict['bulb_dict'])
+        
+        
+        
+        
         
         # *****************************
         
@@ -5486,7 +5577,8 @@ def BER(root, output = '', email = '', forms_data = {}):
             # for record in output_dict[sheet_name]:
             for field in output_dict[sheet_name]:
                 # if sheet_name == "7. Thermal Mass P1":
-                    # print('field_req', ':', field_req)
+                if sheet_name == "11. Lighting P1":
+                    print('field_req', ':', field_req)
                 if not isinstance(output_dict[sheet_name][field], dict):
                     continue
                 if 'field_req' not in output_dict[sheet_name][field].keys():
@@ -5498,6 +5590,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                 
                 # first check if it's Exact Text (Forms question):
                 if field_req in json_dict.keys():
+                    # print('Exact Text')
                     output_dict[sheet_name][field]['value'] = json_dict[field_req]
                 
                 # then check if it's a variable name from xml_val_dict
@@ -5513,6 +5606,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                 
                 
                 elif field_req in json_dict['count_dict'].keys():
+                    print('Count Dict')
                     output_dict[sheet_name][field]['value'] = str(json_dict['count_dict'][field_req])
                 
                 # logic is uncharted
@@ -5563,8 +5657,12 @@ def BER(root, output = '', email = '', forms_data = {}):
             
         d = '8. Ventilation P1'
         
-        # print(d)
-        # pprint.pprint(output_dict[d])
+        print(d)
+        pprint.pprint(output_dict[d])
+        
+        
+        
+        
         
         # print(list(output_dict[d].keys()))
         
@@ -5646,6 +5744,20 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # *****************************
         
+        
+        
+        d = '11. Lighting P1'
+        
+        
+        for f in output_dict[d]:
+            output_dict[d][f]['value'] = str(output_dict[d][f]['value'])
+        
+        # print(d)
+        # pprint.pprint(output_dict[d])
+        
+        
+        # *****************************
+        
         # use output_dict to generate this function's "output" HTML to serve as the body of the return email
         if output == '': # otherwise might contain error details from a function? Need to revisit this
             styling = "border=\"1\""
@@ -5707,10 +5819,11 @@ def BER(root, output = '', email = '', forms_data = {}):
                 
                 
                 
-                if section in ['2 Building Average Storey (Floors)', '2.3 Floor Schedule Table', '3.5 Roof Type Summary Table', '5.2 Window Schedule Table', '5.5 Door Schedule Table', '8.1 Ventilation Items', '11.1 Lighting Schedule']:
-                    headers_only = True
-                else:
-                    headers_only = False
+                # if section in ['2 Building Average Storey (Floors)', '2.3 Floor Schedule Table', '3.5 Roof Type Summary Table', '5.2 Window Schedule Table', '5.5 Door Schedule Table', '8.1 Ventilation Items', '11.1 Lighting Schedule']:
+                    # headers_only = True
+                # else:
+                    # headers_only = False
+                headers_only = True
                 
                 if '2 Building Average Storey (Rooms' in section:
                     headers_only = True
@@ -5720,6 +5833,17 @@ def BER(root, output = '', email = '', forms_data = {}):
                     colour_table = True
                     order_list = []
                 
+                if section == '8. Ventilation P1':
+                    # order_list = []
+                    ovm = json_dict["Is there another ventilation method other than Natural Ventilation?"]['value']
+                    print("Is there another ventilation method other than Natural Ventilation?")
+                    print(ovm)
+                    if ovm == False:
+                        json_dict["Ventilation Type"]['value'] = "Natural Ventilation"
+                    else:
+                        json_dict["Ventilation Type"]['value'] = "Other"
+                
+                print('json_dict["Ventilation Type"]', ':', json_dict["Ventilation Type"])
                 
                 section_output = f"""\
                                 <h1>{section}</h1> \
@@ -5741,6 +5865,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         print(output)
     
     return output
+
+
 
 
 def wall_total_surface_new(wall_type_dict, est_dict):
@@ -5778,9 +5904,13 @@ def create_table_new(data_dict
         # identify from dict top-level?
         
         
-        
+        d = '11. Lighting P1'
         print('creating table for title', ':', title)
-        print('headers_only', ':', headers_only)
+        # if title == d:
+            # print('data_dict', ':')
+            # pprint.pprint(data_dict)
+        # print('headers_only', ':', headers_only)
+        # print('headers', ':', headers)
         # print('order_list', ':', order_list)
         
         # print('this is the data_dict we need to use to create a multicol table:')
@@ -5788,6 +5918,7 @@ def create_table_new(data_dict
         
         output = f'<table {styling}><tr>'
         
+
         
         
         
@@ -5842,13 +5973,20 @@ def create_table_new(data_dict
                 if 'value' not in data_dict[item].keys():
                     continue
                 
+                # if title == d:
+                    # print(data_dict[item]['value'])
+                
                 if isinstance(data_dict[item]['value'], str):
+                    # if title == d:
+                        # print('String')
                     if data_dict[item]['value'] != '':
                         v = data_dict[item]['value']
                         data_dict[item]['value'] = {}
                         data_dict[item]['value']['value'] = v # convert the string to a single-entry dict
                 
                 if isinstance(data_dict[item]['value'], dict):
+                    # if title == d:
+                        # print('Dict')
                     if replace_header != '':
                         if replace_header in data_dict[item]['value'].keys():
                             data_dict[item]['value']['value'] = data_dict[item]['value'][replace_header]
@@ -5857,6 +5995,8 @@ def create_table_new(data_dict
                             value = data_dict[item]['value'][header]
                         else:
                             value = ' '
+                        # if title == d:
+                            # print('value', ';', value)
                         output += f'<td>{value}</td>'
                         
 
@@ -5884,6 +6024,10 @@ def create_table_new(data_dict
                     data_dict[key] = data_dict[key]['value']
                 else:
                     output += f'<tr><td>{key}</td>'
+                if isinstance(data_dict[key], dict):
+                    if 'value' in data_dict[key].keys():
+                        data_dict[key] = data_dict[key]['value']
+                
                 output += f'<td>{data_dict[key]}</td>'
 
         output += '</table>'
@@ -6072,6 +6216,12 @@ def populate_template_new(json_val_dict, template):
         output = ''
         return_filename = ''
         
+        if template == 'template_deap':
+            v = {
+                'plan_name': { 'Value': '' , 'Tab': 'Sheet1' , 'Cell': 'D2'}
+                }
+            
+        
         if template == 'template_ber':
             filename = json_val_dict['plan_name'] + '.xlsx'
             container_name = 'attachment'
@@ -6080,7 +6230,7 @@ def populate_template_new(json_val_dict, template):
             instance_file_path = os.path.join(local_path, filename)
             print('instance_file_path', ':', instance_file_path)
             v = {
-                'plan_name': { 'Value': '' , 'Tab': 'Sheet1' , 'Cell': 'D2'}
+            'plan_name': { 'Value': '' , 'Tab': 'Sheet1' , 'Cell': 'D2'}
                 }
         
         if template == 'template':
