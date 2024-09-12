@@ -2498,8 +2498,9 @@ def XL_2_dict_new(xl_file_path):
                 
                 if sheet.title in ['8.2 Ventilation Items']:
                     headers = [
-                            'Room'
-                            , 'Type'
+                            'key'
+                            , 'name'
+                            , 'room_name'
                             , 'Count'
                             , 'Description'
                             ]
@@ -2988,6 +2989,12 @@ def get_stats_data(project_id, headers = {
         roof_objects = xl_ref_dict['Roofs']
         
         
+        
+        print('vents', ';', vents)
+        
+        
+        
+        
         composite_count_objects = ['Number of Intermittent Fans', 'Number of openings', 'Number of openings Draughtproofed'] # add column(s) to Object Reference to convey this information *KSN need to be able to control this so it shouldn't be hard coded
         
         
@@ -3390,9 +3397,10 @@ def JSON_2_dict(project_id, headers = {
         json_dict['window_summary_dict'] = window_summary(json_dict["window_dict"])
         json_dict['door_summary_dict'] = door_summary(json_dict["door_dict"])
         json_dict['bulb_summary_dict'] = bulb_summary(json_dict["bulb_dict"])
+        json_dict['vent_summary_dict'] = vent_summary(json_dict["vent_dict"])
         
-        print('json_dict["bulb_summary_dict"]', ':')
-        pprint.pprint(json_dict["bulb_summary_dict"])
+        print('json_dict["vent_summary_dict"]', ':')
+        pprint.pprint(json_dict["vent_summary_dict"])
         
         
         
@@ -3792,8 +3800,8 @@ def window_summary(window_dict):
 def bulb_summary(bulb_dict):
     try:
         
-        print('bulb_dict', ':')
-        pprint.pprint(bulb_dict)
+        # print('bulb_dict', ':')
+        # pprint.pprint(bulb_dict)
         
         bulb_summary_dict = {}
         for bulb in bulb_dict:
@@ -3816,6 +3824,41 @@ def bulb_summary(bulb_dict):
             bulb_summary_dict[key]['value']['Count'] += 1
             
         output = bulb_summary_dict
+        
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output)
+    
+    return output
+
+
+def vent_summary(vent_dict):
+    try:
+        
+        print('vent_dict', ':')
+        pprint.pprint(vent_dict)
+        
+        vent_summary_dict = {}
+        for vent in vent_dict:
+            
+            key = ''
+            for keypart in ['room_uid', 'name']: 
+                if keypart in vent_dict[vent]['value'].keys():
+                    key += (str(vent_dict[vent]['value'][keypart]) + '_')
+            key = str(hash(key))
+            if key not in vent_summary_dict.keys():
+                vent_summary_dict[key] = {}
+                vent_summary_dict[key]['value'] = {}
+                vent_summary_dict[key]['value']['Count'] = 0
+            
+            # for keypart in ['Count', 'Room', 'Type', 'Description']:
+            for keypart in ['Count', 'room_name', 'name', 'Description']:
+                if keypart in vent_dict[vent]['value'].keys():
+                    vent_summary_dict[key]['value'][keypart] = vent_dict[vent]['value'][keypart] 
+            
+            vent_summary_dict[key]['value']['Count'] += 1
+            
+        output = vent_summary_dict
         
     except:
         output = traceback.format_exc()
@@ -5234,7 +5277,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         json_dict['wall_type_dict'] = wall_total_surface_new(json_dict['wall_type_dict'], est_dict)
         
-        json_dict['wall_type_dict']['Wall Type 1']['value']['total_surface'] = json_dict['wall_type_dict']['Wall Type 1']['total_surface']
+        # json_dict['wall_type_dict']['Wall Type 1']['value']['total_surface'] = json_dict['wall_type_dict']['Wall Type 1']['total_surface']
         
         
         
@@ -5327,6 +5370,9 @@ def BER(root, output = '', email = '', forms_data = {}):
         for window_group in json_dict['window_summary_dict']:
             output_dict['5.1 Windows Summary Table'][window_group] = json_dict['window_summary_dict'][window_group]
         
+        for vent_group in json_dict['vent_summary_dict']:
+            output_dict['8.2 Ventilation Items'][vent_group] = json_dict['vent_summary_dict'][vent_group]
+        
         for bulb_group in json_dict['bulb_summary_dict']:
             output_dict['11.1 Lighting Schedule'][bulb_group] = json_dict['bulb_summary_dict'][bulb_group]
         
@@ -5346,8 +5392,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         for attic_hatch in json_dict['attic_hatch_dict']:
             output_dict['8.1 Attic Hatches'][attic_hatch] = json_dict['attic_hatch_dict'][attic_hatch]
         
-        for vent in json_dict['vent_dict']:
-            output_dict['8.2 Ventilation Items'][vent] = json_dict['vent_dict'][vent]
+        # for vent in json_dict['vent_dict']:
+            # output_dict['8.2 Ventilation Items'][vent] = json_dict['vent_dict'][vent]
         
         # for floor in json_dict['floor_dict']:
             # output_dict['2.3 Floor Schedule Table'][floor] = json_dict['floor_dict'][floor]
@@ -5560,8 +5606,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         json_dict['Incandescent'] = json_dict['count_dict']['Incandescent']
         json_dict['Linear Fluorescent'] = json_dict['count_dict']['Linear Fluorescent']
         
-        print("json_dict['bulb_dict']", ';')
-        pprint.pprint(json_dict['bulb_dict'])
+        # print("json_dict['bulb_dict']", ';')
+        # pprint.pprint(json_dict['bulb_dict'])
         
         
         
@@ -5836,14 +5882,14 @@ def BER(root, output = '', email = '', forms_data = {}):
                 if section == '8. Ventilation P1':
                     # order_list = []
                     ovm = json_dict["Is there another ventilation method other than Natural Ventilation?"]['value']
-                    print("Is there another ventilation method other than Natural Ventilation?")
-                    print(ovm)
+                    # print("Is there another ventilation method other than Natural Ventilation?")
+                    # print(ovm)
                     if ovm == False:
                         json_dict["Ventilation Type"]['value'] = "Natural Ventilation"
                     else:
                         json_dict["Ventilation Type"]['value'] = "Other"
                 
-                print('json_dict["Ventilation Type"]', ':', json_dict["Ventilation Type"])
+                # print('json_dict["Ventilation Type"]', ':', json_dict["Ventilation Type"])
                 
                 section_output = f"""\
                                 <h1>{section}</h1> \
@@ -5905,6 +5951,7 @@ def create_table_new(data_dict
         
         
         d = '11. Lighting P1'
+        d = '8. Ventilation P1'
         print('creating table for title', ':', title)
         # if title == d:
             # print('data_dict', ':')
@@ -6024,6 +6071,8 @@ def create_table_new(data_dict
                     data_dict[key] = data_dict[key]['value']
                 else:
                     output += f'<tr><td>{key}</td>'
+                if title == d:
+                    print(data_dict[key])
                 if isinstance(data_dict[key], dict):
                     if 'value' in data_dict[key].keys():
                         data_dict[key] = data_dict[key]['value']
