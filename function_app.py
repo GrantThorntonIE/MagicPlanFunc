@@ -2513,7 +2513,7 @@ def XL_2_dict_new(xl_file_path):
                             'key'
                             , 'name'
                             , 'room_name'
-                            # , 'floor_name'
+                            , 'floor_name'
                             , 'Count'
                             # , 'Type'
                             , 'Description'
@@ -3020,12 +3020,15 @@ def get_stats_data(project_id, headers = {
         # pprint.pprint(xl_ref_dict)
         
         count_objects = composite_count_objects + bulbs + intermittent_fans + openings + cond_count_objects # add column
-        print('count_objects', ':', count_objects)
+        # print('count_objects', ':', count_objects)
         for co_id in count_objects:
             for category in xl_ref_dict['alt'].keys():
                 # print(category.keys())
                 if co_id in xl_ref_dict['alt'][category].keys():
                     co_name = xl_ref_dict['alt'][category][co_id]
+                    # print(co_name)
+                    co_name = co_name.strip()
+                    # print(co_name)
                     count_dict[co_name] = 0
                 
             # count_dict[co_id] = 0
@@ -3075,17 +3078,34 @@ def get_stats_data(project_id, headers = {
                 
                 for room in floor["rooms"]:
                     room_uid = room["uid"]
-                    
+                    if room_uid not in count_dict.keys():
+                        count_dict[room_uid] = {}
                     if xml_ref_dict[floor["uid"]] == '1000':
                         roof_dict[room["uid"]] = {}
                         roof_dict[room["uid"]]['value'] = {}
                         for room_stat in room:
                             if room_stat in ["name", "area", "area_without_walls", "area_with_interior_walls_only", "area_with_walls"]:
                                 roof_dict[room["uid"]]['value'][room_stat] = room[room_stat]
-                        
+                        for furniture in room["furnitures"]:
+                            furniture["name"] = furniture["name"].strip()
+                            if furniture["id"] in bulbs:
+                                bulb_dict[furniture["uid"]] = {}
+                                bulb_dict[furniture["uid"]]['value'] = {}
+                                bulb_dict[furniture["uid"]]['value']["name"] = furniture["name"]
+                                bulb_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
+                                bulb_dict[furniture["uid"]]['value']["room_name"] = room["name"]
+                                bulb_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
+                                bulb_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
+                            if furniture["id"] in count_objects:
+                                count_dict[furniture["name"]] += 2
+                                print(3101, furniture["name"])
+                                if furniture["name"] not in count_dict[room_uid].keys():
+                                    count_dict[room_uid][furniture["name"]] = 0
+                                count_dict[room_uid][furniture["name"]] += 2
                     
                     # Need special one for roof/skylights - furnitures on a non-true-floor (1000? could this loop be tabbed right under the above umbrella?) that need to appear in window table
                     for furniture in room["furnitures"]:
+                        furniture["name"] = furniture["name"].strip()
                         if furniture["id"] in windows: # can this only happen on floor 1000?
                             window_dict[furniture["uid"]] = {}
                             window_dict[furniture["uid"]]['value'] = {}
@@ -3098,19 +3118,10 @@ def get_stats_data(project_id, headers = {
                             window_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
                     
                     
-                    if floor_uid in xml_ref_dict['true_floors'] and room_uid in xml_ref_dict['thermal_envelope_uids']:
-                        if room_uid not in count_dict.keys():
-                            count_dict[room_uid] = {}
-                    
+                    if floor_uid in xml_ref_dict['true_floors']:
+                        
                         for furniture in room["furnitures"]:
-                            # print('furniture["name"]', ':', furniture["name"], ' ', 'furniture["id"]', ':', furniture["id"])
-                            if furniture["id"] in count_objects:
-                                furniture["name"] = furniture["name"].strip()
-                                count_dict[furniture["name"]] += 1
-                                if furniture["name"] not in count_dict[room_uid].keys():
-                                    count_dict[room_uid][furniture["name"]] = 0
-                                count_dict[room_uid][furniture["name"]] += 1
-                            
+                            furniture["name"] = furniture["name"].strip()
                             if furniture["id"] in bulbs:
                                 bulb_dict[furniture["uid"]] = {}
                                 bulb_dict[furniture["uid"]]['value'] = {}
@@ -3119,54 +3130,89 @@ def get_stats_data(project_id, headers = {
                                 bulb_dict[furniture["uid"]]['value']["room_name"] = room["name"]
                                 bulb_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
                                 bulb_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
-
-                            if furniture["id"] in vents:
-                                vent_dict[furniture["uid"]] = {}
-                                vent_dict[furniture["uid"]]['value'] = {}
-                                vent_dict[furniture["uid"]]['value']["name"] = furniture["name"]
-                                vent_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
-                                vent_dict[furniture["uid"]]['value']["room_name"] = room["name"]
-                                vent_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
-                                vent_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
+                            if furniture["id"] in count_objects:
+                                count_dict[furniture["name"]] += 1
+                                if furniture["name"] not in count_dict[room_uid].keys():
+                                    count_dict[room_uid][furniture["name"]] = 0
+                                count_dict[room_uid][furniture["name"]] += 1
+                                print(3138, furniture["name"])
                         
-                        for wall_item in room["wall_items"]:
-                            # print(wall_item["name"])
-                            # print(wall_item["uid"])
-                            if wall_item["id"] in count_objects:
-                                count_dict[wall_item["name"]] += 1
-                                if wall_item["name"] not in count_dict[room_uid].keys():
-                                    count_dict[room_uid][wall_item["name"]] = 0
-                                count_dict[room_uid][wall_item["name"]] += 1
+                        
+                        if room_uid in xml_ref_dict['thermal_envelope_uids']:
+                            
+                            
+                            
+                        
+                            for furniture in room["furnitures"]:
+                                # print('furniture["name"]', ':', furniture["name"], ' ', 'furniture["id"]', ':', furniture["id"])
+                                if furniture["id"] in count_objects:
+                                    furniture["name"] = furniture["name"].strip()
+                                    count_dict[furniture["name"]] += 1
+                                    if furniture["name"] not in count_dict[room_uid].keys():
+                                        count_dict[room_uid][furniture["name"]] = 0
+                                    count_dict[room_uid][furniture["name"]] += 1
+                                print(3154, furniture["name"])
                                 
-                            if wall_item["id"] in vents:
-                                vent_dict[wall_item["uid"]] = {}
-                                vent_dict[wall_item["uid"]]['value'] = {}
-                                vent_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
-                                vent_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
-                                vent_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
-                                vent_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
-                                vent_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
-                                
-                            if wall_item["id"] in doors:
-                                door_dict[wall_item["uid"]] = {}
-                                door_dict[wall_item["uid"]]['value'] = {}
-                                door_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
-                                door_dict[wall_item["uid"]]['value']["height"] = wall_item["height"]
-                                door_dict[wall_item["uid"]]['value']["width"] = wall_item["width"]
-                                door_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
-                                door_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
-                                door_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
-                                door_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
-                            if wall_item["id"] in windows:
-                                window_dict[wall_item["uid"]] = {}
-                                window_dict[wall_item["uid"]]['value'] = {}
-                                window_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
-                                window_dict[wall_item["uid"]]['value']["height"] = wall_item["height"]
-                                window_dict[wall_item["uid"]]['value']["width"] = wall_item["width"]
-                                window_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
-                                window_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
-                                window_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
-                                window_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
+
+                                if furniture["id"] in vents:
+                                    vent_dict[furniture["uid"]] = {}
+                                    vent_dict[furniture["uid"]]['value'] = {}
+                                    vent_dict[furniture["uid"]]['value']["name"] = furniture["name"]
+                                    vent_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
+                                    vent_dict[furniture["uid"]]['value']["room_name"] = room["name"]
+                                    vent_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
+                                    vent_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
+                            
+                            for wall_item in room["wall_items"]:
+                                # print(wall_item["name"])
+                                # print(wall_item["uid"])
+                                if wall_item["id"] in count_objects:
+                                    count_dict[wall_item["name"]] += 1
+                                    if wall_item["name"] not in count_dict[room_uid].keys():
+                                        count_dict[room_uid][wall_item["name"]] = 0
+                                    count_dict[room_uid][wall_item["name"]] += 1
+                                    
+                                if wall_item["id"] in vents:
+                                    vent_dict[wall_item["uid"]] = {}
+                                    vent_dict[wall_item["uid"]]['value'] = {}
+                                    vent_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
+                                    vent_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
+                                    vent_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
+                                    vent_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
+                                    vent_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
+                                    
+                                if wall_item["id"] in doors:
+                                    door_dict[wall_item["uid"]] = {}
+                                    door_dict[wall_item["uid"]]['value'] = {}
+                                    door_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
+                                    door_dict[wall_item["uid"]]['value']["height"] = wall_item["height"]
+                                    door_dict[wall_item["uid"]]['value']["width"] = wall_item["width"]
+                                    door_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
+                                    door_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
+                                    door_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
+                                    door_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
+                                if wall_item["id"] in windows:
+                                    window_dict[wall_item["uid"]] = {}
+                                    window_dict[wall_item["uid"]]['value'] = {}
+                                    window_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
+                                    window_dict[wall_item["uid"]]['value']["height"] = wall_item["height"]
+                                    window_dict[wall_item["uid"]]['value']["width"] = wall_item["width"]
+                                    window_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
+                                    window_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
+                                    window_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
+                                    window_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
+                    
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 
                 # Get "rooflight_area" (to be subtracted later after slope calculations)
                 for w in window_dict:
@@ -3817,7 +3863,7 @@ def bulb_summary(bulb_dict):
                 bulb_summary_dict[key]['value']['Count'] = 0
             
             # for keypart in ['Count', 'Room', 'Type', 'Description']:
-            for keypart in ['Count', 'room_name', 'name', 'Description']:
+            for keypart in ['Count', 'room_name', 'floor_name', 'name', 'Description']:
                 if keypart in bulb_dict[bulb]['value'].keys():
                     bulb_summary_dict[key]['value'][keypart] = bulb_dict[bulb]['value'][keypart] 
             
@@ -3962,8 +4008,11 @@ def door_forms_append(object_dict, forms_uid_dict): # shouldn't any part of the 
     try:
         object_dict_2 = object_dict.copy()
         for door in object_dict:
-            if object_dict[door]['value']["Is this door considered a heat loss door as per BER methodology?"] == False:
-                del object_dict_2[door]
+            if "Is this door considered a heat loss door as per BER methodology?" not in object_dict[door]['value'].keys():
+                print('door', ':', door, ':', "object_dict[door]['value']", ':', object_dict[door]['value'])
+            else:
+                if object_dict[door]['value']["Is this door considered a heat loss door as per BER methodology?"] == False:
+                    del object_dict_2[door]
         object_dict = object_dict_2
             
         for door in object_dict:
@@ -5600,11 +5649,11 @@ def BER(root, output = '', email = '', forms_data = {}):
         # json_dict['Number of Incandescent/Unknown bulbs'] = json_dict['count_dict']['Incandescent']
         # json_dict['Number of Linear Fluorescent bulbs'] = json_dict['count_dict']['Linear Fluorescent']
         
-        json_dict['LED/CFL'] = json_dict['count_dict']['LED/CFL']
-        json_dict['Halogen Lamp'] = json_dict['count_dict']['Halogen Lamp']
-        json_dict['Halogen LV'] = json_dict['count_dict']['Halogen LV']
-        json_dict['Incandescent'] = json_dict['count_dict']['Incandescent']
-        json_dict['Linear Fluorescent'] = json_dict['count_dict']['Linear Fluorescent']
+        json_dict['LED/CFL'] = int(json_dict['count_dict']['LED/CFL'] / 2)
+        json_dict['Halogen Lamp'] = int(json_dict['count_dict']['Halogen Lamp'] / 2)
+        json_dict['Halogen LV'] = int(json_dict['count_dict']['Halogen LV'] / 2)
+        json_dict['Incandescent'] = int(json_dict['count_dict']['Incandescent'] / 2)
+        json_dict['Linear Fluorescent'] = int(json_dict['count_dict']['Linear Fluorescent'] / 2)
         
         # print("json_dict['bulb_dict']", ';')
         # pprint.pprint(json_dict['bulb_dict'])
