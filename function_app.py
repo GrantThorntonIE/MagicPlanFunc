@@ -2420,6 +2420,10 @@ def XL_2_dict_new(xl_file_path):
                             , '6. Colour Area Table P1'
                             , '8.1 Attic Hatches'
                             , '8.2 Ventilation Items'
+                            , '9. Space Heating'
+                            , '9.1 Space Heating Schedule'
+                            , '9.2 Space Heating Category'
+                            , '9.5 Pumps and Fans'
                             
 
                             #, '10. Water Heating P3'
@@ -2427,15 +2431,11 @@ def XL_2_dict_new(xl_file_path):
                             #, '10.4 Solar Thermal Table'
                             #, '12. Renewables P5'
                             #, '12.1 Renewables Table'
-                            #, '9. Space Heating'
-                            #, '9.1 Space Heating Schedule'
-                            #, '9.2 Space Heating Category'
-                            #, '9.5 Pumps and Fans'
 
                             
                             
                             
-                            , '9.3 Space Heating Category'
+                            # , '9.3 Space Heating Category'
                             , '11.1 Lighting Schedule'
                             ]
         
@@ -2490,8 +2490,9 @@ def XL_2_dict_new(xl_file_path):
                 
                 if sheet.title in ['8.1 Attic Hatches']:
                     headers = [
-                            'Room'
-                            , 'Type'
+                            'key'
+                            , 'name'
+                            , 'room_name'
                             , 'Count'
                             , 'Description'
                             ]
@@ -2503,6 +2504,23 @@ def XL_2_dict_new(xl_file_path):
                             , 'room_name'
                             , 'Count'
                             , 'Description'
+                            ]
+                
+                
+                if sheet.title in ['9.1 Space Heating Schedule']:
+                    headers = [
+                            'uid'
+                            , 'Heat Source Type on DEAP'
+                            , 'Heat %'
+                            , 'Object Name'
+                            , 'Manufacturer'
+                            , 'Model'
+                            , 'Seasonal Efficiency [%]'
+                            , 'Efficiency Adj. Factor'
+                            , 'Fuel Type'
+                            , 'Design Flow Temp. [°C]'
+                            , 'Daily Operation [h]'
+                            , 'Does the heat source heat water?'
                             ]
                 
                 
@@ -2686,32 +2704,9 @@ def XL_2_dict_new(xl_file_path):
                 #, '9.5 Pumps and Fans'
                             
                 
-                # if sheet.title in ['2 Building Average Storey' , '2 Building Average Storey (Floors)', '2 Building Average Storey (Rooms)']:
-                
-                # if sheet.title in ['2 Building Average Storey (Floors)']: # does this sheet title even exist yet? Maybe none of this should be here
-                    # headers = ['uid'
-                            # , 'number'
-                            # ,  'name'
-                            # ,  'use_floor_level_height'
-                            # ,  'ceiling_height'
-                            # ,  'thermal_envelope'
-                            # , 'Living Area (m2)'
-                            # ]
-                    
-                    
-                    
-                # if 'Building Average Storey (Rooms' in sheet.title:
-                    # headers = ['uid'
-                            # ,  'ceiling_height'
-                            # ,  'name'
-                            # ,  'floor_type'
-                            # ,  'use_floor_level_height'
-                            # ,  'volume'
-                            # ,  'room_type'
-                            # ,  'thermal_envelope']
                 
                 
-                if sheet.title in ['9.3 Space Heating Category']:
+                if sheet.title in ['9.2 Space Heating Category']:
                     headers = ["uid"
                                 , "Object Name"
                                 # ,"Primary/Secondary/Neither/Fuel Cost Comparson Required"
@@ -2973,6 +2968,7 @@ def get_stats_data(project_id, headers = {
         window_dict = {}
         bulb_dict = {}
         vent_dict = {}
+        attic_hatch_dict = {}
         
         storey_height_dict = {}
         
@@ -2999,23 +2995,31 @@ def get_stats_data(project_id, headers = {
         
         
         
-        intermittent_fans = ["Broken Cooker Hood", "Broken Mechanical Vent", "New Mechanical Vent", "Ducted Cooker Hood", "Existing Mechanical Vent"] # as above
+        # intermittent_fans = ["Broken Cooker Hood", "Broken Mechanical Vent", "New Mechanical Vent", "Ducted Cooker Hood", "Existing Mechanical Vent"] # as above
+        intermittent_fans = ["co-d0f4acd2-8598-49ec-ac3c-8b39edc724e9", "co-33fd6b69-25ae-4e55-bf7b-f91af6112ac4", "co-accd48a4-43b8-4381-b569-c8404f52dec5", "co-03b80e12-32b7-45be-8b44-9b4b03a09b4c", "co-0c7d0ada-8a17-41f9-8746-e7007a1c40b1"] # as above
         
-        # Hatches: all in "Roofs" category, add column to indicate Not/Draughtproofed subcategory)
-        # thermal envelope only (specifiy in input tables - add column that refers to "Floor Reference" tab
+        # attic_hatches_draught_stripped = ["Fixed Ladder Hatch Draughtproofed", "Attic Hatch Draughtproofed", "Wall Hatch Draughtproofed"] 
+        attic_hatches_draught_stripped = ['co-b004be99-a198-4353-b123-905dd6519f8c', 'co-aa86fc1c-cda9-4423-a383-2abb402362a8', 'co-ef552230-8aeb-44b7-840b-957d32f61a46', 'co-199a7a34-8065-4653-ae05-db12a118b338']
+        # attic_hatches_not_draught_stripped = ["Fixed Ladder Hatch Not Draughtproofed", "Attic Hatch Not Draughtproofed", "Wall Hatch Not Draughtproofed"]
+        attic_hatches_not_draught_stripped = ['co-2dcf4963-17b3-4bcd-a070-6e109fd4d175', 'co-8299d479-dd59-4f24-a4b8-62c8fec34281', 'co-296ac89f-ca34-41b5-a041-e0ac1381c6f6', 'co-4f3d9a5c-a208-4ab7-bab0-ff5bbeca7ad2']
+        
+        attic_hatches = attic_hatches_draught_stripped + attic_hatches_not_draught_stripped
+        
+        # Hatches: all in "Roofs" category, add column to indicate Not/Draughtproofed subcategory?
+        # thermal envelope only (specifiy in input tables - add column that refers to "Floor Reference" tab?
+        
         # for roof_object in roof_objects:
             # print('roof_object', ':', roof_object)
         
         
-        attic_hatches_draught_stripped = ["Fixed Ladder Hatch Draughtproofed", "Attic Hatch Draughtproofed", "Wall Hatch Draughtproofed"] 
-        attic_hatches_not_draught_stripped = ["Fixed Ladder Hatch Not Draughtproofed", "Attic Hatch Not Draughtproofed", "Wall Hatch Not Draughtproofed"]
-        openings = windows + doors + attic_hatches_draught_stripped + attic_hatches_not_draught_stripped # add column (should this object be considered an opening?)
+        
+        openings = windows + doors + attic_hatches_draught_stripped + attic_hatches_not_draught_stripped # add input column? ("should this object be considered an opening?")
         
         # need to add Chimneys and Flues to count_dict
         # these only exist as "Ventilation Types" associated with certain Heating Objects
         # only visible in forms
         cond_count_objects = ["Chimney", "Flue"]
-               
+       
         # print("xl_ref_dict", ':')
         # pprint.pprint(xl_ref_dict)
         
@@ -3103,10 +3107,10 @@ def get_stats_data(project_id, headers = {
                                     count_dict[room_uid][furniture["name"]] = 0
                                 count_dict[room_uid][furniture["name"]] += 2
                     
-                    # Need special one for roof/skylights - furnitures on a non-true-floor (1000? could this loop be tabbed right under the above umbrella?) that need to appear in window table
+                    # Need special one for roof/skylights - furnitures on a non-true-floor (1000? could this loop be tabbed right, to under the above umbrella?) that need to appear in window table
                     for furniture in room["furnitures"]:
                         furniture["name"] = furniture["name"].strip()
-                        if furniture["id"] in windows: # can this only happen on floor 1000?
+                        if furniture["id"] in windows: # furniture as windows, can this only happen on floor 1000?
                             window_dict[furniture["uid"]] = {}
                             window_dict[furniture["uid"]]['value'] = {}
                             window_dict[furniture["uid"]]['value']["name"] = furniture["name"]
@@ -3153,7 +3157,6 @@ def get_stats_data(project_id, headers = {
                                     count_dict[room_uid][furniture["name"]] += 1
                                 print(3154, furniture["name"])
                                 
-
                                 if furniture["id"] in vents:
                                     vent_dict[furniture["uid"]] = {}
                                     vent_dict[furniture["uid"]]['value'] = {}
@@ -3162,6 +3165,15 @@ def get_stats_data(project_id, headers = {
                                     vent_dict[furniture["uid"]]['value']["room_name"] = room["name"]
                                     vent_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
                                     vent_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
+                                
+                                if furniture["id"] in attic_hatches:
+                                    attic_hatch_dict[furniture["uid"]] = {}
+                                    attic_hatch_dict[furniture["uid"]]['value'] = {}
+                                    attic_hatch_dict[furniture["uid"]]['value']["name"] = furniture["name"]
+                                    attic_hatch_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
+                                    attic_hatch_dict[furniture["uid"]]['value']["room_name"] = room["name"]
+                                    attic_hatch_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
+                                    attic_hatch_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
                             
                             for wall_item in room["wall_items"]:
                                 # print(wall_item["name"])
@@ -3257,6 +3269,7 @@ def get_stats_data(project_id, headers = {
         output['window_dict'] = window_dict
         output['bulb_dict'] = bulb_dict
         output['vent_dict'] = vent_dict
+        output['attic_hatch_dict'] = attic_hatch_dict
         output['floor_dict'] = floor_dict
         output['floor_type_dict'] = floor_type_dict
         output['roof_dict'] = roof_dict
@@ -3362,7 +3375,7 @@ def JSON_2_dict(project_id, headers = {
             for key in count_dict.keys():
                 json_dict[key] = str(count_dict[key])
         
-            # where should we exclude floors/ex-thermal envelope?
+            # necessary?:
             for object_uid in json_uid_dict:
                 if 'Ventilation Type' in json_uid_dict[object_uid].keys():
                     # print('Ventilation Type', ':', json_uid_dict[object_uid]['Ventilation Type'])
@@ -3373,6 +3386,7 @@ def JSON_2_dict(project_id, headers = {
         # adding these like this for now, might change depending on what is most convenient later:
         json_dict["bulb_dict"] = stats_data["bulb_dict"]
         json_dict["vent_dict"] = stats_data["vent_dict"]
+        json_dict["attic_hatch_dict"] = stats_data["attic_hatch_dict"]
         json_dict["storey_height_dict"] = stats_data["storey_height_dict"]
         
         # Now need to go through Forms adding fields to our object dicts by uid
@@ -3444,9 +3458,10 @@ def JSON_2_dict(project_id, headers = {
         json_dict['door_summary_dict'] = door_summary(json_dict["door_dict"])
         json_dict['bulb_summary_dict'] = bulb_summary(json_dict["bulb_dict"])
         json_dict['vent_summary_dict'] = vent_summary(json_dict["vent_dict"])
+        json_dict['attic_hatch_summary_dict'] = attic_hatch_summary(json_dict["attic_hatch_dict"])
         
-        print('json_dict["vent_summary_dict"]', ':')
-        pprint.pprint(json_dict["vent_summary_dict"])
+        print('json_dict["attic_hatch_summary_dict"]', ':')
+        pprint.pprint(json_dict["attic_hatch_summary_dict"])
         
         
         
@@ -3877,6 +3892,46 @@ def bulb_summary(bulb_dict):
     
     return output
 
+
+def attic_hatch_summary(attic_hatch_dict):
+    try:
+        
+        print('attic_hatch_dict', ':')
+        pprint.pprint(attic_hatch_dict)
+        
+        attic_hatch_summary_dict = {}
+        for attic_hatch in attic_hatch_dict:
+            
+            if "Not Draughtproofed" in attic_hatch_dict[attic_hatch]['value']['name']:
+                attic_hatch_dict[attic_hatch]['value']['draughtproofed'] = False
+            else:
+                attic_hatch_dict[attic_hatch]['value']['draughtproofed'] = True
+            
+            
+            key = ''
+            for keypart in ['room_uid', 'draughtproofed']: 
+                if keypart in attic_hatch_dict[attic_hatch]['value'].keys():
+                    key += (str(attic_hatch_dict[attic_hatch]['value'][keypart]) + '_')
+            key = str(hash(key))
+            if key not in attic_hatch_summary_dict.keys():
+                attic_hatch_summary_dict[key] = {}
+                attic_hatch_summary_dict[key]['value'] = {}
+                attic_hatch_summary_dict[key]['value']['Count'] = 0
+            
+            # for keypart in ['Count', 'Room', 'Type', 'Description']:
+            for keypart in ['Count', 'room_name', 'name', 'Description']:
+                if keypart in attic_hatch_dict[attic_hatch]['value'].keys():
+                    attic_hatch_summary_dict[key]['value'][keypart] = attic_hatch_dict[attic_hatch]['value'][keypart] 
+            
+            attic_hatch_summary_dict[key]['value']['Count'] += 1
+            
+        output = attic_hatch_summary_dict
+        
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output)
+    
+    return output
 
 def vent_summary(vent_dict):
     try:
@@ -5434,18 +5489,9 @@ def BER(root, output = '', email = '', forms_data = {}):
         for door in json_dict['door_dict']:
             output_dict['5.5 Door Schedule Table'][door] = json_dict['door_dict'][door]
         
-        # for bulb in json_dict['bulb_dict']:
-            # output_dict['11.1 Lighting Schedule'][bulb] = json_dict['bulb_dict'][bulb]
-        
-        json_dict['attic_hatch_dict'] = {}
-        for attic_hatch in json_dict['attic_hatch_dict']:
-            output_dict['8.1 Attic Hatches'][attic_hatch] = json_dict['attic_hatch_dict'][attic_hatch]
-        
-        # for vent in json_dict['vent_dict']:
-            # output_dict['8.2 Ventilation Items'][vent] = json_dict['vent_dict'][vent]
-        
-        # for floor in json_dict['floor_dict']:
-            # output_dict['2.3 Floor Schedule Table'][floor] = json_dict['floor_dict'][floor]
+        # json_dict['attic_hatch_dict'] = {}
+        for attic_hatch_group in json_dict['attic_hatch_summary_dict']:
+            output_dict['8.1 Attic Hatches'][attic_hatch_group] = json_dict['attic_hatch_summary_dict'][attic_hatch_group]
         
         # print("json_dict['heating_dict']", ':')
         # pprint.pprint(json_dict['heating_dict'])
@@ -5466,9 +5512,12 @@ def BER(root, output = '', email = '', forms_data = {}):
             output_dict['6. Colour Area Table P1'][colour] = colours_dict[colour]
         
         for h in json_dict['heating_dict']:
+            output_dict['9.1 Space Heating Schedule'][h] = json_dict['heating_dict'][h]
+        for h in json_dict['heating_dict']:
             if 'Heat Source Type on DEAP' in json_dict['heating_dict'][h]['value'].keys():
                 if json_dict['heating_dict'][h]['value']['Heat Source Type on DEAP'] in ['Primary', 'Secondary']:
-                    output_dict['9.3 Space Heating Category'][h] = json_dict['heating_dict'][h]
+                    output_dict['9.2 Space Heating Category'][h] = json_dict['heating_dict'][h]
+        
         
         
         
@@ -5882,13 +5931,12 @@ def BER(root, output = '', email = '', forms_data = {}):
                                 , '8. Ventilation P1'
                                 , '8.1 Attic Hatches'
                                 , '8.2 Ventilation Items'
+                                , '9. Space Heating'
+                                , '9.1 Space Heating Schedule'
+                                , '9.2 Space Heating Category'
+                                , '9.5 Pumps and Fans'
                                 , '11. Lighting P1'
                                 , '11.1 Lighting Schedule'
-                                # 9. Space Heating P4
-                                # 9.3 Space Heating Category
-                                # 9.4 Heating System Controls
-                                # 9.4 Heating System Controls (2)
-                                # 9.4 Pumps and Fans
                                 ]
                                 
             
