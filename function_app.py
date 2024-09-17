@@ -2491,10 +2491,10 @@ def XL_2_dict_new(xl_file_path):
                 if sheet.title in ['8.1 Attic Hatches']:
                     headers = [
                             'key'
-                            , 'name'
+                            , 'draughtproofed'
                             , 'room_name'
                             , 'Count'
-                            , 'Description'
+                            # , 'Description'
                             ]
                 
                 if sheet.title in ['8.2 Ventilation Items']:
@@ -2968,12 +2968,13 @@ def get_stats_data(project_id, headers = {
         floor_dict = {} # need to know floor uid/names to combine with colour/uid from XML?
         roof_dict = {}
         
-        count_dict = {} # maybe this shouldn't be here 
+        count_dict = {} # maybe this shouldn't be here - move all count operations to later 
         door_dict = {}
         window_dict = {}
         bulb_dict = {}
         vent_dict = {}
         attic_hatch_dict = {}
+        heating_dict = {}
         
         storey_height_dict = {}
         
@@ -2982,17 +2983,18 @@ def get_stats_data(project_id, headers = {
         
         # colour_dict = {} 
         
-        # below are lists of ids but statistics file uses names:
+        # below are lists of ids but statistics file also includes names:
         doors = xl_ref_dict['Door']
         windows = xl_ref_dict['Windows']
         bulbs = xl_ref_dict['Lighting']
         vents = xl_ref_dict['Wall Ventilation'] + xl_ref_dict['Mechanical Ventilation Systems']
         roof_objects = xl_ref_dict['Roofs']
+        heating_objects = xl_ref_dict['Heating']
         
         # Duct Cooker Hood
         # New Background Vent
         
-        print('vents', ';', vents)
+        print('heating_objects', ';', heating_objects)
         
         
         
@@ -3003,6 +3005,12 @@ def get_stats_data(project_id, headers = {
         
         # intermittent_fans = ["Broken Cooker Hood", "Broken Mechanical Vent", "New Mechanical Vent", "Ducted Cooker Hood", "Existing Mechanical Vent"] # as above
         intermittent_fans = ["co-d0f4acd2-8598-49ec-ac3c-8b39edc724e9", "co-33fd6b69-25ae-4e55-bf7b-f91af6112ac4", "co-accd48a4-43b8-4381-b569-c8404f52dec5", "co-03b80e12-32b7-45be-8b44-9b4b03a09b4c", "co-0c7d0ada-8a17-41f9-8746-e7007a1c40b1"] # as above
+        
+        # passive_non_closable_vents = ["New Permanent Vent", "Existing Permanent Vent"]
+        passive_non_closable_vents = ["co-483ab20e-2762-4733-9db5-19d21e1d090d", "co-4d2e52df-c793-4c02-953a-f4ed0b7eaae0"] # as above
+        
+        
+        
         
         # attic_hatches_draught_stripped = ["Fixed Ladder Hatch Draughtproofed", "Attic Hatch Draughtproofed", "Wall Hatch Draughtproofed"] 
         attic_hatches_draught_stripped = ['co-b004be99-a198-4353-b123-905dd6519f8c', 'co-aa86fc1c-cda9-4423-a383-2abb402362a8', 'co-ef552230-8aeb-44b7-840b-957d32f61a46', 'co-199a7a34-8065-4653-ae05-db12a118b338']
@@ -3039,7 +3047,9 @@ def get_stats_data(project_id, headers = {
                     # print(co_name)
                     co_name = co_name.strip()
                     # print(co_name)
-                    count_dict[co_name] = 0
+                else:
+                    co_name = co_id # this is to include Chimney & Flue which are attributes of Heating Objects
+                count_dict[co_name] = 0
                 
             # count_dict[co_id] = 0
         
@@ -3147,12 +3157,11 @@ def get_stats_data(project_id, headers = {
                                 count_dict[room_uid][furniture["name"]] += 1
                                 print(3142, furniture["name"])
                         
+                        #******************** THERMAL ENVELOPE ********************
+                        
                         
                         if room_uid in xml_ref_dict['thermal_envelope_uids']:
                             
-                            
-                            
-                        
                             for furniture in room["furnitures"]:
                                 # print('furniture["name"]', ':', furniture["name"], ' ', 'furniture["id"]', ':', furniture["id"])
                                 if furniture["id"] in count_objects:
@@ -3162,6 +3171,16 @@ def get_stats_data(project_id, headers = {
                                         count_dict[room_uid][furniture["name"]] = 0
                                     count_dict[room_uid][furniture["name"]] += 1
                                     print(3158, furniture["name"])
+                                
+                                if furniture["id"] in heating_objects:
+                                    heating_dict[furniture["uid"]] = {}
+                                    heating_dict[furniture["uid"]]['value'] = {}
+                                    heating_dict[furniture["uid"]]['value']["id"] = furniture["id"]
+                                    heating_dict[furniture["uid"]]['value']["name"] = furniture["name"]
+                                    heating_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
+                                    heating_dict[furniture["uid"]]['value']["room_name"] = room["name"]
+                                    heating_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
+                                    heating_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
                                 
                                 if furniture["id"] in vents:
                                     vent_dict[furniture["uid"]] = {}
@@ -3260,8 +3279,12 @@ def get_stats_data(project_id, headers = {
 
         if 'Number of Intermittent Fans' not in count_dict.keys():
             count_dict['Number of Intermittent Fans'] = 0
+        if 'Number of Passive, Non-Closable Vents' not in count_dict.keys():
+            count_dict['Number of Passive, Non-Closable Vents'] = 0
         if 'Number of openings' not in count_dict.keys():
             count_dict['Number of openings'] = 0
+        if 'Number of openings Draughtproofed' not in count_dict.keys():
+            count_dict['Number of openings Draughtproofed'] = 0
         if 'Attic Hatches Draught stripped' not in count_dict.keys():
             count_dict['Attic Hatches Draught stripped'] = 0
         if 'Attic Hatches Not Draught stripped' not in count_dict.keys():
@@ -3273,6 +3296,8 @@ def get_stats_data(project_id, headers = {
             # print("vent_dict[vent]['value']['id']", ':', vent_dict[vent]['value']['id'])
             if vent_dict[vent]['value']['id'] in intermittent_fans:
                 count_dict['Number of Intermittent Fans'] += 1
+            if vent_dict[vent]['value']['id'] in passive_non_closable_vents:
+                count_dict['Number of Passive, Non-Closable Vents'] += 1
         
         for attic_hatch in attic_hatch_dict:
             if attic_hatch_dict[attic_hatch]['value']['id'] in openings: # unnecessary?
@@ -3281,6 +3306,8 @@ def get_stats_data(project_id, headers = {
                 count_dict['Attic Hatches Draught stripped'] += 1
             if attic_hatch_dict[attic_hatch]['value']['id'] in attic_hatches_not_draught_stripped:
                 count_dict['Attic Hatches Not Draught stripped'] += 1
+        
+        
         
 
         print("count_dict['Number of Intermittent Fans']", ':', count_dict['Number of Intermittent Fans'])
@@ -3306,6 +3333,7 @@ def get_stats_data(project_id, headers = {
         output['window_dict'] = window_dict
         output['bulb_dict'] = bulb_dict
         output['vent_dict'] = vent_dict
+        output['heating_dict'] = heating_dict
         output['attic_hatch_dict'] = attic_hatch_dict
         output['floor_dict'] = floor_dict
         output['floor_type_dict'] = floor_type_dict
@@ -3433,15 +3461,30 @@ def JSON_2_dict(project_id, headers = {
         # pprint.pprint(wall_type_dict)
         # json_dict["wall_dict"] = stats_append(wall_dict, forms_uid_dict)
         
-        json_dict["door_dict"] = stats_append(stats_data["door_dict"], forms_uid_dict) 
+        json_dict["door_dict"] = stats_append(stats_data["door_dict"], forms_uid_dict) # forms_append?
         json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # forms_append?
         json_dict["roof_dict"] =  stats_append(stats_data["roof_dict"], forms_uid_dict) 
         
-        # print('json_dict["door_dict"]', ':')
-        # pprint.pprint(json_dict["door_dict"])
+        json_dict["heating_dict"] = stats_append(stats_data["heating_dict"], forms_uid_dict) # forms_append?
         
         
-        # 66d588c8.6ad3e7ff
+        
+        
+        print('json_dict["heating_dict"]', ':')
+        pprint.pprint(json_dict["heating_dict"])
+        
+        for ho in json_dict["heating_dict"]:
+            room_uid = json_dict["heating_dict"][ho]['value']['room_uid']
+            if room_uid not in xml_ref_dict['thermal_envelope_uids']:
+                continue
+            if 'Ventilation Type' in json_dict["heating_dict"][ho]['value'].keys():
+                vt = json_dict["heating_dict"][ho]['value']['Ventilation Type']
+                if vt in ['Chimney', 'Flue']: # cond_count_objects
+                    count_dict[vt] += 1
+                
+        
+        
+        
         
         json_dict["floor_name_dict"] = stats_data["floor_dict"]
 
@@ -3454,19 +3497,10 @@ def JSON_2_dict(project_id, headers = {
         
         
         
-        json_dict["heating_dict"] = {}
-        for ft in forms_data['heating_dict']:
-            if ft not in json_dict["heating_dict"].keys():
-                json_dict["heating_dict"][ft] = {}
-            json_dict["heating_dict"][ft]['value'] = forms_data['heating_dict'][ft]
-        
-        # print('json_dict["heating_dict"]', ':')
-        # pprint.pprint(json_dict["heating_dict"])
-        
         
         
         json_dict["floor_type_dict"] = {}
-        for ft in forms_data['floor_type_dict']:
+        for ft in forms_data['floor_type_dict']: # confusing reuse of ft (in XML this is 10, 1000, etc.)
             if ft not in json_dict["floor_type_dict"].keys():
                 json_dict["floor_type_dict"][ft] = {}
             json_dict["floor_type_dict"][ft]['value'] = forms_data['floor_type_dict'][ft]
@@ -3599,7 +3633,34 @@ def JSON_2_dict(project_id, headers = {
         
         
         json_dict['wall_type_dict'] = wall_type_dict
+        
+        
+        print('json_dict["door_dict"]', ':')
+        pprint.pprint(json_dict['door_dict'])
+        print('json_dict["window_dict"]', ':')
+        pprint.pprint(json_dict['window_dict'])
+        
+        
+        for wd in json_dict["door_dict"]:
+            no = int(json_dict["door_dict"][wd]['value']['Number of openings'])
+            count_dict['Number of openings'] += no
+            nod = int(json_dict["door_dict"][wd]['value']['Number of openings draughtstripped'])
+            count_dict['Number of openings Draughtproofed'] += no
+        for wd in json_dict["window_dict"]:
+            no = int(json_dict["window_dict"][wd]['value']['No. of opes'])
+            count_dict['Number of openings'] += no
+            nod = int(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
+            count_dict['Number of openings Draughtproofed'] += no
+            
+            
+        
+        
         json_dict['count_dict'] = count_dict
+        
+        
+        
+        
+        
         
         
         # print('json_dict["count_dict"]', ':')
@@ -3956,7 +4017,7 @@ def attic_hatch_summary(attic_hatch_dict):
                 attic_hatch_summary_dict[key]['value']['Count'] = 0
             
             # for keypart in ['Count', 'Room', 'Type', 'Description']:
-            for keypart in ['Count', 'room_name', 'name', 'Description']:
+            for keypart in ['Count', 'room_name', 'draughtproofed']:
                 if keypart in attic_hatch_dict[attic_hatch]['value'].keys():
                     attic_hatch_summary_dict[key]['value'][keypart] = attic_hatch_dict[attic_hatch]['value'][keypart] 
             
@@ -4877,8 +4938,8 @@ def get_forms_data(id, headers = {
                             
         # print('wall_type_dict', ':')
         # pprint.pprint(wall_type_dict)
-        print('heating_dict', ':')
-        pprint.pprint(heating_dict)
+        # print('heating_dict', ':')
+        # pprint.pprint(heating_dict)
         
         
         
@@ -5374,8 +5435,33 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(json_dict['count_dict'])
         
         
+        
+        
         # print("json_dict['count_dict']", ':')
         # pprint.pprint(json_dict['count_dict'])
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        # counts can only be done after we have collected forms & stats data
+        # could do it inside or outside JSON_2_Dict
+        
+        
+        # print('json_dict["heating_dict"]', ':')
+        # pprint.pprint(json_dict["heating_dict"])
+        
+        # for h in json_dict["heating_dict"]:
+            # need room uid, both ways
+
+        
+        
+        
+        
         
         colours_dict_2 = {}
         for c in colours_dict:
@@ -5550,13 +5636,13 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         for h in json_dict['heating_dict']:
             if 'Heat Source Type on DEAP' in json_dict['heating_dict'][h]['value'].keys():
-                if json_dict['heating_dict'][h]['value']['Heat Source Type on DEAP'] in ['Primary']:
+                if json_dict['heating_dict'][h]['value']['Heat Source Type on DEAP'] in ['Primary', 'Secondary', 'Fuel Cost Comparison Required']:
                     output_dict['Heat Sources'][h] = json_dict['heating_dict'][h]
         for h in json_dict['heating_dict']:
             print("json_dict['heating_dict'][h]", ':')
             pprint.pprint(json_dict['heating_dict'][h])
             if 'Heat Source Type on DEAP' in json_dict['heating_dict'][h]['value'].keys():
-                if json_dict['heating_dict'][h]['value']['Heat Source Type on DEAP'] in ['Primary', 'Secondary', 'Fuel Cost Comparison Required']:
+                if json_dict['heating_dict'][h]['value']['Heat Source Type on DEAP'] in ['Primary']:
                     output_dict['Controls and Responsiveness'][h] = json_dict['heating_dict'][h]
         
         
@@ -5845,6 +5931,13 @@ def BER(root, output = '', email = '', forms_data = {}):
         print(d)
         pprint.pprint(output_dict[d])
         
+        n = int(output_dict[d]['Number of openings']['value'])
+        o = int(json_dict['count_dict']['Number of openings'])
+        p = int(output_dict[d]['Number of openings Draughtproofed']['value'])
+        q = int(json_dict['count_dict']['Number of openings Draughtproofed'])
+        
+        output_dict[d]['Number of openings']['value'] = str(n + o)
+        output_dict[d]['Number of openings Draughtproofed']['value'] = str(p + q)
         
         
         
