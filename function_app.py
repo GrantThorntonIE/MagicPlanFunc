@@ -3004,6 +3004,10 @@ def get_stats_data(project_id, headers = {
                         , 'co-199a7a34-8065-4653-ae05-db12a118b338'
                         , 'co-4f3d9a5c-a208-4ab7-bab0-ff5bbeca7ad2'
                         , 'co-5dc7f956-8852-4d0a-b6c7-0ec48eafa359'
+                        , 'co-34ef07d5-b741-4db6-a3a5-3ebb8e6ef5a4'
+                        , 'co-e012f945-a074-4fe3-a2bb-4a0b39faa497'
+                        , 'co-3a9736be-9e03-4352-bb80-2b54b448cdfb'
+                        , 'co-c2fdb8da-54a7-48d3-bf80-5baab9761967'
                         ]
         
         # Duct Cooker Hood
@@ -3323,7 +3327,16 @@ def JSON_2_dict(project_id, headers = {
         json_dict["door_dict"] = stats_append(stats_data["door_dict"], forms_uid_dict) # forms_append?
         json_dict["window_dict"] = stats_append(stats_data["window_dict"], forms_uid_dict) # forms_append?
         json_dict["roof_dict"] =  stats_append(stats_data["roof_dict"], forms_uid_dict) 
+        
+        
+        
         json_dict["heating_dict"] = stats_append(stats_data["heating_dict"], forms_uid_dict) # forms_append?
+        
+        print('json_dict["heating_dict"]', ':')
+        pprint.pprint(json_dict["heating_dict"])
+        
+        
+        
         
         
         json_dict["floor_name_dict"] = stats_data["floor_dict"]
@@ -3357,6 +3370,7 @@ def JSON_2_dict(project_id, headers = {
         
         
         
+        json_dict["heating_dict"] = heating_object_forms_append(json_dict["heating_dict"], forms_uid_dict)
         json_dict["door_dict"] = door_forms_append(json_dict["door_dict"], forms_uid_dict)
         json_dict["window_dict"] = window_forms_append(json_dict["window_dict"], forms_uid_dict, window_detail_dict)
         
@@ -3370,8 +3384,8 @@ def JSON_2_dict(project_id, headers = {
         json_dict['vent_summary_dict'] = vent_summary(json_dict["vent_dict"])
         json_dict['attic_hatch_summary_dict'] = attic_hatch_summary(json_dict["attic_hatch_dict"])
         
-        print('json_dict["vent_summary_dict"]', ':')
-        pprint.pprint(json_dict["vent_summary_dict"])
+        # print('json_dict["vent_summary_dict"]', ':')
+        # pprint.pprint(json_dict["vent_summary_dict"])
         
         
         
@@ -3549,8 +3563,8 @@ def JSON_2_dict(project_id, headers = {
         
         
         count_dict = initialize_count_dict(xl_ref_dict)
-        print('count_dict', ':')
-        pprint.pprint(count_dict)
+        # print('count_dict', ':')
+        # pprint.pprint(count_dict)
         
         
         dicts = ["bulb_dict", "heating_dict", "vent_dict", "attic_hatch_dict"]
@@ -3598,8 +3612,8 @@ def JSON_2_dict(project_id, headers = {
                 json_dict['rooms_with_cfa'].append(room_uid)
         
 
-        print('json_dict["vent_dict"]', ':')
-        pprint.pprint(json_dict["vent_dict"])
+        # print('json_dict["vent_dict"]', ':')
+        # pprint.pprint(json_dict["vent_dict"])
         
         
         
@@ -4040,7 +4054,7 @@ def window_summary(window_dict):
                 window_summary_dict[key]['value']['No. of opes'] = 0
                 window_summary_dict[key]['value']['No. of opes draught- stripped'] = 0
             
-            for keypart in ['Type', 'Description', 'Construction', 'In roof', 'Over shading', 'cardinal_direction', 'U-Value [W/m2K]']: # Openings? U-value?
+            for keypart in ['Type', 'Description', 'Construction', 'In roof', 'Over shading', 'cardinal_direction', 'U-Value [W/m2K]', 'Orientation']: # Openings? U-value?
                 if keypart in window_dict[window]['value'].keys():
                     window_summary_dict[key]['value'][keypart] = window_dict[window]['value'][keypart] 
             
@@ -4141,8 +4155,8 @@ def attic_hatch_summary(attic_hatch_dict):
 def vent_summary(vent_dict):
     try:
         
-        print('vent_dict', ':')
-        pprint.pprint(vent_dict)
+        # print('vent_dict', ':')
+        # pprint.pprint(vent_dict)
         
         vent_summary_dict = {}
         for vent in vent_dict:
@@ -4255,6 +4269,27 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
             
         
         
+        output = object_dict
+    
+    
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output)
+    
+    return output
+
+def heating_object_forms_append(object_dict, forms_uid_dict): # shouldn't any part of the below that involves uid_dict be already covered by stats_append()?
+    
+    try:
+            
+        for ho in object_dict:
+            for key in object_dict[ho]['value']:
+                if key == "Is the fuel type mains gas?":
+                    if object_dict[ho]['value'][key] == True:
+                        object_dict[ho]['value']['Fuel Type'] = 'Mains Gas'
+                    else:
+                        object_dict[ho]['value']['Fuel Type'] = 'Other'
+
         output = object_dict
     
     
@@ -5544,9 +5579,10 @@ def BER(root, output = '', email = '', forms_data = {}):
         # counts can only be done after we have collected forms & stats data
         # could do it inside or outside JSON_2_Dict
         # do we need anything from XML? (see colours dict below)
+        # maybe outside is always better?
         
-        print('json_dict["count_dict"]', ':')
-        pprint.pprint(json_dict['count_dict'])
+        # print('json_dict["count_dict"]', ':')
+        # pprint.pprint(json_dict['count_dict'])
         
         
         
