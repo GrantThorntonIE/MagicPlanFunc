@@ -3198,7 +3198,7 @@ def get_stats_data(project_id, headers = {
                         ]
         
         
-        
+        duplicate_objects = []
         # some of our objects appear as wall items, some as furnitures, check both?
 
         for floor in JSON["data"]["project_statistics"]["floors"]:
@@ -3273,6 +3273,10 @@ def get_stats_data(project_id, headers = {
                             window_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
                             window_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
                     
+                    
+                    if floor_uid not in xml_ref_dict['true_floors']:
+                        for furniture in room["furnitures"]:
+                            duplicate_objects.append(furniture["uid"])
                     
                     if floor_uid in xml_ref_dict['true_floors']:
                         
@@ -3411,6 +3415,7 @@ def get_stats_data(project_id, headers = {
         output['floor_type_dict'] = floor_type_dict
         output['roof_dict'] = roof_dict
         output['storey_height_dict'] = storey_height_dict
+        output['duplicate_objects'] = duplicate_objects
 
     except:
         output = traceback.format_exc()
@@ -3486,7 +3491,7 @@ def JSON_2_dict(project_id, headers = {
             raise Exception(stats_data)
         
         
-        
+        print("stats_data['duplicate_objects']", ':', stats_data['duplicate_objects'])
         # adding these like this for now, might change depending on what is most convenient later:
         json_dict["bulb_dict"] = stats_data["bulb_dict"]
         json_dict["vent_dict"] = stats_data["vent_dict"]
@@ -3541,7 +3546,8 @@ def JSON_2_dict(project_id, headers = {
         
         
         
-        json_dict["heating_dict"] = heating_object_forms_append(json_dict["heating_dict"], forms_data['heating_dict'], heating_objects=xl_ref_dict['alt']['Heating'])
+        json_dict["heating_dict"] = heating_object_forms_append(json_dict["heating_dict"], forms_data['heating_dict'], heating_objects=xl_ref_dict['alt']['Heating'], duplicate_objects=stats_data['duplicate_objects'])
+        
         json_dict["door_dict"] = door_forms_append(json_dict["door_dict"], forms_uid_dict)
         json_dict["window_dict"] = window_forms_append(json_dict["window_dict"], forms_uid_dict, window_detail_dict)
         
@@ -4453,14 +4459,25 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
     
     return output
 
-def heating_object_forms_append(object_dict, forms_uid_dict, heating_objects={}):
+def heating_object_forms_append(object_dict, forms_uid_dict, heating_objects={}, duplicate_objects=[]):
     try:
+        primary_already_exists = False
+        for ho in forms_uid_dict:
+            if 'Heat Source Type on DEAP' in forms_uid_dict[ho].keys():
+                if forms_uid_dict[ho]['Heat Source Type on DEAP'] == 'Primary':
+                    if primary_already_exists == True:
+                        duplicate_objects.append(ho)
+                    else:
+                        primary_already_exists = True
+                
+            
         for ho in forms_uid_dict:
             if forms_uid_dict[ho]['Object Name'] in heating_objects.keys():
                 if ho not in object_dict.keys():
-                    print(forms_uid_dict[ho]['Object Name'])
-                    object_dict[ho] = {}
-                    object_dict[ho]['value'] = forms_uid_dict[ho]
+                    if ho not in duplicate_objects:
+                        print(forms_uid_dict[ho]['Object Name'])
+                        object_dict[ho] = {}
+                        object_dict[ho]['value'] = forms_uid_dict[ho]
         
         
         for ho in object_dict:
