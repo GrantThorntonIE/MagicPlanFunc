@@ -2416,6 +2416,7 @@ def XL_2_dict_new(xl_file_path):
                             , '7.1 Referance Table'
                             , 'lookup Age Band'
                             , 'lookup Assumed Roof U-Value'
+                            , '9.2 Space Heating Category'
                             ]
        
         
@@ -2784,7 +2785,17 @@ def XL_2_dict_new(xl_file_path):
                     field_loc = no_2_alph(2) + str(i)
                     # print('field_loc', ':', field_loc)
                     lookup[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc}
-                
+                    
+                    if sheet.title == '9.2 Space Heating Category':
+                        field_req = row[13]
+                        field_req_2 = row[14]
+                        field_req_3 = row[15]
+                        # field_loc = no_2_alph(2) + str(i)
+                        # print('field_loc', ':', field_loc)
+                        lookup[sheet.title][field_name] = {"field_req": field_req, "field_loc": field_loc, "field_req_2": field_req_2, "field_req_3": field_req_3}
+                    
+                    
+                    
             elif sheet.title == 'Floor reference': # one-to-many
                 lookup[sheet.title] = {}
                 for i, row in enumerate(list(sheet.values)):
@@ -3462,8 +3473,8 @@ def JSON_2_dict(project_id, headers = {
         
         # print("xl_ref_dict", ':')
         # pprint.pprint(xl_ref_dict)
-        print("forms_data['heating_dict']", ':')
-        pprint.pprint(forms_data['heating_dict'])
+        # print("forms_data['heating_dict']", ':')
+        # pprint.pprint(forms_data['heating_dict'])
         
         
         wall_type_dict = expand(forms_data['wall_type_dict'])
@@ -3491,7 +3502,7 @@ def JSON_2_dict(project_id, headers = {
             raise Exception(stats_data)
         
         
-        print("stats_data['duplicate_objects']", ':', stats_data['duplicate_objects'])
+        # print("stats_data['duplicate_objects']", ':', stats_data['duplicate_objects'])
         # adding these like this for now, might change depending on what is most convenient later:
         json_dict["bulb_dict"] = stats_data["bulb_dict"]
         json_dict["vent_dict"] = stats_data["vent_dict"]
@@ -3503,13 +3514,13 @@ def JSON_2_dict(project_id, headers = {
         json_dict["roof_dict"] =  stats_append(stats_data["roof_dict"], forms_uid_dict) 
         
         
-        print('stats_data["heating_dict"]', ':')
-        pprint.pprint(stats_data["heating_dict"])
+        # print('stats_data["heating_dict"]', ':')
+        # pprint.pprint(stats_data["heating_dict"])
         
         
         json_dict["heating_dict"] = stats_append(stats_data["heating_dict"], forms_data['heating_dict']) # forms_append?
-        print('json_dict["heating_dict"]', ':')
-        pprint.pprint(json_dict["heating_dict"])
+        # print('json_dict["heating_dict"]', ':')
+        # pprint.pprint(json_dict["heating_dict"])
         
         
         
@@ -5797,8 +5808,19 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
+        print("lookup_dict['9.2 Space Heating Category']", ':')
+        pprint.pprint(lookup_dict['9.2 Space Heating Category'])
         
-        
+        print("json_dict['heating_dict']", ':')
+        pprint.pprint(json_dict['heating_dict'])
+
+        for ho in json_dict['heating_dict']:
+            if 'Object Name' in json_dict['heating_dict'][ho]['value'].keys():
+                on = json_dict['heating_dict'][ho]['value']['Object Name']
+                json_dict['heating_dict'][ho]['value']['Heating System Category'] = lookup_dict['9.2 Space Heating Category'][on]['field_req']
+                json_dict['heating_dict'][ho]['value']['Sub Category'] = lookup_dict['9.2 Space Heating Category'][on]['field_req_2']
+                json_dict['heating_dict'][ho]['value']['Sub Category2 (Primary Heating System only)'] = lookup_dict['9.2 Space Heating Category'][on]['field_req_3']
+                
         
         
         # print("'output_dict'", ':')
