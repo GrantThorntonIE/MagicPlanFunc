@@ -750,7 +750,23 @@ def get_project_files(id, plan_name, headers = {
         
         
         for file in JSON["data"]["files"]:
-            if file["file_type"] == "pdf":
+            # if file["file_type"] == "xlsx":
+                # if "Estimate" in file["name"]:
+                    # request = urllib.request.Request(file["url"], headers=headers)
+                    # file_content = urllib.request.urlopen(request).read()
+                    # local_file_name = file["name"]
+                    # blob_client = blob_service_client.get_blob_client(container=container_name, blob=os.path.join(plan_name, file["name"]))
+                    # blob_client.upload_blob(file_content, overwrite=True)
+                    
+                    # local_xl_fp = Azure_2_Local(file_name = file["name"], container_from = container_name, local_dir = "/" + plan_name)
+                    
+                    # wb = openpyxl.load_workbook(local_xl_fp, data_only = True)
+                    # for sheet in wb.worksheets:
+                        # print(sheet.title)
+                        # if sheet.title == "Table of works":
+                            # print(sheet["C2"])
+                            
+            if file["file_type"] in ["pdf", "xlsx"]:
                 output.append(file["name"])
                 # print('getting file: ' + file["name"])
                 if generate_locally == True:
@@ -2385,8 +2401,8 @@ def XL_2_dict_new(xl_file_path):
                         , "7. Thermal Mass P1"
                         , "8. Ventilation P1"
                         , "9. Space Heating P4"
-                        , "9.4 Heating System Controls"
-                        , "9.4 Heating System Controls (2)"
+                        # , "9.4 Heating System Controls"
+                        # , "9.4 Heating System Controls (2)"
                         , "9.4 Pumps and Fans"
                         , "11. Lighting P1"
                         ]
@@ -2937,6 +2953,177 @@ def XL_2_dict(
         
     return output, lookup
 
+
+
+
+def expand(forms_data_wall_type_dict):
+    
+    try:
+        wall_type_dict = {}
+        for wt in forms_data_wall_type_dict:
+            for key in forms_data_wall_type_dict[wt].keys():
+                if 'Is there a' in key or wt == 'Wall Type 1':
+                    if forms_data_wall_type_dict[wt][key] == True or wt == 'Wall Type 1':
+                        wall_type_dict[wt] = forms_data_wall_type_dict[wt]
+                        
+                        wall_type_dict[wt + ' - Semi-Exposed'] = {}
+                        wall_type_dict[wt + ' - Semi-Exposed']['value'] = {}
+                        for key in forms_data_wall_type_dict[wt].keys():
+                            if key == 'value':
+                                for v in forms_data_wall_type_dict[wt][key]:
+                                    wall_type_dict[wt + ' - Semi-Exposed'][key][v] = forms_data_wall_type_dict[wt][key][v]
+                            else:
+                                wall_type_dict[wt + ' - Semi-Exposed'][key] = forms_data_wall_type_dict[wt][key]
+                            
+                        # wall_type_dict[wt + ' - Semi-Exposed'] = forms_data_wall_type_dict[wt + ' - Semi-Exposed']
+                        wall_type_dict[wt + ' - Semi-Exposed']['value']['Is semi exposed'] = 'Yes'
+                        # print("wall_type_dict[wt + ' - Semi-Exposed']['Is semi exposed']", ':', wall_type_dict[wt + ' - Semi-Exposed']['Is semi exposed'])
+        output = wall_type_dict
+    
+    finally:
+        return output
+    
+    
+
+
+def get_forms_data(id, headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
+            , "customer": "63b5a4ae69c91"
+            , "accept": "application/json"
+            }):
+    
+    try:
+        output = {}
+        form_val_dict = {}
+        forms_full_dict = {}
+        forms_uid_dict = {}
+        missing_vals = {}
+        window_detail_dict = {}
+        wall_type_dict = {}
+        floor_type_dict = {} # pick up floor details from every room - then group based on [age band, ...]
+        heating_dict = {}
+        
+        # wall_type_vals_dict = {}
+
+        json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + id
+        request = urllib.request.Request(json_url, headers=headers)
+        
+        JSON = urllib.request.urlopen(request).read()
+        print('type(JSON)', ':', type(JSON))
+        if not type(JSON) is bytes:
+            raise Exception(JSON)
+        
+        JSON = json.loads(JSON)
+        print('type(JSON)', ':', type(JSON))
+        if not isinstance(JSON, dict):
+            raise Exception(JSON)
+        
+
+        for datum in JSON["data"]:
+            if datum["symbol_instance_id"] not in forms_uid_dict.keys():
+                forms_uid_dict[datum["symbol_instance_id"]] = {}
+                forms_uid_dict[datum["symbol_instance_id"]]["symbol_name"] = datum["symbol_name"]
+            if datum["symbol_type"] not in forms_full_dict.keys():
+                forms_full_dict[datum["symbol_type"]] = {}
+            if datum["symbol_name"] not in forms_full_dict[datum["symbol_type"]].keys():
+                forms_full_dict[datum["symbol_type"]][datum["symbol_name"]] = {}
+            forms_full_dict[datum["symbol_type"]][datum["symbol_name"]]['uid'] = datum["symbol_instance_id"]
+                
+            for form in datum["forms"]:
+                # print(form["title"])
+                for section in form["sections"]:
+                    if form["title"] == "b. Building | Walls": # BER only
+                        if section["name"] == "":
+                            continue
+                        wall_type_dict[section["name"]] = {}
+                        wall_type_dict[section["name"] + ' - Semi-Exposed'] = {}
+                    
+                    if form["title"] == "BER Floor Details": # BER only
+                        # if section["name"] == "":
+                            # continue
+                        floor_type_dict[datum["symbol_instance_id"]] = {}
+                    
+                    if form["title"] == "BER Space Heating": # BER only
+                        if datum["symbol_instance_id"] not in heating_dict:
+                            heating_dict[datum["symbol_instance_id"]] = {}
+                            heating_dict[datum["symbol_instance_id"]]['Object Name'] = datum["symbol_name"]
+                            # heating_dict[datum["symbol_instance_id"]]['id'] = datum["symbol_name"]
+                        # print('Object Name', ':', datum["symbol_name"])
+                    
+                    for field in section["fields"]:
+                        im = field["label"].replace(' *', '')
+                        im = im.replace('*', '')
+                        v = ''
+                        if field["value"]["value"] == None:
+                            vals = []
+                            vals = [val["value"] for val in field["value"]["values"]]
+                            for val in vals:
+                                v += val
+                                v += '<BR>'
+                        else:
+                            v = field["value"]["value"]
+                        
+                        if im not in form_val_dict.keys():
+                            form_val_dict[im] = {}
+                        key = 'value'
+                        if key not in form_val_dict[im].keys():
+                            form_val_dict[im][key] = v
+                        
+                        forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][im] = v
+                        forms_uid_dict[datum["symbol_instance_id"]][im] = v
+                        
+                        # if form["title"] == "BER Space Heating":
+                            # print(im, ':', v)
+                        
+                        
+                        
+                        if field["is_required"] == True and field["value"]["has_value"] == False:
+                            missing_vals[datum["symbol_name"]] = im
+                            
+                        if form["title"] == "c. Building | Windows":
+                            if im not in window_detail_dict.keys():
+                                window_detail_dict[im] = {}
+                            window_detail_dict[im] = v
+                        if form["title"] == "b. Building | Walls":
+                            wall_type_dict[section["name"]][im] = v
+                        if form["title"] == "BER Floor Details":
+                            floor_type_dict[datum["symbol_instance_id"]][im] = v
+                        if form["title"] == "BER Space Heating":
+                            heating_dict[datum["symbol_instance_id"]][im] = v
+                
+                        # if datum["symbol_instance_id"] == '65e0b636.65c3ebff':
+                            # print('heating_dict[datum["symbol_instance_id"]]', ':')
+                            # pprint.pprint(heating_dict[datum["symbol_instance_id"]])
+            
+            
+                            
+        # print('wall_type_dict', ':')
+        # pprint.pprint(wall_type_dict)
+        # print('heating_dict', ':')
+        # pprint.pprint(heating_dict)
+        
+        
+        
+        output = {}
+        output['form_val_dict'] = form_val_dict
+        output['forms_full_dict'] = forms_full_dict
+        output['forms_uid_dict'] = forms_uid_dict
+        output['window_detail_dict'] = window_detail_dict
+        output['missing_vals'] = missing_vals
+        # output['wall_type_vals_dict'] = wall_type_vals_dict
+        output['wall_type_dict'] = wall_type_dict
+        output['floor_type_dict'] = floor_type_dict
+        output['heating_dict'] = heating_dict
+    
+    except:
+        output = traceback.format_exc()
+        print('exception', ':', output)
+    
+    return output
+
+
+
 def get_stats_data(project_id, headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
             ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
@@ -2968,11 +3155,12 @@ def get_stats_data(project_id, headers = {
         if not isinstance(JSON, dict):
             raise Exception(JSON)
         
+        if not isinstance(JSON["data"]["project_statistics"]["floors"], list):
+            raise Exception(JSON["data"]["project_statistics"]["floors"])
         
         floor_dict = {} # need to know floor uid/names to combine with colour/uid from XML?
         roof_dict = {}
         
-        # count_dict = {} # maybe this shouldn't be here - move all count operations outside this function
         door_dict = {}
         window_dict = {}
         bulb_dict = {}
@@ -2985,7 +3173,6 @@ def get_stats_data(project_id, headers = {
         
         wall_dict = {} # this comes from XML? But then requires additional info from Forms
         
-        # colour_dict = {} 
         
         # below are lists of ids but statistics file also includes names:
         doors = xl_ref_dict['Door']
@@ -3010,23 +3197,10 @@ def get_stats_data(project_id, headers = {
                         , 'co-c2fdb8da-54a7-48d3-bf80-5baab9761967'
                         ]
         
-        # Duct Cooker Hood
-        # New Background Vent
-        
-        # print('heating_objects', ';', heating_objects)
-        
-        
-        # print('floor_type_dict', ';')
-        # pprint.pprint(floor_type_dict)
-        
         
         
         # some of our objects appear as wall items, some as furnitures, check both?
-        
-        # print('type(JSON["data"]["project_statistics"]["floors"])', ':', type(JSON["data"]["project_statistics"]["floors"]))
-        if not isinstance(JSON["data"]["project_statistics"]["floors"], list):
-            raise Exception(JSON["data"]["project_statistics"]["floors"])
-        
+
         for floor in JSON["data"]["project_statistics"]["floors"]:
             floor_uid = floor["uid"]
             floor_name = floor["name"]
@@ -3054,7 +3228,7 @@ def get_stats_data(project_id, headers = {
                     floor_type_dict[room["uid"]]['value']['floor_name'] = floor_name
             
             
-            if floor["uid"] in xml_ref_dict.keys(): # when would it not be? why is this condition necessary here?
+            if floor["uid"] in xml_ref_dict.keys(): # when would it not be? why is this condition necessary here? independent assembly of shd above?
                 # if xml_ref_dict[floor["uid"]] == '1000':
                     # del floor_dict[floor["uid"]]
                 
@@ -3085,7 +3259,7 @@ def get_stats_data(project_id, headers = {
                                     # count_dict[room_uid][furniture["name"]] = 0
                                 # count_dict[room_uid][furniture["name"]] += 2
                     
-                    # Need special one for roof/skylights - furnitures on a non-true-floor (1000? could this loop be tabbed right, to under the above umbrella?) that need to appear in window table
+                    # Need special one for roof/skylights - furnitures on a non-true-floor (1000? could this loop be tabbed right, to go under the above umbrella?) that need to appear in window table
                     for furniture in room["furnitures"]:
                         furniture["name"] = furniture["name"].strip()
                         if furniture["id"] in windows: # furniture as windows, can this only happen on floor 1000?
@@ -3112,6 +3286,17 @@ def get_stats_data(project_id, headers = {
                                 bulb_dict[furniture["uid"]]['value']["room_name"] = room["name"]
                                 bulb_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
                                 bulb_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
+                            if furniture["id"] in heating_objects:
+                                heating_dict[furniture["uid"]] = {}
+                                heating_dict[furniture["uid"]]['value'] = {}
+                                heating_dict[furniture["uid"]]['value']["id"] = furniture["id"]
+                                heating_dict[furniture["uid"]]['value']["name"] = furniture["name"]
+                                heating_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
+                                heating_dict[furniture["uid"]]['value']["room_name"] = room["name"]
+                                heating_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
+                                heating_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
+                            
+                            
                             # if furniture["id"] in count_objects:
                                 # count_dict[furniture["name"]] += 1
                                 # if furniture["name"] not in count_dict[room_uid].keys():
@@ -3134,16 +3319,7 @@ def get_stats_data(project_id, headers = {
                                     # count_dict[room_uid][furniture["name"]] += 1
                                     # print(3158, furniture["name"])
                                 
-                                if furniture["id"] in heating_objects:
-                                    heating_dict[furniture["uid"]] = {}
-                                    heating_dict[furniture["uid"]]['value'] = {}
-                                    heating_dict[furniture["uid"]]['value']["id"] = furniture["id"]
-                                    heating_dict[furniture["uid"]]['value']["name"] = furniture["name"]
-                                    heating_dict[furniture["uid"]]['value']["room_uid"] = room["uid"]
-                                    heating_dict[furniture["uid"]]['value']["room_name"] = room["name"]
-                                    heating_dict[furniture["uid"]]['value']["floor_name"] = floor["name"]
-                                    heating_dict[furniture["uid"]]['value']["floor_uid"] = floor["uid"]
-                                
+
                                 if furniture["id"] in vents:
                                     vent_dict[furniture["uid"]] = {}
                                     vent_dict[furniture["uid"]]['value'] = {}
@@ -3242,6 +3418,11 @@ def get_stats_data(project_id, headers = {
     
     return output
 
+
+
+
+
+
 def JSON_2_dict(project_id, headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
             ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
@@ -3263,6 +3444,8 @@ def JSON_2_dict(project_id, headers = {
         label_val_dict
     '''
     try:
+        
+        
         json_dict = {}
         
         # json_dict: need to combine "forms_full_dict" and statistics (statistics_full_dict?)
@@ -3272,29 +3455,15 @@ def JSON_2_dict(project_id, headers = {
             forms_data = get_forms_data(project_id)
         
         
-        # print("forms_data['wall_type_dict']", ':')
-        # pprint.pprint(forms_data['wall_type_dict'])
+        # print("xl_ref_dict", ':')
+        # pprint.pprint(xl_ref_dict)
+        print("forms_data['heating_dict']", ':')
+        pprint.pprint(forms_data['heating_dict'])
         
         
-        wall_type_dict = {}
-        for wt in forms_data['wall_type_dict']:
-            for key in forms_data['wall_type_dict'][wt].keys():
-                if 'Is there a' in key or wt == 'Wall Type 1':
-                    if forms_data['wall_type_dict'][wt][key] == True or wt == 'Wall Type 1':
-                        wall_type_dict[wt] = forms_data['wall_type_dict'][wt]
-                        
-                        wall_type_dict[wt + ' - Semi-Exposed'] = {}
-                        wall_type_dict[wt + ' - Semi-Exposed']['value'] = {}
-                        for key in forms_data['wall_type_dict'][wt].keys():
-                            if key == 'value':
-                                for v in forms_data['wall_type_dict'][wt][key]:
-                                    wall_type_dict[wt + ' - Semi-Exposed'][key][v] = forms_data['wall_type_dict'][wt][key][v]
-                            else:
-                                wall_type_dict[wt + ' - Semi-Exposed'][key] = forms_data['wall_type_dict'][wt][key]
-                            
-                        # wall_type_dict[wt + ' - Semi-Exposed'] = forms_data['wall_type_dict'][wt + ' - Semi-Exposed']
-                        wall_type_dict[wt + ' - Semi-Exposed']['value']['Is semi exposed'] = 'Yes'
-                        # print("wall_type_dict[wt + ' - Semi-Exposed']['Is semi exposed']", ':', wall_type_dict[wt + ' - Semi-Exposed']['Is semi exposed'])
+        wall_type_dict = expand(forms_data['wall_type_dict'])
+        
+
         
         form_val_dict = forms_data['form_val_dict']
         forms_full_dict = forms_data['forms_full_dict']
@@ -3329,9 +3498,11 @@ def JSON_2_dict(project_id, headers = {
         json_dict["roof_dict"] =  stats_append(stats_data["roof_dict"], forms_uid_dict) 
         
         
+        print('stats_data["heating_dict"]', ':')
+        pprint.pprint(stats_data["heating_dict"])
         
-        json_dict["heating_dict"] = stats_append(stats_data["heating_dict"], forms_uid_dict) # forms_append?
         
+        json_dict["heating_dict"] = stats_append(stats_data["heating_dict"], forms_data['heating_dict']) # forms_append?
         print('json_dict["heating_dict"]', ':')
         pprint.pprint(json_dict["heating_dict"])
         
@@ -3370,7 +3541,7 @@ def JSON_2_dict(project_id, headers = {
         
         
         
-        json_dict["heating_dict"] = heating_object_forms_append(json_dict["heating_dict"], forms_uid_dict)
+        json_dict["heating_dict"] = heating_object_forms_append(json_dict["heating_dict"], forms_data['heating_dict'], heating_objects=xl_ref_dict['alt']['Heating'])
         json_dict["door_dict"] = door_forms_append(json_dict["door_dict"], forms_uid_dict)
         json_dict["window_dict"] = window_forms_append(json_dict["window_dict"], forms_uid_dict, window_detail_dict)
         
@@ -3598,6 +3769,8 @@ def JSON_2_dict(project_id, headers = {
         if 'rooms_with_cfa' not in json_dict.keys():
             json_dict['rooms_with_cfa'] = []
         for ho in json_dict["heating_dict"]:
+            if 'room_uid' not in json_dict["heating_dict"][ho]['value'].keys(): # "Heat Pump Outdoor Unit"
+                continue
             room_uid = json_dict["heating_dict"][ho]['value']['room_uid']
             if room_uid not in xml_ref_dict['thermal_envelope_uids']:
                 continue
@@ -3935,6 +4108,8 @@ def stats_append(stats_dict, forms_dict):
         for item in stats_dict:
             if item in forms_dict.keys():
                 for field in forms_dict[item]:
+                    if item == '66dea72f.190603ff':
+                        print(field)
                     stats_dict[item]['value'][field] = forms_dict[item][field]
         
         
@@ -4278,12 +4453,31 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
     
     return output
 
-def heating_object_forms_append(object_dict, forms_uid_dict): # shouldn't any part of the below that involves uid_dict be already covered by stats_append()?
-    
+def heating_object_forms_append(object_dict, forms_uid_dict, heating_objects={}):
     try:
-            
+        for ho in forms_uid_dict:
+            if forms_uid_dict[ho]['Object Name'] in heating_objects.keys():
+                if ho not in object_dict.keys():
+                    print(forms_uid_dict[ho]['Object Name'])
+                    object_dict[ho] = {}
+                    object_dict[ho]['value'] = forms_uid_dict[ho]
+        
+        
         for ho in object_dict:
+            if 'Individual Heating System' not in object_dict[ho]['value'].keys():
+                object_dict[ho]['value']['Individual Heating System'] = ''
+            if 'Group or District Heating System' not in object_dict[ho]['value'].keys():
+                object_dict[ho]['value']['Group or District Heating System'] = ''
+            if 'Fuel Type' not in object_dict[ho]['value'].keys():
+                object_dict[ho]['value']['Fuel Type'] = ''
+            
             for key in object_dict[ho]['value']:
+                if key == "Is the heating system part of an Individual Scheme?":
+                    if object_dict[ho]['value'][key] == True:
+                        object_dict[ho]['value']['Individual Heating System'] = True
+                    else:
+                        object_dict[ho]['value']['Group or District Heating System'] = True
+                
                 if key == "Is the fuel type mains gas?":
                     if object_dict[ho]['value'][key] == True:
                         object_dict[ho]['value']['Fuel Type'] = 'Mains Gas'
@@ -4966,142 +5160,6 @@ def XML_2_dict_new(root, t = "floor"):
     
     finally:
         return xml_ref_dict, nwa_dict, xml_val_dict, colours_dict, wo, est_dict, storey_height_dict
-
-
-def get_forms_data(id, headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
-            ,"key": "45170e50321733db78952dfa5901b0dfeeb8"
-            , "customer": "63b5a4ae69c91"
-            , "accept": "application/json"
-            }):
-    
-    try:
-        output = {}
-        form_val_dict = {}
-        forms_full_dict = {}
-        forms_uid_dict = {}
-        missing_vals = {}
-        window_detail_dict = {}
-        wall_type_dict = {}
-        floor_type_dict = {} # pick up floor details from every room - then group based on [age band, ...]
-        heating_dict = {}
-        
-        # wall_type_vals_dict = {}
-
-        json_url = "https://cloud.magicplan.app/api/v2/plans/forms/" + id
-        request = urllib.request.Request(json_url, headers=headers)
-        
-        JSON = urllib.request.urlopen(request).read()
-        print('type(JSON)', ':', type(JSON))
-        if not type(JSON) is bytes:
-            raise Exception(JSON)
-        
-        JSON = json.loads(JSON)
-        print('type(JSON)', ':', type(JSON))
-        if not isinstance(JSON, dict):
-            raise Exception(JSON)
-        
-
-        for datum in JSON["data"]:
-            if datum["symbol_instance_id"] not in forms_uid_dict.keys():
-                forms_uid_dict[datum["symbol_instance_id"]] = {}
-                forms_uid_dict[datum["symbol_instance_id"]]["symbol_name"] = datum["symbol_name"]
-            if datum["symbol_type"] not in forms_full_dict.keys():
-                forms_full_dict[datum["symbol_type"]] = {}
-            if datum["symbol_name"] not in forms_full_dict[datum["symbol_type"]].keys():
-                forms_full_dict[datum["symbol_type"]][datum["symbol_name"]] = {}
-            forms_full_dict[datum["symbol_type"]][datum["symbol_name"]]['uid'] = datum["symbol_instance_id"]
-                
-            for form in datum["forms"]:
-                # print(form["title"])
-                for section in form["sections"]:
-                    if form["title"] == "b. Building | Walls": # BER only
-                        if section["name"] == "":
-                            continue
-                        wall_type_dict[section["name"]] = {}
-                        wall_type_dict[section["name"] + ' - Semi-Exposed'] = {}
-                    
-                    if form["title"] == "BER Floor Details": # BER only
-                        # if section["name"] == "":
-                            # continue
-                        floor_type_dict[datum["symbol_instance_id"]] = {}
-                    
-                    if form["title"] == "BER Space Heating": # BER only
-                        if datum["symbol_instance_id"] not in heating_dict:
-                            heating_dict[datum["symbol_instance_id"]] = {}
-                            heating_dict[datum["symbol_instance_id"]]['Object Name'] = datum["symbol_name"]
-                        # print('Object Name', ':', datum["symbol_name"])
-                    
-                    for field in section["fields"]:
-                        im = field["label"].replace(' *', '')
-                        im = im.replace('*', '')
-                        v = ''
-                        if field["value"]["value"] == None:
-                            vals = []
-                            vals = [val["value"] for val in field["value"]["values"]]
-                            for val in vals:
-                                v += val
-                                v += '<BR>'
-                        else:
-                            v = field["value"]["value"]
-                        
-                        if im not in form_val_dict.keys():
-                            form_val_dict[im] = {}
-                        key = 'value'
-                        if key not in form_val_dict[im].keys():
-                            form_val_dict[im][key] = v
-                        
-                        forms_full_dict[datum["symbol_type"]][datum["symbol_name"]][im] = v
-                        forms_uid_dict[datum["symbol_instance_id"]][im] = v
-                        
-                        # if form["title"] == "BER Space Heating":
-                            # print(im, ':', v)
-                        
-                        
-                        
-                        if field["is_required"] == True and field["value"]["has_value"] == False:
-                            missing_vals[datum["symbol_name"]] = im
-                            
-                        if form["title"] == "c. Building | Windows":
-                            if im not in window_detail_dict.keys():
-                                window_detail_dict[im] = {}
-                            window_detail_dict[im] = v
-                        if form["title"] == "b. Building | Walls":
-                            wall_type_dict[section["name"]][im] = v
-                        if form["title"] == "BER Floor Details":
-                            floor_type_dict[datum["symbol_instance_id"]][im] = v
-                        if form["title"] == "BER Space Heating":
-                            heating_dict[datum["symbol_instance_id"]][im] = v
-                
-                        # if datum["symbol_instance_id"] == '65e0b636.65c3ebff':
-                            # print('heating_dict[datum["symbol_instance_id"]]', ':')
-                            # pprint.pprint(heating_dict[datum["symbol_instance_id"]])
-            
-            
-                            
-        # print('wall_type_dict', ':')
-        # pprint.pprint(wall_type_dict)
-        # print('heating_dict', ':')
-        # pprint.pprint(heating_dict)
-        
-        
-        
-        output = {}
-        output['form_val_dict'] = form_val_dict
-        output['forms_full_dict'] = forms_full_dict
-        output['forms_uid_dict'] = forms_uid_dict
-        output['window_detail_dict'] = window_detail_dict
-        output['missing_vals'] = missing_vals
-        # output['wall_type_vals_dict'] = wall_type_vals_dict
-        output['wall_type_dict'] = wall_type_dict
-        output['floor_type_dict'] = floor_type_dict
-        output['heating_dict'] = heating_dict
-    
-    except:
-        output = traceback.format_exc()
-        print('exception', ':', output)
-    
-    return output
 
 
 
@@ -6444,6 +6502,7 @@ def create_table_new(data_dict
         
         output = output.replace('\u03bb', '&#955')
         output = output.replace('\u00b2', '&#178')
+        output = output.replace('\u00b0', '&#x00B0')
     except:
         output = traceback.format_exc()
         print(output)
