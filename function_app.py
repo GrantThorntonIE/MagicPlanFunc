@@ -4462,7 +4462,21 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
 def heating_object_forms_append(object_dict, forms_uid_dict, heating_objects={}, duplicate_objects=[]):
     try:
         primary_already_exists = False
+        ukeys = []
         for ho in forms_uid_dict:
+            ukeyparts = ['Object Name', 'Manufacturer', 'Model', 'Does the heat source heat water?']
+            ukey = ''
+            for ukp in ukeyparts:
+                if ukp in forms_uid_dict[ho].keys():
+                    ukey = ukey + str(forms_uid_dict[ho][ukp])
+            if ukey in ukeys:
+                duplicate_objects.append(ho)
+                # print(ukeys)
+                # print(duplicate_objects)
+            else:
+                ukeys.append(ukey)
+                
+            
             if 'Heat Source Type on DEAP' in forms_uid_dict[ho].keys():
                 if forms_uid_dict[ho]['Heat Source Type on DEAP'] == 'Primary':
                     if primary_already_exists == True:
