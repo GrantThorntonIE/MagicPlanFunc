@@ -3206,6 +3206,8 @@ def get_stats_data(project_id, headers = {
                         , 'co-e012f945-a074-4fe3-a2bb-4a0b39faa497'
                         , 'co-3a9736be-9e03-4352-bb80-2b54b448cdfb'
                         , 'co-c2fdb8da-54a7-48d3-bf80-5baab9761967'
+                        , 'co-3a9736be-9e03-4352-bb80-2b54b448cdfb'
+                        , 'co-c2fdb8da-54a7-48d3-bf80-5baab9761967'
                         ]
         
         
@@ -3393,6 +3395,18 @@ def get_stats_data(project_id, headers = {
                                     window_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
                                     window_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
                                     window_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
+                    
+                                if wall_item["id"] in attic_hatches:
+                                    attic_hatch_dict[wall_item["uid"]] = {}
+                                    attic_hatch_dict[wall_item["uid"]]['value'] = {}
+                                    attic_hatch_dict[wall_item["uid"]]['value']["id"] = wall_item["id"]
+                                    attic_hatch_dict[wall_item["uid"]]['value']["name"] = wall_item["name"]
+                                    attic_hatch_dict[wall_item["uid"]]['value']["room_uid"] = room["uid"]
+                                    attic_hatch_dict[wall_item["uid"]]['value']["room_name"] = room["name"]
+                                    attic_hatch_dict[wall_item["uid"]]['value']["floor_name"] = floor["name"]
+                                    attic_hatch_dict[wall_item["uid"]]['value']["floor_uid"] = floor["uid"]
+                    
+                    
                     
                 # Get "rooflight_area" (to be subtracted later after slope calculations)
                 for w in window_dict:
@@ -3779,14 +3793,14 @@ def JSON_2_dict(project_id, headers = {
                     count_dict[json_uid_dict[object_uid]['Ventilation Type']] += 1
         
         
-        
+        # rooms with chimney, flue or flueless combustion heater
         
         # print('json_dict["heating_dict"]', ':')
         # pprint.pprint(json_dict["heating_dict"])
         if 'rooms_with_cfa' not in json_dict.keys():
             json_dict['rooms_with_cfa'] = []
         for ho in json_dict["heating_dict"]:
-            if 'room_uid' not in json_dict["heating_dict"][ho]['value'].keys(): # "Heat Pump Outdoor Unit"
+            if 'room_uid' not in json_dict["heating_dict"][ho]['value'].keys(): # "Heat Pump Outdoor Unit" etc.
                 continue
             room_uid = json_dict["heating_dict"][ho]['value']['room_uid']
             if room_uid not in xml_ref_dict['thermal_envelope_uids']:
@@ -4307,8 +4321,8 @@ def bulb_summary(bulb_dict):
 def attic_hatch_summary(attic_hatch_dict):
     try:
         
-        # print('attic_hatch_dict', ':')
-        # pprint.pprint(attic_hatch_dict)
+        print('attic_hatch_dict', ':')
+        pprint.pprint(attic_hatch_dict)
         
         attic_hatch_summary_dict = {}
         for attic_hatch in attic_hatch_dict:
@@ -5749,6 +5763,40 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
+        # *****************************
+        
+        estimate_file_dict = {}
+        
+        file_name = project_name + " Estimate.xlsx"
+        container_from = os.path.join('project-files', project_name)
+        xl_file_path = Azure_2_Local(file_name = file_name, container_from = container_from, local_dir = "/tmp")
+        
+        wb = openpyxl.load_workbook(xl_file_path, data_only = True)
+        for sheet in wb.worksheets:
+            print(sheet.title)
+            if sheet.title == "Table of works":
+                for i, row in enumerate(list(sheet.values)):
+                    if row[1] in [None, 'SKU']:
+                        continue
+                    sku = row[1].replace('Semi exposed', 'Semi-Exposed')
+                    v = row[2]
+                    estimate_file_dict[sku] = v
+        
+        # print('estimate_file_dict', ':')
+        # pprint.pprint(estimate_file_dict)
+        # print("json_dict['wall_type_dict']", ':')
+        # pprint.pprint(json_dict['wall_type_dict'])
+        
+        for w in json_dict['wall_type_dict'].keys():
+            for sku in estimate_file_dict.keys():
+                if sku in [None, 'SKU']:
+                    continue
+                print('w', ':', w)
+                print('sku', ':', sku)
+                if w.lower() == sku.lower():
+                    json_dict['wall_type_dict'][w]['value']['total_surface'] = estimate_file_dict[sku]
+        
+        
         
         # *****************************
         
@@ -5808,11 +5856,11 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
-        print("lookup_dict['9.2 Space Heating Category']", ':')
-        pprint.pprint(lookup_dict['9.2 Space Heating Category'])
+        # print("lookup_dict['9.2 Space Heating Category']", ':')
+        # pprint.pprint(lookup_dict['9.2 Space Heating Category'])
         
-        print("json_dict['heating_dict']", ':')
-        pprint.pprint(json_dict['heating_dict'])
+        # print("json_dict['heating_dict']", ':')
+        # pprint.pprint(json_dict['heating_dict'])
 
         for ho in json_dict['heating_dict']:
             if 'Object Name' in json_dict['heating_dict'][ho]['value'].keys():
