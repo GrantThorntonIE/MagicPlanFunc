@@ -17,14 +17,15 @@ import openpyxl
 import math
 
 import socket
-print(socket.gethostname())
+# print(socket.gethostname())
 
 import pprint
 # from dictsearch.search import iterate_dictionary
 
-
-# import matplotlib.pyplot as plt
-# import numpy as np
+if (socket.gethostname()) == "PC1VXW6X":
+    # import nwa_plot
+    import matplotlib.pyplot as plt
+    import numpy as np
 
 
 
@@ -3872,8 +3873,13 @@ def JSON_2_dict(project_id, headers = {
         for wd in json_dict["window_dict"]:
             no = int(json_dict["window_dict"][wd]['value']['No. of opes'])
             count_dict['Number of openings'] += no
-            nod = int(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
-            count_dict['Number of openings Draughtproofed'] += no
+            if 'No. of opes draught- stripped' in json_dict["window_dict"][wd]['value'].keys():
+                nod = int(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
+            else:
+                nod = 0
+                print("json_dict['window_dict'][" + wd + "]['value']", ':')
+                pprint.pprint(json_dict["window_dict"][wd]['value'])
+            count_dict['Number of openings Draughtproofed'] += nod
             
             
         
@@ -4321,8 +4327,8 @@ def bulb_summary(bulb_dict):
 def attic_hatch_summary(attic_hatch_dict):
     try:
         
-        print('attic_hatch_dict', ':')
-        pprint.pprint(attic_hatch_dict)
+        # print('attic_hatch_dict', ':')
+        # pprint.pprint(attic_hatch_dict)
         
         attic_hatch_summary_dict = {}
         for attic_hatch in attic_hatch_dict:
@@ -5417,7 +5423,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         # 1. thermal_envelope_uids
         # 2. ext_perim - matching of walls to exploded walls
         # 3. walls - total_area = net_a (not sure this is required?)
-        # 4. est_dict - assigning of values to wall_dict
+        # 4. est_dict - assigning of values to wall_dict (is this now taken from estimate file?)
         
         
         # *****************************
@@ -5436,159 +5442,23 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print(thermal_envelope_uids)
         xml_ref_dict['thermal_envelope_uids'] = thermal_envelope_uids
         
-        # *****************************
         
+        # ************* PERIMETER ****************
+        print(' ************* PERIMETER ****************')
         
-        # print('about to get ex wa')
-        wt_dict_ewag, exploded_wall_dict = exterior_walls(root)
-        
-        r_to = 2
-        
-        
-        
-        point_list = []
-        for floor in nwa_dict:
-            # if floor != '11':
-                # continue
+        cond = True
+        if cond == True:
+            if (socket.gethostname()) == "PC1VXW6X":
             
-            for room in nwa_dict[floor]:
-                for wall in nwa_dict[floor][room]:
-                    x1 = round(nwa_dict[floor][room][wall]['x1'], r_to)
-                    y1 = round(nwa_dict[floor][room][wall]['y1'], r_to)
-                    a = [x1, y1]
-                    point_list.append(a)
-                    x2 = round(nwa_dict[floor][room][wall]['x2'], r_to)
-                    y2 = round(nwa_dict[floor][room][wall]['y2'], r_to)
-                    b = [x2, y2]
-                    point_list.append(b)
-                
-                
-                # print('point_list', ':', point_list)
-                # l = np.array(point_list)
-                # point_list = []
-                # datapoints = l.T
-                # plt.plot(datapoints[0], datapoints[1])
-            
-            
-            
-            for room in nwa_dict[floor]:
-                for wall in nwa_dict[floor][room]:
-                    nwa_dict[floor][room][wall]['x3'] = round(nwa_dict[floor][room][wall]['x3'], r_to)
-                    nwa_dict[floor][room][wall]['y3'] = round(nwa_dict[floor][room][wall]['y3'], r_to)
-                    x3 = round(nwa_dict[floor][room][wall]['x3'], r_to)
-                    y3 = round(nwa_dict[floor][room][wall]['y3'], r_to)
-                    a = [x3, y3]
-                    point_list.append(a)
-                    nwa_dict[floor][room][wall]['x4'] = round(nwa_dict[floor][room][wall]['x4'], r_to)
-                    nwa_dict[floor][room][wall]['y4'] = round(nwa_dict[floor][room][wall]['y4'], r_to)
-                    x4 = round(nwa_dict[floor][room][wall]['x4'], r_to)
-                    y4 = round(nwa_dict[floor][room][wall]['y4'], r_to)
-                    b = [x4, y4]
-                    point_list.append(b)
-                
-                
-                # print('point_list', ':', point_list)
-                # l = np.array(point_list)
-                # point_list = []
-                # datapoints = l.T
-                # plt.plot(datapoints[0], datapoints[1])
+                # print('about to get ex wa')
+                wt_dict_ewag, exploded_wall_dict = exterior_walls(root)
+                # print('exploded_wall_dict', ':')
+                # pprint.pprint(exploded_wall_dict)
+                # nwa_dict = nwa_plot.wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
+                nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
+                # print(nwa_dict)
         
-        
-        
-        # obs_room = 'Hall (66bc8575.a5205bff)'
-        obs_room = 'Kitchen (66c611bf.a8f4b3ff)'
-        
-        point_list = []
-        for floor in exploded_wall_dict:
-            # if floor != '11':
-                # continue
-            for ex_wall in exploded_wall_dict[floor]:
-                type_ex = exploded_wall_dict[floor][ex_wall]['type']
-                if exploded_wall_dict[floor][ex_wall]['type'] != 'exterior':
-                    continue
-                exploded_wall_dict[floor][ex_wall]['x1'] = round(exploded_wall_dict[floor][ex_wall]['x1'], r_to)
-                exploded_wall_dict[floor][ex_wall]['y1'] = round(exploded_wall_dict[floor][ex_wall]['y1'], r_to)
-                x1 = round(exploded_wall_dict[floor][ex_wall]['x1'], r_to)
-                y1 = round(exploded_wall_dict[floor][ex_wall]['y1'], r_to)
-                a = [x1, y1]
-                point_list.append(a)
-                exploded_wall_dict[floor][ex_wall]['x2'] = round(exploded_wall_dict[floor][ex_wall]['x2'], r_to)
-                exploded_wall_dict[floor][ex_wall]['y2'] = round(exploded_wall_dict[floor][ex_wall]['y2'], r_to)
-                x2 = round(exploded_wall_dict[floor][ex_wall]['x2'], r_to)
-                y2 = round(exploded_wall_dict[floor][ex_wall]['y2'], r_to)
-                b = [x2, y2]
-                point_list.append(b)
-                # print(a, '\t', b)
-                
-                for room in nwa_dict[floor]:
-                    if 'ext_perim' not in nwa_dict[floor][room].keys():
-                        nwa_dict[floor][room]['ext_perim'] = 0
-                    # print('room', ':', room)
-                    for wall in nwa_dict[floor][room]:
-                        if not isinstance(nwa_dict[floor][room][wall], dict):
-                            continue
-                        # print('wall', ':', wall)
-                        # pprint.pprint(nwa_dict[floor][room][wall])
-                        if 'loadBearingWall' in nwa_dict[floor][room][wall].keys():
-                            if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
-                                continue
-                        
-                        x3 = nwa_dict[floor][room][wall]['x3']
-                        y3 = nwa_dict[floor][room][wall]['y3']
-                        c = [x3, -y3]
-                        # print('c', ':', c)
-                        x4 = nwa_dict[floor][room][wall]['x4']
-                        y4 = nwa_dict[floor][room][wall]['y4']
-                        d = [x4, -y4]
-                        # print('d', ':', d)
-                
-                        # print(a, '\t', b, '\t', c, '\t', d)
-                        # print('room', ':', room, '\t', 'type_ex', ':', type_ex,  '\t', 'wall', ':', wall,  '\t', x1, '\t', y1, '\t', x2, '\t', y2, '\t', x3, '\t', y3, '\t', x4, '\t', y4)
-                        # print('room', ':', room, '\t', 'wall', ':', wall, '\t', x1, '\t', y1, '\t', x3, '\t', y3)
-                        # print('room', ':', room, '\t', 'wall', ':', wall, '\t', x2, '\t', y2, '\t', x4, '\t', y4)
-                        
-                        
-                        string = ('segment ' + str(ex_wall) + '\t' 
-                                            + str(x1) + '\t' 
-                                            + str(y1) + '\t' 
-                                            + str(x2) + '\t' 
-                                            + str(y2) + '\t' 
-                                            + ' is colinear with wall ' + '\t' 
-                                            + str(wall) + '\t' 
-                                            + str(x3) + '\t' 
-                                            + str(y3) + '\t' 
-                                            + str(x4) + '\t' 
-                                            + str(y4))
-                        if linear_subset(x1, y1, x2, y2, x3, y3, x4, y4, epsilon=0.05, zeta=0.05) == True:
-                            l = cart_distance((x1, y1), (x2, y2))
-                            # if room == obs_room:
-                                # print('cart_distance', ':', l)
-                            nwa_dict[floor][room][wall]['ext_perim'] = l
-                            nwa_dict[floor][room]['ext_perim'] += l
-                        else:
-                            string = string.replace('is colinear', 'is NOT colinear')
-                            
-                        # if room == obs_room:
-                            # print(string)
-                    
-                    # if room == obs_room:
-                        # print("nwa_dict[" + str(floor) + "][" + room + "]['ext_perim']", ':')
-                        # pprint.pprint(nwa_dict[floor][room]['ext_perim'])
-                        
-                        # if (x1 == x3 and y1 == y3 and x2 == x4 and y2 == y4) or (x1 == x4 and y1 == y4 and x2 == x3 and y2 == y3):
-                            # print('nwa_dict[floor][room]', ':')
-                            # pprint.pprint(nwa_dict[floor][room])
-                            # print(exploded_wall_dict[floor][ex_wall]['type'])
-                            # nwa_dict[floor][room][wall]['type'] = exploded_wall_dict[floor][ex_wall]['type']
-                
-            # print('point_list', ':', point_list)
-            # l = np.array(point_list)
-            # datapoints = l.T
-            # plt.scatter(datapoints[0], datapoints[1])
-            # plt.plot(datapoints[0], datapoints[1])
-        
-            # plt.gca().set_aspect('equal', adjustable='box')
-            # plt.show()
+        print(' ************* FINISHED PERIMETER CALCULATION ****************')
         
         # print('nwa_dict["10"][obs_room]', ':')
         # pprint.pprint(nwa_dict["10"][obs_room])
@@ -5771,31 +5641,37 @@ def BER(root, output = '', email = '', forms_data = {}):
         container_from = os.path.join('project-files', project_name)
         xl_file_path = Azure_2_Local(file_name = file_name, container_from = container_from, local_dir = "/tmp")
         
-        wb = openpyxl.load_workbook(xl_file_path, data_only = True)
-        for sheet in wb.worksheets:
-            print(sheet.title)
-            if sheet.title == "Table of works":
-                for i, row in enumerate(list(sheet.values)):
-                    if row[1] in [None, 'SKU']:
+        try:
+            wb = openpyxl.load_workbook(xl_file_path, data_only = True)
+            for sheet in wb.worksheets:
+                print(sheet.title)
+                if sheet.title == "Table of works":
+                    for i, row in enumerate(list(sheet.values)):
+                        if row[1] in [None, 'SKU']:
+                            continue
+                        sku = row[1].replace('Semi exposed', 'Semi-Exposed')
+                        v = row[2]
+                        estimate_file_dict[sku] = v
+            
+            # print('estimate_file_dict', ':')
+            # pprint.pprint(estimate_file_dict)
+            # print("json_dict['wall_type_dict']", ':')
+            # pprint.pprint(json_dict['wall_type_dict'])
+            
+            for w in json_dict['wall_type_dict'].keys():
+                for sku in estimate_file_dict.keys():
+                    if sku in [None, 'SKU']:
                         continue
-                    sku = row[1].replace('Semi exposed', 'Semi-Exposed')
-                    v = row[2]
-                    estimate_file_dict[sku] = v
-        
-        # print('estimate_file_dict', ':')
-        # pprint.pprint(estimate_file_dict)
-        # print("json_dict['wall_type_dict']", ':')
-        # pprint.pprint(json_dict['wall_type_dict'])
-        
-        for w in json_dict['wall_type_dict'].keys():
-            for sku in estimate_file_dict.keys():
-                if sku in [None, 'SKU']:
-                    continue
-                print('w', ':', w)
-                print('sku', ':', sku)
-                if w.lower() == sku.lower():
-                    json_dict['wall_type_dict'][w]['value']['total_surface'] = estimate_file_dict[sku]
-        
+                    print('w', ':', w)
+                    print('sku', ':', sku)
+                    if w.lower() == sku.lower():
+                        json_dict['wall_type_dict'][w]['value']['total_surface'] = estimate_file_dict[sku]
+        except:
+            output = traceback.format_exc()
+            print('Exception')
+            print(output)
+        finally:
+            outcome = 'success'
         
         
         # *****************************
@@ -7363,3 +7239,124 @@ def exterior_walls(root):
             # print('extern_perim', ':', str(extern_perim))
     finally:
         return ext_wall_area_gross, exploded_wall_dict
+
+def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
+    try:
+        output = nwa_dict
+        # print('nwa_dict', ':')
+        # pprint.pprint(nwa_dict)
+        # print('exploded_wall_dict', ':')
+        # pprint.pprint(exploded_wall_dict)
+        # print('nwa_dict[' + obs_floor + ']', ':')
+        # pprint.pprint(nwa_dict[obs_floor])
+        # print('exploded_wall_dict[' + obs_floor + ']', ':')
+        # pprint.pprint(exploded_wall_dict[obs_floor])
+        
+        
+        
+        
+        # obs_room = 'Hall (66bc8575.a5205bff)'
+        obs_room = 'Kitchen (66c611bf.a8f4b3ff)'
+        
+        
+        point_list = []
+        for floor in exploded_wall_dict:
+            # if floor != obs_floor:
+                # continue
+            for ex_wall in exploded_wall_dict[floor]:
+                type_ex = exploded_wall_dict[floor][ex_wall]['type']
+                if exploded_wall_dict[floor][ex_wall]['type'] != 'exterior':
+                    continue
+                exploded_wall_dict[floor][ex_wall]['x1'] = round(exploded_wall_dict[floor][ex_wall]['x1'], r_to)
+                exploded_wall_dict[floor][ex_wall]['y1'] = round(exploded_wall_dict[floor][ex_wall]['y1'], r_to)
+                x1 = round(exploded_wall_dict[floor][ex_wall]['x1'], r_to)
+                y1 = round(exploded_wall_dict[floor][ex_wall]['y1'], r_to)
+                a = [x1, y1]
+                point_list.append(a)
+                exploded_wall_dict[floor][ex_wall]['x2'] = round(exploded_wall_dict[floor][ex_wall]['x2'], r_to)
+                exploded_wall_dict[floor][ex_wall]['y2'] = round(exploded_wall_dict[floor][ex_wall]['y2'], r_to)
+                x2 = round(exploded_wall_dict[floor][ex_wall]['x2'], r_to)
+                y2 = round(exploded_wall_dict[floor][ex_wall]['y2'], r_to)
+                b = [x2, y2]
+                point_list.append(b)
+                # print(a, '\t', b)
+                
+                for room in nwa_dict[floor]:
+                    if 'ext_perim' not in nwa_dict[floor][room].keys():
+                        nwa_dict[floor][room]['ext_perim'] = 0
+                    # print('room', ':', room)
+                    for wall in nwa_dict[floor][room]:
+                        if not isinstance(nwa_dict[floor][room][wall], dict):
+                            continue
+                        # print('wall', ':', wall)
+                        # pprint.pprint(nwa_dict[floor][room][wall])
+                        if 'loadBearingWall' in nwa_dict[floor][room][wall].keys():
+                            if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
+                                continue
+                        
+                        x3 = nwa_dict[floor][room][wall]['x3']
+                        y3 = nwa_dict[floor][room][wall]['y3']
+                        c = [x3, -y3]
+                        # print('c', ':', c)
+                        x4 = nwa_dict[floor][room][wall]['x4']
+                        y4 = nwa_dict[floor][room][wall]['y4']
+                        d = [x4, -y4]
+                        # print('d', ':', d)
+                
+                        # print(a, '\t', b, '\t', c, '\t', d)
+                        # print('room', ':', room, '\t', 'type_ex', ':', type_ex,  '\t', 'wall', ':', wall,  '\t', x1, '\t', y1, '\t', x2, '\t', y2, '\t', x3, '\t', y3, '\t', x4, '\t', y4)
+                        # print('room', ':', room, '\t', 'wall', ':', wall, '\t', x1, '\t', y1, '\t', x3, '\t', y3)
+                        # print('room', ':', room, '\t', 'wall', ':', wall, '\t', x2, '\t', y2, '\t', x4, '\t', y4)
+                        
+                        
+                        string = ('segment ' + str(ex_wall) + '\t' 
+                                            + str(x1) + '\t' 
+                                            + str(y1) + '\t' 
+                                            + str(x2) + '\t' 
+                                            + str(y2) + '\t' 
+                                            + ' is colinear with wall ' + '\t' 
+                                            + str(wall) + '\t' 
+                                            + str(x3) + '\t' 
+                                            + str(y3) + '\t' 
+                                            + str(x4) + '\t' 
+                                            + str(y4))
+                        if linear_subset(x1, y1, x2, y2, x3, y3, x4, y4, epsilon=0.05, zeta=0.05) == True:
+                            l = cart_distance((x1, y1), (x2, y2))
+                            # if room == obs_room:
+                                # print('cart_distance', ':', l)
+                            nwa_dict[floor][room][wall]['ext_perim'] = l
+                            nwa_dict[floor][room]['ext_perim'] += l
+                        else:
+                            string = string.replace('is colinear', 'is NOT colinear')
+                            
+                        # if room == obs_room:
+                            # print(string)
+                    
+                    # if room == obs_room:
+                        # print("nwa_dict[" + str(floor) + "][" + room + "]['ext_perim']", ':')
+                        # pprint.pprint(nwa_dict[floor][room]['ext_perim'])
+                        
+                        # if (x1 == x3 and y1 == y3 and x2 == x4 and y2 == y4) or (x1 == x4 and y1 == y4 and x2 == x3 and y2 == y3):
+                            # print('nwa_dict[floor][room]', ':')
+                            # pprint.pprint(nwa_dict[floor][room])
+                            # print(exploded_wall_dict[floor][ex_wall]['type'])
+                            # nwa_dict[floor][room][wall]['type'] = exploded_wall_dict[floor][ex_wall]['type']
+                
+            print('point_list', ':', point_list)
+            l = np.array(point_list)
+            datapoints = l.T
+            plt.scatter(datapoints[0], datapoints[1])
+            plt.plot(datapoints[0], datapoints[1])
+        
+            # plt.gca().set_aspect('equal', adjustable='box')
+            plt.show()
+        output = nwa_dict
+    
+    except:
+        output = traceback.format_exc()
+        print('Exception')
+        print(output)
+    
+    finally:
+        return output
+        
