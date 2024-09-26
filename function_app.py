@@ -22,10 +22,10 @@ import socket
 import pprint
 # from dictsearch.search import iterate_dictionary
 
-if (socket.gethostname()) == "PC1VXW6X":
+# if (socket.gethostname()) == "PC1VXW6X":
     # import nwa_plot
-    import matplotlib.pyplot as plt
-    import numpy as np
+    # import matplotlib.pyplot as plt
+    # import numpy as np
 
 
 
@@ -5447,17 +5447,16 @@ def BER(root, output = '', email = '', forms_data = {}):
         # ************* PERIMETER ****************
         print(' ************* PERIMETER ****************')
         
-        cond = True
-        if cond == True:
-            if (socket.gethostname()) == "PC1VXW6X":
+
+        # if (socket.gethostname()) == "PC1VXW6X":
             
-                # print('about to get ex wa')
-                wt_dict_ewag, exploded_wall_dict = exterior_walls(root)
-                # print('exploded_wall_dict', ':')
-                # pprint.pprint(exploded_wall_dict)
-                # nwa_dict = nwa_plot.wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
-                nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
-                # print(nwa_dict)
+        # print('about to get ex wa')
+        wt_dict_ewag, exploded_wall_dict = exterior_walls(root)
+        # print('exploded_wall_dict', ':')
+        # pprint.pprint(exploded_wall_dict)
+        # nwa_dict = nwa_plot.wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
+        nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
+        # print(nwa_dict)
         
         print(' ************* FINISHED PERIMETER CALCULATION ****************')
         
@@ -7366,14 +7365,14 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
                             # print(exploded_wall_dict[floor][expl_wall]['type'])
                             # nwa_dict[floor][room][wall]['type'] = exploded_wall_dict[floor][expl_wall]['type']
                 
-            print('point_list', ':', point_list)
-            l = np.array(point_list)
-            datapoints = l.T
-            plt.scatter(datapoints[0], datapoints[1])
-            plt.plot(datapoints[0], datapoints[1])
+            # print('point_list', ':', point_list)
+            # l = np.array(point_list)
+            # datapoints = l.T
+            # plt.scatter(datapoints[0], datapoints[1])
+            # plt.plot(datapoints[0], datapoints[1])
         
             # plt.gca().set_aspect('equal', adjustable='box')
-            plt.show()
+            # plt.show()
         output = nwa_dict
     
     except:
