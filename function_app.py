@@ -5452,11 +5452,14 @@ def BER(root, output = '', email = '', forms_data = {}):
             
         # print('about to get ex wa')
         wt_dict_ewag, exploded_wall_dict = exterior_walls(root)
-        # print('exploded_wall_dict', ':')
-        # pprint.pprint(exploded_wall_dict)
+        print('exploded_wall_dict', ':')
+        pprint.pprint(exploded_wall_dict)
         # nwa_dict = nwa_plot.wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
         nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
         # print(nwa_dict)
+        
+            
+        
         
         print(' ************* FINISHED PERIMETER CALCULATION ****************')
         
@@ -5464,8 +5467,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(nwa_dict["10"][obs_room])
         # print('nwa_dict["10"]', ':')
         # pprint.pprint(nwa_dict["10"])
-        # print('nwa_dict', ':')
-        # pprint.pprint(nwa_dict)
+        print('nwa_dict', ':')
+        pprint.pprint(nwa_dict)
         # print('exploded_wall_dict["10"]', ':')
         # pprint.pprint(exploded_wall_dict["10"])
         # print('exploded_wall_dict', ':')
@@ -5787,8 +5790,9 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(json_dict['heating_dict'])
         
         for floor_type in json_dict['floor_type_dict']:
-            if json_dict['floor_type_dict'][floor_type]['value']['is this floor being used?'] == True:
-                output_dict['2.3 Floor Schedule Table'][floor_type] = json_dict['floor_type_dict'][floor_type]
+            if exploded_wall_dict != {}: # only populated for floors 10-13, if they don't exist then we don't want this table
+                if json_dict['floor_type_dict'][floor_type]['value']['is this floor being used?'] == True:
+                    output_dict['2.3 Floor Schedule Table'][floor_type] = json_dict['floor_type_dict'][floor_type]
         
         for roof in json_dict['roof_dict']:
             output_dict['3.4 Roof Type Schedule Table'][roof] = json_dict['roof_dict'][roof]
@@ -7175,15 +7179,15 @@ def exterior_walls(root):
         
         floors = root.findall('interiorRoomPoints/floor')
         floors = root.findall('floor')
-        print('no of floors', ':', len(floors))
+        # print('no of floors', ':', len(floors))
         
         
         for floor in floors:
             floor_type = floor.get('floorType')
-            print('floor_type', ':', floor_type)
-            if (socket.gethostname()) != "PC1VXW6X":
-                if floor_type not in ['10', '11', '12', '13']:
-                    continue
+            # print('floor_type', ':', floor_type)
+            # if (socket.gethostname()) != "PC1VXW6X":
+            if floor_type not in ['10', '11', '12', '13']:
+                continue
             ft = floor_type
             exterior_walls = [] # {} 
             walls = floor.findall('exploded/wall')
