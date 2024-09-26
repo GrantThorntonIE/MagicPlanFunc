@@ -3794,7 +3794,7 @@ def JSON_2_dict(project_id, headers = {
                     count_dict[json_uid_dict[object_uid]['Ventilation Type']] += 1
         
         
-        # rooms with chimney, flue or flueless combustion heater
+        # need to establish a list of rooms with chimney, flue or flueless combustion heater - we don't count passive_non_closable_vents in these rooms
         
         # print('json_dict["heating_dict"]', ':')
         # pprint.pprint(json_dict["heating_dict"])
@@ -3874,6 +3874,7 @@ def JSON_2_dict(project_id, headers = {
             no = int(json_dict["window_dict"][wd]['value']['No. of opes'])
             count_dict['Number of openings'] += no
             if 'No. of opes draught- stripped' in json_dict["window_dict"][wd]['value'].keys():
+                print(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
                 nod = int(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
             else:
                 nod = 0
@@ -4462,7 +4463,7 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
             object_dict[window]['value']['No. of opes draught- stripped'] = object_dict[window]['value']['No. of opes']
             if 'Are all of the Window Openings Draught-stripped?' in object_dict[window]['value'].keys():
                 if object_dict[window]['value']['Are all of the Window Openings Draught-stripped?'] == False:
-                    object_dict[window]['value']['No. of opes draught- stripped'] = 'need exact text' # object_dict[window]['Other Window Type']
+                    object_dict[window]['value']['No. of opes draught- stripped'] = object_dict[window]['value']['Number of Window Openings Draught-stripped?'] # object_dict[window]['Other Window Type']
             
             
             
@@ -5610,9 +5611,9 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
-        # ************** WALLS: ADD XML DATA TO JSON ***************
+        # ************** WALLS: ADD XML DATA TO JSON (DISUSED - NOW USE ESTIMATE FILE) ***************
         
-        json_dict['wall_type_dict'] = wall_total_surface_new(json_dict['wall_type_dict'], est_dict)
+        # json_dict['wall_type_dict'] = wall_total_surface_new(json_dict['wall_type_dict'], est_dict)
         
         # json_dict['wall_type_dict']['Wall Type 1']['value']['total_surface'] = json_dict['wall_type_dict']['Wall Type 1']['total_surface']
         
@@ -5634,14 +5635,16 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         # *****************************
+        print("json_dict['wall_type_dict']", ':')
+        pprint.pprint(json_dict['wall_type_dict'])
         
         estimate_file_dict = {}
         
-        file_name = project_name + " Estimate.xlsx"
-        container_from = os.path.join('project-files', project_name)
-        xl_file_path = Azure_2_Local(file_name = file_name, container_from = container_from, local_dir = "/tmp")
-        
         try:
+            file_name = project_name + " Estimate.xlsx"
+            container_from = os.path.join('project-files', project_name)
+            xl_file_path = Azure_2_Local(file_name = file_name, container_from = container_from, local_dir = "/tmp")
+            
             wb = openpyxl.load_workbook(xl_file_path, data_only = True)
             for sheet in wb.worksheets:
                 print(sheet.title)
@@ -5667,13 +5670,17 @@ def BER(root, output = '', email = '', forms_data = {}):
                     if w.lower() == sku.lower():
                         json_dict['wall_type_dict'][w]['value']['total_surface'] = estimate_file_dict[sku]
         except:
-            output = traceback.format_exc()
+            
             print('Exception')
-            print(output)
+            print(traceback.format_exc())
+            for w in json_dict['wall_type_dict'].keys():
+                json_dict['wall_type_dict'][w]['value']['total_surface'] = 'unable to read from file'
         finally:
             outcome = 'success'
         
-        
+        print("json_dict['wall_type_dict']", ':')
+        pprint.pprint(json_dict['wall_type_dict'])
+
         # *****************************
         
         print('************** THERMAL MASS CALC ***************')
@@ -7157,7 +7164,7 @@ def lot(output_dict):
 
 def exterior_walls(root):
     try:
-        print('ex_wa')
+        print('processing "exploded" wall data')
         
         ext_wall_area_gross = 0
         plan_name = root.get('name')
@@ -7168,13 +7175,16 @@ def exterior_walls(root):
         exploded_wall_dict = {}
         
         floors = root.findall('interiorRoomPoints/floor')
-        # floors = root.findall('floor')
-        # print('no of floors', ':', len(floors))
+        floors = root.findall('floor')
+        print('no of floors', ':', len(floors))
+        
+        
         for floor in floors:
             floor_type = floor.get('floorType')
-            # print('floor_type', ':', floor_type)
-            if floor_type not in ['10', '11', '12', '13']:
-                continue
+            print('floor_type', ':', floor_type)
+            if (socket.gethostname()) != "PC1VXW6X":
+                if floor_type not in ['10', '11', '12', '13']:
+                    continue
             ft = floor_type
             exterior_walls = [] # {} 
             walls = floor.findall('exploded/wall')
@@ -7192,7 +7202,7 @@ def exterior_walls(root):
                 y2 = -float(p2.get('y'))
                 length = cart_distance((x1, y1), (x2, y2)) - (0.25 * exteriorWallWidth)
                 # print(length)
-                # wall_height = (float(p1.get('height')) + float(p2.get('height'))) / 2
+                wall_height = (float(p1.get('height')) + float(p2.get('height'))) / 2
                 if floor_type == '10':
                     wall_height = 2.4
                 if floor_type == '11':
@@ -7237,16 +7247,21 @@ def exterior_walls(root):
                 # walls_area_gross.append(wall_area_gross)
             # print('ext_wall_area_gross', ':', str(ext_wall_area_gross))
             # print('extern_perim', ':', str(extern_perim))
+    except:
+        output = traceback.format_exc()
+        print('Exception')
+        print(output)
+    
     finally:
         return ext_wall_area_gross, exploded_wall_dict
 
 def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
     try:
         output = nwa_dict
-        # print('nwa_dict', ':')
-        # pprint.pprint(nwa_dict)
-        # print('exploded_wall_dict', ':')
-        # pprint.pprint(exploded_wall_dict)
+        print('nwa_dict', ':')
+        pprint.pprint(nwa_dict)
+        print('exploded_wall_dict', ':')
+        pprint.pprint(exploded_wall_dict)
         # print('nwa_dict[' + obs_floor + ']', ':')
         # pprint.pprint(nwa_dict[obs_floor])
         # print('exploded_wall_dict[' + obs_floor + ']', ':')
@@ -7256,31 +7271,36 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
         
         
         # obs_room = 'Hall (66bc8575.a5205bff)'
-        obs_room = 'Kitchen (66c611bf.a8f4b3ff)'
+        # obs_room = 'Kitchen (66c611bf.a8f4b3ff)'
+        obs_room = 'Hall (66d1e5d4.2580e3ff)'
         
         
         point_list = []
         for floor in exploded_wall_dict:
             # if floor != obs_floor:
                 # continue
-            for ex_wall in exploded_wall_dict[floor]:
-                type_ex = exploded_wall_dict[floor][ex_wall]['type']
-                if exploded_wall_dict[floor][ex_wall]['type'] != 'exterior':
+            for expl_wall in exploded_wall_dict[floor]: # there are 9 in perimeter 35 (we skip the 1 interior wall segment)
+                type_ex = exploded_wall_dict[floor][expl_wall]['type']
+                if type_ex != 'exterior':
                     continue
-                exploded_wall_dict[floor][ex_wall]['x1'] = round(exploded_wall_dict[floor][ex_wall]['x1'], r_to)
-                exploded_wall_dict[floor][ex_wall]['y1'] = round(exploded_wall_dict[floor][ex_wall]['y1'], r_to)
-                x1 = round(exploded_wall_dict[floor][ex_wall]['x1'], r_to)
-                y1 = round(exploded_wall_dict[floor][ex_wall]['y1'], r_to)
+                print('checking exploded wall', ':', expl_wall)
+                exploded_wall_dict[floor][expl_wall]['x1'] = round(exploded_wall_dict[floor][expl_wall]['x1'], r_to)
+                exploded_wall_dict[floor][expl_wall]['y1'] = round(exploded_wall_dict[floor][expl_wall]['y1'], r_to)
+                x1 = round(exploded_wall_dict[floor][expl_wall]['x1'], r_to)
+                y1 = round(exploded_wall_dict[floor][expl_wall]['y1'], r_to)
                 a = [x1, y1]
+                exploded_wall_dict[floor][expl_wall]['a'] = a
                 point_list.append(a)
-                exploded_wall_dict[floor][ex_wall]['x2'] = round(exploded_wall_dict[floor][ex_wall]['x2'], r_to)
-                exploded_wall_dict[floor][ex_wall]['y2'] = round(exploded_wall_dict[floor][ex_wall]['y2'], r_to)
-                x2 = round(exploded_wall_dict[floor][ex_wall]['x2'], r_to)
-                y2 = round(exploded_wall_dict[floor][ex_wall]['y2'], r_to)
+                exploded_wall_dict[floor][expl_wall]['x2'] = round(exploded_wall_dict[floor][expl_wall]['x2'], r_to)
+                exploded_wall_dict[floor][expl_wall]['y2'] = round(exploded_wall_dict[floor][expl_wall]['y2'], r_to)
+                x2 = round(exploded_wall_dict[floor][expl_wall]['x2'], r_to)
+                y2 = round(exploded_wall_dict[floor][expl_wall]['y2'], r_to)
                 b = [x2, y2]
+                exploded_wall_dict[floor][expl_wall]['b'] = b
                 point_list.append(b)
                 # print(a, '\t', b)
                 
+                wall_no = -1
                 for room in nwa_dict[floor]:
                     if 'ext_perim' not in nwa_dict[floor][room].keys():
                         nwa_dict[floor][room]['ext_perim'] = 0
@@ -7288,18 +7308,21 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
                     for wall in nwa_dict[floor][room]:
                         if not isinstance(nwa_dict[floor][room][wall], dict):
                             continue
+                        wall_no += 1
                         # print('wall', ':', wall)
                         # pprint.pprint(nwa_dict[floor][room][wall])
+                        nwa_dict[floor][room][wall]['wall_no'] = wall_no
                         if 'loadBearingWall' in nwa_dict[floor][room][wall].keys():
                             if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
+                                print('skipping load bearing wall', ':', wall)
                                 continue
                         
-                        x3 = nwa_dict[floor][room][wall]['x3']
-                        y3 = nwa_dict[floor][room][wall]['y3']
-                        c = [x3, -y3]
+                        x3 = round(nwa_dict[floor][room][wall]['x3'], r_to)
+                        y3 = round(nwa_dict[floor][room][wall]['y3'], r_to)
+                        c = [x3, -y3] # why does y3 need to be negated here when exploded y1, y2 don't above?
                         # print('c', ':', c)
-                        x4 = nwa_dict[floor][room][wall]['x4']
-                        y4 = nwa_dict[floor][room][wall]['y4']
+                        x4 = round(nwa_dict[floor][room][wall]['x4'], r_to)
+                        y4 = round(nwa_dict[floor][room][wall]['y4'], r_to)
                         d = [x4, -y4]
                         # print('d', ':', d)
                 
@@ -7309,12 +7332,12 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
                         # print('room', ':', room, '\t', 'wall', ':', wall, '\t', x2, '\t', y2, '\t', x4, '\t', y4)
                         
                         
-                        string = ('segment ' + str(ex_wall) + '\t' 
+                        string = ('exploded segment ' + str(expl_wall) + '\t' 
                                             + str(x1) + '\t' 
                                             + str(y1) + '\t' 
                                             + str(x2) + '\t' 
                                             + str(y2) + '\t' 
-                                            + ' is colinear with wall ' + '\t' 
+                                            + ' is colinear with nwa_dict wall ' + str(wall_no) + '\t' 
                                             + str(wall) + '\t' 
                                             + str(x3) + '\t' 
                                             + str(y3) + '\t' 
@@ -7322,15 +7345,16 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
                                             + str(y4))
                         if linear_subset(x1, y1, x2, y2, x3, y3, x4, y4, epsilon=0.05, zeta=0.05) == True:
                             l = cart_distance((x1, y1), (x2, y2))
-                            # if room == obs_room:
+                            if room == obs_room:
                                 # print('cart_distance', ':', l)
+                                string = string + '\t' + str(l)
                             nwa_dict[floor][room][wall]['ext_perim'] = l
                             nwa_dict[floor][room]['ext_perim'] += l
                         else:
                             string = string.replace('is colinear', 'is NOT colinear')
                             
-                        # if room == obs_room:
-                            # print(string)
+                        if room == obs_room:
+                            print(string)
                     
                     # if room == obs_room:
                         # print("nwa_dict[" + str(floor) + "][" + room + "]['ext_perim']", ':')
@@ -7339,8 +7363,8 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
                         # if (x1 == x3 and y1 == y3 and x2 == x4 and y2 == y4) or (x1 == x4 and y1 == y4 and x2 == x3 and y2 == y3):
                             # print('nwa_dict[floor][room]', ':')
                             # pprint.pprint(nwa_dict[floor][room])
-                            # print(exploded_wall_dict[floor][ex_wall]['type'])
-                            # nwa_dict[floor][room][wall]['type'] = exploded_wall_dict[floor][ex_wall]['type']
+                            # print(exploded_wall_dict[floor][expl_wall]['type'])
+                            # nwa_dict[floor][room][wall]['type'] = exploded_wall_dict[floor][expl_wall]['type']
                 
             print('point_list', ':', point_list)
             l = np.array(point_list)
