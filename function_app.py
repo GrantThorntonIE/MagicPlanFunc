@@ -3190,7 +3190,7 @@ def get_stats_data(project_id, headers = {
         doors = xl_ref_dict['Door']
         windows = xl_ref_dict['Windows']
         bulbs = xl_ref_dict['Lighting']
-        vents = xl_ref_dict['Wall Ventilation'] + xl_ref_dict['Mechanical Ventilation Systems']
+        vents = xl_ref_dict['Intermittent Fan'] + xl_ref_dict['Passive, Non-Closable Vent'] + xl_ref_dict['Flueless combustion room heater']
         roof_objects = xl_ref_dict['Roofs']
         heating_objects = xl_ref_dict['Heating']
         
@@ -3574,6 +3574,34 @@ def JSON_2_dict(project_id, headers = {
         
         json_dict["heating_dict"] = heating_object_forms_append(json_dict["heating_dict"], forms_data['heating_dict'], heating_objects=xl_ref_dict['alt']['Heating'], duplicate_objects=stats_data['duplicate_objects'])
         
+        print('json_dict["heating_dict"]', ':')
+        pprint.pprint(json_dict["heating_dict"])
+        print('json_dict["vent_dict"]', ':')
+        pprint.pprint(json_dict["vent_dict"])
+        
+        # need to add chimneys etc. to vent_dict
+        for ho in json_dict["heating_dict"]:
+            if 'Ventilation Type' in json_dict["heating_dict"][ho]['value'].keys():
+                if json_dict["heating_dict"][ho]['value']['Ventilation Type'] in ['Flue', 'Chimney']:
+                    print('ho', ':', ho)
+                    v_id = ho + '_'
+                    json_dict["vent_dict"][v_id] = {}
+                    json_dict["vent_dict"][v_id]['value'] = {}
+                    json_dict["vent_dict"][v_id]['value']["name"] = json_dict["heating_dict"][ho]['value']['Ventilation Type']
+                    if 'id' in json_dict["heating_dict"][ho]['value'].keys():
+                        json_dict["vent_dict"][v_id]['value']["id"] = json_dict["heating_dict"][ho]['value']['id'] + '_'
+                    if 'room_uid' in json_dict["heating_dict"][ho]['value'].keys():
+                        json_dict["vent_dict"][v_id]['value']["room_uid"] = json_dict["heating_dict"][ho]['value']['room_uid']
+                    if 'room_name' in json_dict["heating_dict"][ho]['value'].keys():
+                        json_dict["vent_dict"][v_id]['value']["room_name"] = json_dict["heating_dict"][ho]['value']['room_name']
+                    if 'floor_name' in json_dict["heating_dict"][ho]['value'].keys():
+                        json_dict["vent_dict"][v_id]['value']["floor_name"] = json_dict["heating_dict"][ho]['value']['floor_name']
+                    if 'floor_uid' in json_dict["heating_dict"][ho]['value'].keys():
+                        json_dict["vent_dict"][v_id]['value']["floor_uid"] = json_dict["heating_dict"][ho]['value']['floor_uid']
+
+                    
+        
+        
         json_dict["door_dict"] = door_forms_append(json_dict["door_dict"], forms_uid_dict)
         json_dict["window_dict"] = window_forms_append(json_dict["window_dict"], forms_uid_dict, window_detail_dict)
         
@@ -3711,7 +3739,7 @@ def JSON_2_dict(project_id, headers = {
         doors = xl_ref_dict['Door']
         windows = xl_ref_dict['Windows']
         bulbs = xl_ref_dict['Lighting']
-        vents = xl_ref_dict['Wall Ventilation'] + xl_ref_dict['Mechanical Ventilation Systems']
+        vents = xl_ref_dict['Intermittent Fan'] + xl_ref_dict['Passive, Non-Closable Vent'] + xl_ref_dict['Flueless combustion room heater']
         roof_objects = xl_ref_dict['Roofs']
         heating_objects = xl_ref_dict['Heating']
         
@@ -3812,6 +3840,8 @@ def JSON_2_dict(project_id, headers = {
                     count_dict[vt] += 1
                     json_dict['rooms_with_cfa'].append(room_uid)
         for vent in json_dict['vent_dict']:
+            if 'room_uid' not in json_dict["vent_dict"][vent]['value'].keys():
+                continue
             room_uid = json_dict["vent_dict"][vent]['value']['room_uid']
             if json_dict["vent_dict"][vent]['value']['id'] == "co-ecf09dcf-0350-4fdd-a7f0-8f0b3fcfbe13": # "Flueless combustion room heater"
                 json_dict['rooms_with_cfa'].append(room_uid)
@@ -3845,6 +3875,8 @@ def JSON_2_dict(project_id, headers = {
         
         
         for vent in json_dict["vent_dict"]:
+            if 'room_uid' not in json_dict["vent_dict"][vent]['value'].keys():
+                continue
             room_uid = json_dict["vent_dict"][vent]['value']['room_uid']
             if json_dict["vent_dict"][vent]['value']['id'] in intermittent_fans:
                 count_dict['Number of Intermittent Fans'] += 1
@@ -3874,7 +3906,7 @@ def JSON_2_dict(project_id, headers = {
             no = int(json_dict["window_dict"][wd]['value']['No. of opes'])
             count_dict['Number of openings'] += no
             if 'No. of opes draught- stripped' in json_dict["window_dict"][wd]['value'].keys():
-                print(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
+                # print(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
                 nod = int(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
             else:
                 nod = 0
@@ -3919,7 +3951,7 @@ def initialize_count_dict(xl_ref_dict):
         doors = xl_ref_dict['Door']
         windows = xl_ref_dict['Windows']
         bulbs = xl_ref_dict['Lighting']
-        vents = xl_ref_dict['Wall Ventilation'] + xl_ref_dict['Mechanical Ventilation Systems']
+        vents = xl_ref_dict['Intermittent Fan'] + xl_ref_dict['Passive, Non-Closable Vent'] + xl_ref_dict['Flueless combustion room heater'] # xl_ref_dict['Wall Ventilation'] + xl_ref_dict['Mechanical Ventilation Systems']
         roof_objects = xl_ref_dict['Roofs']
         heating_objects = xl_ref_dict['Heating']
         
@@ -4452,10 +4484,11 @@ def window_forms_append(object_dict, forms_uid_dict, window_detail_dict): # form
             
             object_dict[window]['value']['In roof'] = True if object_dict[window]['value']['name'] == 'Skylight' else False
             
-            object_dict[window]['value']['No. of opes'] = 1
+            object_dict[window]['value']['No. of opes'] = 0
             if 'Are the Number of Rooflight Openings required to be calculated?' in object_dict[window]['value'].keys():
                 if object_dict[window]['value']['Are the Number of Rooflight Openings required to be calculated?'] == True:
                     object_dict[window]['value']['No. of opes'] = object_dict[window]['value']['Number of Rooflight Openings']
+            
             if 'Are the Number of Window Openings required to be calculated?' in object_dict[window]['value'].keys():
                 if object_dict[window]['value']['Are the Number of Window Openings required to be calculated?'] == True:
                     object_dict[window]['value']['No. of opes'] = object_dict[window]['value']['Number of Window Openings']
@@ -5637,8 +5670,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         # *****************************
-        print("json_dict['wall_type_dict']", ':')
-        pprint.pprint(json_dict['wall_type_dict'])
+        # print("json_dict['wall_type_dict']", ':')
+        # pprint.pprint(json_dict['wall_type_dict'])
         
         estimate_file_dict = {}
         
@@ -5680,8 +5713,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         finally:
             outcome = 'success'
         
-        print("json_dict['wall_type_dict']", ':')
-        pprint.pprint(json_dict['wall_type_dict'])
+        # print("json_dict['wall_type_dict']", ':')
+        # pprint.pprint(json_dict['wall_type_dict'])
 
         # *****************************
         
