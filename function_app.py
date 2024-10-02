@@ -731,7 +731,7 @@ def get_project_files(id, plan_name, headers = {
         blob_service_client = BlobServiceClient(account_url, credential=default_credential)
         
         
-        container_name = "project-files"
+        container_name = "project-files-2"
         container_client = blob_service_client.get_container_client(container_name)
         if not container_client.exists():
             container_client = blob_service_client.create_container(container_name)
@@ -2856,7 +2856,7 @@ def XL_2_dict(
                 , default_credential = DefaultAzureCredential()
                 , container_from = 'attachment'
                 , local_path_from = "/tmp"
-                # , container_to = 'project-files'
+                # , container_to = 'project-files-2'
                 # , local_path_to = plan_name
                 ):
     '''
@@ -3910,8 +3910,8 @@ def JSON_2_dict(project_id, headers = {
                 nod = int(json_dict["window_dict"][wd]['value']['No. of opes draught- stripped'])
             else:
                 nod = 0
-                print("json_dict['window_dict'][" + wd + "]['value']", ':')
-                pprint.pprint(json_dict["window_dict"][wd]['value'])
+                # print("json_dict['window_dict'][" + wd + "]['value']", ':')
+                # pprint.pprint(json_dict["window_dict"][wd]['value'])
             count_dict['Number of openings Draughtproofed'] += nod
             
             
@@ -5485,8 +5485,8 @@ def BER(root, output = '', email = '', forms_data = {}):
             
         # print('about to get ex wa')
         wt_dict_ewag, exploded_wall_dict = exterior_walls(root)
-        print('exploded_wall_dict', ':')
-        pprint.pprint(exploded_wall_dict)
+        # print('exploded_wall_dict', ':')
+        # pprint.pprint(exploded_wall_dict)
         # nwa_dict = nwa_plot.wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
         nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
         # print(nwa_dict)
@@ -5500,8 +5500,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         # pprint.pprint(nwa_dict["10"][obs_room])
         # print('nwa_dict["10"]', ':')
         # pprint.pprint(nwa_dict["10"])
-        print('nwa_dict', ':')
-        pprint.pprint(nwa_dict)
+        # print('nwa_dict', ':')
+        # pprint.pprint(nwa_dict)
         # print('exploded_wall_dict["10"]', ':')
         # pprint.pprint(exploded_wall_dict["10"])
         # print('exploded_wall_dict', ':')
@@ -5677,7 +5677,7 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         try:
             file_name = project_name + " Estimate.xlsx"
-            container_from = os.path.join('project-files', project_name)
+            container_from = os.path.join('project-files-2', project_name)
             xl_file_path = Azure_2_Local(file_name = file_name, container_from = container_from, local_dir = "/tmp")
             
             wb = openpyxl.load_workbook(xl_file_path, data_only = True)
@@ -5830,11 +5830,16 @@ def BER(root, output = '', email = '', forms_data = {}):
         for roof in json_dict['roof_dict']:
             output_dict['3.4 Roof Type Schedule Table'][roof] = json_dict['roof_dict'][roof]
         
+        
+        
         for wall_type in json_dict['wall_type_dict']:
             if 'total_surface' in json_dict['wall_type_dict'][wall_type].keys():
                 if json_dict['wall_type_dict'][wall_type]['total_surface'] != '' or 'Semi-Exposed' not in json_dict['wall_type_dict'][wall_type]:
                     output_dict['4.3 Wall Summary Table'][wall_type] = json_dict['wall_type_dict'][wall_type]
-        
+            # else:
+                # print(wall_type, ':')
+                # pprint.pprint(json_dict['wall_type_dict'][wall_type])
+            
         for colour in colours_dict:
             output_dict['6. Colour Area Table P1'][colour] = colours_dict[colour]
         
@@ -6653,7 +6658,7 @@ def test_function(req: func.HttpRequest) -> func.HttpResponse:
             blob_client = blob_service_client.get_blob_client(container=container_name, blob=local_file_name)
             blob_client.upload_blob(json_data)
             
-            # container_name = "project-files"
+            # container_name = "project-files-2"
             # container_client = blob_service_client.get_container_client(container_name)
             # if not container_client.exists():
                 # container_client = blob_service_client.create_container(container_name)
@@ -7094,7 +7099,7 @@ def copy_from_container(plan_name
         # filename = plan_name + ' Major Renovation calculation' + '.xlsx'
         # container_name = 'attachment'
         
-        container_to = 'project-files'
+        container_to = 'project-files-2'
         local_path_to = plan_name
 
         # instance_file_path = os.path.join(local_path, filename)
@@ -7294,10 +7299,10 @@ def exterior_walls(root):
 def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
     try:
         output = nwa_dict
-        print('nwa_dict', ':')
-        pprint.pprint(nwa_dict)
-        print('exploded_wall_dict', ':')
-        pprint.pprint(exploded_wall_dict)
+        # print('nwa_dict', ':')
+        # pprint.pprint(nwa_dict)
+        # print('exploded_wall_dict', ':')
+        # pprint.pprint(exploded_wall_dict)
         # print('nwa_dict[' + obs_floor + ']', ':')
         # pprint.pprint(nwa_dict[obs_floor])
         # print('exploded_wall_dict[' + obs_floor + ']', ':')
@@ -7389,8 +7394,8 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
                         else:
                             string = string.replace('is colinear', 'is NOT colinear')
                             
-                        if room == obs_room:
-                            print(string)
+                        # if room == obs_room:
+                        # print(string)
                     
                     # if room == obs_room:
                         # print("nwa_dict[" + str(floor) + "][" + room + "]['ext_perim']", ':')
