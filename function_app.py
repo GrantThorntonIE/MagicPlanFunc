@@ -2366,6 +2366,7 @@ def Azure_2_Local(file_name
     except:
         output = traceback.format_exc()
         print(output)
+        # output = 'failed to retrieve file: ' + file_name
         
     return output
 
@@ -4693,7 +4694,7 @@ def XML_2_dict_new(root, t = "floor"):
         
         xml_val_dict['eircode'] = root.get('postalCode')
         
-        
+        xml_val_dict['internal_width'] = float(root.get('interiorWallWidth'))
         
         
         MagicPlan_2_SEAI_dict = {
@@ -4852,6 +4853,7 @@ def XML_2_dict_new(root, t = "floor"):
                 colours_dict[colour]['value'][floor_uid] = round(colours_dict[colour]['value'][floor_uid], 2)
             
             for room in floor.findall('floorRoom'):
+                room_uid = room.get('uid')
                 if room.get('type') not in xml_ref_dict.keys():
                     xml_ref_dict[room.get('type')] = []
                 xml_ref_dict[room.get('type')].append(room.get('uid'))
@@ -4899,7 +4901,14 @@ def XML_2_dict_new(root, t = "floor"):
                 room_x = room.get('x')
                 room_y = room.get('y')
                 w_index = 0
+                
+                if room_uid == '66f1845d.9d271bff':
+                    print("len(room.findall('point')", ':')
+                    print(len(room.findall('point')))
+                
                 for point in room.findall('point'):
+                    if room_uid == '66f1845d.9d271bff':
+                        print(point.get("uid"))
                     w_index += 1
                     # uid = point.get('uid')
                     x[w_index] = {}
@@ -4961,6 +4970,8 @@ def XML_2_dict_new(root, t = "floor"):
                 
         # print('nwa_dict', ':')
         # pprint.pprint(nwa_dict)
+        # print('nwa_dict["10"]', ':')
+        # pprint.pprint(nwa_dict["10"])
         
         # print("xml_ref_dict['exclude_rooms']", ':', str(xml_ref_dict['exclude_rooms']))
         # print("xml_ref_dict['include_rooms']", ':', str(xml_ref_dict['include_rooms']))
@@ -5099,6 +5110,8 @@ def XML_2_dict_new(root, t = "floor"):
             
             # obj_dict[ft] = o
             
+            
+            
             for room in floor.findall('floorRoom'):
                 uid = room.get('uid')
                 rt = room.get('type')
@@ -5131,17 +5144,31 @@ def XML_2_dict_new(root, t = "floor"):
                         # print('o', ':')
                         # pprint.pprint(o)
                 
+                
+                if uid == '66f1845d.9d271bff':
+                    print("len(room.findall('point')", ':')
+                    print(len(room.findall('point')))
+                
                 w_index = 0
                 for point in room.findall('point'): # get (x3, y3)
+                    if room_uid == '66f1845d.9d271bff':
+                        print(point.get("uid"))
                     w_index += 1
                     w[w_index] = {}
                     w[w_index]['uid'] = point.get('uid')
                     w[w_index]['x3'] = float(point.get('snappedX')) + float(room_x)
                     w[w_index]['y3'] = -float(point.get('snappedY')) - float(room_y)
-
+                
+                
+                
+                
+                
                 w_index = 0
                 for wall in w: # get (x4, y4), the second point in each line segment - WARNING: relies on the assumption that the points are in order
+                        # print('##############################################' , w)
                     w_index += 1
+                    if 'x3' not in w[w_index].keys():
+                        print('##############################################' , w[w_index]['uid'])
                     if w_index + 1 in list(w.keys()):
                         w[w_index]['x4'] = w[w_index + 1]['x3']
                         w[w_index]['y4'] = w[w_index + 1]['y3']
@@ -5151,8 +5178,9 @@ def XML_2_dict_new(root, t = "floor"):
                 
                 # print('ft', ':', ft)
                 # print('rt', ':', '"' + rt + '"')
-                # print('w', ':')
-                # pprint.pprint(w)
+                if uid == '66f1845d.9d271bff':
+                    print('w', ':')
+                    pprint.pprint(w)
                 
                 for wall in w: # transfer values to nwa_dict (where wall key is "uid" instead of numbered index)
                     uid = w[wall]['uid']
@@ -5447,8 +5475,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         est_dict = xml_dict[5]
         storey_height_dict = xml_dict[6]
         
-        # print('nwa_dict["11"]', ':')
-        # pprint.pprint(nwa_dict["11"])
+        # print('nwa_dict["10"]', ':')
+        # pprint.pprint(nwa_dict["10"])
         
         # *****************************
         
@@ -5488,8 +5516,11 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print('exploded_wall_dict', ':')
         # pprint.pprint(exploded_wall_dict)
         # nwa_dict = nwa_plot.wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
-        nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
-        # print(nwa_dict)
+        print('nwa_dict', ':')
+        pprint.pprint(nwa_dict)
+        nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict, internal_width=xml_val_dict['internal_width'])
+        print('nwa_dict', ':')
+        pprint.pprint(nwa_dict)
         
             
         
@@ -5528,10 +5559,10 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print('est_dict', ':')
         # pprint.pprint(est_dict)        
         
-        for item in est_dict:
-            if item in wall_dict.keys():
-                for v in est_dict[item]:
-                    wall_dict[item]['value'][v] = est_dict[item][v]
+        # for item in est_dict:
+            # if item in wall_dict.keys():
+                # for v in est_dict[item]:
+                    # wall_dict[item]['value'][v] = est_dict[item][v]
         
         # print('wall_dict', ':')
         # pprint.pprint(wall_dict)
@@ -5706,15 +5737,15 @@ def BER(root, output = '', email = '', forms_data = {}):
                         json_dict['wall_type_dict'][w]['value']['total_surface'] = estimate_file_dict[sku]
         except:
             
-            print('Exception')
+            print('Exception (warning only)')
             print(traceback.format_exc())
             for w in json_dict['wall_type_dict'].keys():
                 json_dict['wall_type_dict'][w]['value']['total_surface'] = 'unable to read from file'
+            print("json_dict['wall_type_dict']", ':')
+            pprint.pprint(json_dict['wall_type_dict'])
         finally:
-            outcome = 'success'
+            outcome = 'wall_type_dict complete'
         
-        # print("json_dict['wall_type_dict']", ':')
-        # pprint.pprint(json_dict['wall_type_dict'])
 
         # *****************************
         
@@ -7296,7 +7327,7 @@ def exterior_walls(root):
     finally:
         return ext_wall_area_gross, exploded_wall_dict
 
-def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
+def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2, internal_width = 0):
     try:
         output = nwa_dict
         # print('nwa_dict', ':')
@@ -7350,14 +7381,16 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
                         if not isinstance(nwa_dict[floor][room][wall], dict):
                             continue
                         wall_no += 1
-                        # print('wall', ':', wall)
-                        # pprint.pprint(nwa_dict[floor][room][wall])
+                        print('wall', ':', wall)
+                        pprint.pprint(nwa_dict[floor][room][wall])
                         nwa_dict[floor][room][wall]['wall_no'] = wall_no
                         if 'loadBearingWall' in nwa_dict[floor][room][wall].keys():
                             if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
                                 print('skipping load bearing wall', ':', wall)
                                 continue
                         
+                        if 'x3' not in nwa_dict[floor][room][wall].keys():
+                            continue
                         x3 = round(nwa_dict[floor][room][wall]['x3'], r_to)
                         y3 = round(nwa_dict[floor][room][wall]['y3'], r_to)
                         c = [x3, -y3] # why does y3 need to be negated here when exploded y1, y2 don't above?
@@ -7385,7 +7418,8 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2):
                                             + str(x4) + '\t' 
                                             + str(y4))
                         if linear_subset(x1, y1, x2, y2, x3, y3, x4, y4, epsilon=0.05, zeta=0.05) == True:
-                            l = cart_distance((x1, y1), (x2, y2))
+                            l = cart_distance((x1, y1), (x2, y2)) - internal_width
+                            # l = cart_distance((x3, y3), (x4, y4))
                             if room == obs_room:
                                 # print('cart_distance', ':', l)
                                 string = string + '\t' + str(l)
