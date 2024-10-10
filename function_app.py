@@ -3825,8 +3825,11 @@ def JSON_2_dict(project_id, headers = {
         
         # need to establish a list of rooms with chimney, flue or flueless combustion heater - we don't count passive_non_closable_vents in these rooms
         
+        
         # print('json_dict["heating_dict"]', ':')
         # pprint.pprint(json_dict["heating_dict"])
+        count_dict['Chimney'] = 0
+        count_dict['Flue'] = 0
         if 'rooms_with_cfa' not in json_dict.keys():
             json_dict['rooms_with_cfa'] = []
         for ho in json_dict["heating_dict"]:
@@ -3839,6 +3842,8 @@ def JSON_2_dict(project_id, headers = {
                 vt = json_dict["heating_dict"][ho]['value']['Ventilation Type']
                 if vt in ['Chimney', 'Flue']: # cond_count_objects
                     count_dict[vt] += 1
+                    print(vt, ':', room_uid, ':')
+                    print(count_dict[vt])
                     json_dict['rooms_with_cfa'].append(room_uid)
         for vent in json_dict['vent_dict']:
             if 'room_uid' not in json_dict["vent_dict"][vent]['value'].keys():
@@ -4694,7 +4699,7 @@ def XML_2_dict_new(root, t = "floor"):
         
         xml_val_dict['eircode'] = root.get('postalCode')
         
-        xml_val_dict['internal_width'] = float(root.get('interiorWallWidth'))
+        xml_val_dict['interior_wall_width'] = float(root.get('interiorWallWidth'))
         
         
         MagicPlan_2_SEAI_dict = {
@@ -5178,9 +5183,9 @@ def XML_2_dict_new(root, t = "floor"):
                 
                 # print('ft', ':', ft)
                 # print('rt', ':', '"' + rt + '"')
-                if uid == '66f1845d.9d271bff':
-                    print('w', ':')
-                    pprint.pprint(w)
+                # if uid == '66f1845d.9d271bff':
+                    # print('w', ':')
+                    # pprint.pprint(w)
                 
                 for wall in w: # transfer values to nwa_dict (where wall key is "uid" instead of numbered index)
                     uid = w[wall]['uid']
@@ -5516,11 +5521,11 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print('exploded_wall_dict', ':')
         # pprint.pprint(exploded_wall_dict)
         # nwa_dict = nwa_plot.wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict)
-        print('nwa_dict', ':')
-        pprint.pprint(nwa_dict)
-        nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict, internal_width=xml_val_dict['internal_width'])
-        print('nwa_dict', ':')
-        pprint.pprint(nwa_dict)
+        # print('nwa_dict', ':')
+        # pprint.pprint(nwa_dict)
+        nwa_dict = wall_plot(exploded_wall_dict=exploded_wall_dict, nwa_dict=nwa_dict, interior_wall_width=xml_val_dict['interior_wall_width'])
+        # print('nwa_dict', ':')
+        # pprint.pprint(nwa_dict)
         
             
         
@@ -5741,8 +5746,8 @@ def BER(root, output = '', email = '', forms_data = {}):
             print(traceback.format_exc())
             for w in json_dict['wall_type_dict'].keys():
                 json_dict['wall_type_dict'][w]['value']['total_surface'] = 'unable to read from file'
-            print("json_dict['wall_type_dict']", ':')
-            pprint.pprint(json_dict['wall_type_dict'])
+            # print("json_dict['wall_type_dict']", ':')
+            # pprint.pprint(json_dict['wall_type_dict'])
         finally:
             outcome = 'wall_type_dict complete'
         
@@ -5863,12 +5868,17 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         
         
+        
+        # print('wall_type_dict', ':')
+        # pprint.pprint(json_dict['wall_type_dict'])
+        
+        
         for wall_type in json_dict['wall_type_dict']:
-            if 'total_surface' in json_dict['wall_type_dict'][wall_type].keys():
-                if json_dict['wall_type_dict'][wall_type]['total_surface'] != '' or 'Semi-Exposed' not in json_dict['wall_type_dict'][wall_type]:
+            if 'total_surface' in json_dict['wall_type_dict'][wall_type]['value'].keys():
+                if json_dict['wall_type_dict'][wall_type]['value']['total_surface'] != '' or 'Semi-Exposed' not in json_dict['wall_type_dict'][wall_type]:
                     output_dict['4.3 Wall Summary Table'][wall_type] = json_dict['wall_type_dict'][wall_type]
             # else:
-                # print(wall_type, ':')
+                # print(wall_type, ':', "'total_surface' not found", ':')
                 # pprint.pprint(json_dict['wall_type_dict'][wall_type])
             
         for colour in colours_dict:
@@ -6036,9 +6046,8 @@ def BER(root, output = '', email = '', forms_data = {}):
                 
         
         
-        
-        
-        
+
+                
         
         
         
@@ -6058,12 +6067,25 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print("json_dict['count_dict']", ':')
         # pprint.pprint(json_dict['count_dict'])
         
+        print("json_dict['bulb_summary_dict']", ':')
+        pprint.pprint(json_dict['bulb_summary_dict'])
         
-        # json_dict['Number of LED/CFL bulbs'] = json_dict['count_dict']['LED/CFL']
-        # json_dict['Number of Halogen Lamp bulbs'] = json_dict['count_dict']['Halogen Lamp']
-        # json_dict['Number of Halogen Lamp Low Voltage bulbs'] = json_dict['count_dict']['Halogen LV']
-        # json_dict['Number of Incandescent/Unknown bulbs'] = json_dict['count_dict']['Incandescent']
-        # json_dict['Number of Linear Fluorescent bulbs'] = json_dict['count_dict']['Linear Fluorescent']
+        json_dict['LED/CFL'] = 0
+        json_dict['Halogen Lamp'] = 0
+        json_dict['Halogen LV'] = 0
+        json_dict['Incandescent'] = 0
+        json_dict['Linear Fluorescent'] = 0
+        for bulb_group in json_dict['bulb_summary_dict']:
+            if json_dict['bulb_summary_dict'][bulb_group]['value']['name'] == 'LED/CFL':
+                json_dict['LED/CFL'] += json_dict['bulb_summary_dict'][bulb_group]['value']['Count']
+            if json_dict['bulb_summary_dict'][bulb_group]['value']['name'] == 'Halogen Lamp':
+                json_dict['Halogen Lamp'] += json_dict['bulb_summary_dict'][bulb_group]['value']['Count']
+            if json_dict['bulb_summary_dict'][bulb_group]['value']['name'] == 'Halogen LV':
+                json_dict['Halogen LV'] += json_dict['bulb_summary_dict'][bulb_group]['value']['Count']
+            if json_dict['bulb_summary_dict'][bulb_group]['value']['name'] == 'Incandescent':
+                json_dict['Incandescent'] += json_dict['bulb_summary_dict'][bulb_group]['value']['Count']
+            if json_dict['bulb_summary_dict'][bulb_group]['value']['name'] == 'Linear Fluorescent':
+                json_dict['Linear Fluorescent'] += json_dict['bulb_summary_dict'][bulb_group]['value']['Count']
         
         # json_dict['LED/CFL'] = int(json_dict['count_dict']['LED/CFL'] / 2)
         # json_dict['Halogen Lamp'] = int(json_dict['count_dict']['Halogen Lamp'] / 2)
@@ -6117,7 +6139,7 @@ def BER(root, output = '', email = '', forms_data = {}):
                 
                 
                 elif field_req in json_dict['count_dict'].keys():
-                    print('Count Dict')
+                    # print('Count Dict')
                     output_dict[sheet_name][field]['value'] = str(json_dict['count_dict'][field_req])
                 
                 # logic is uncharted
@@ -7327,7 +7349,7 @@ def exterior_walls(root):
     finally:
         return ext_wall_area_gross, exploded_wall_dict
 
-def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2, internal_width = 0):
+def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2, interior_wall_width = 0):
     try:
         output = nwa_dict
         # print('nwa_dict', ':')
@@ -7381,8 +7403,8 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2, inter
                         if not isinstance(nwa_dict[floor][room][wall], dict):
                             continue
                         wall_no += 1
-                        print('wall', ':', wall)
-                        pprint.pprint(nwa_dict[floor][room][wall])
+                        # print('wall', ':', wall)
+                        # pprint.pprint(nwa_dict[floor][room][wall])
                         nwa_dict[floor][room][wall]['wall_no'] = wall_no
                         if 'loadBearingWall' in nwa_dict[floor][room][wall].keys():
                             if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
@@ -7418,7 +7440,7 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2, inter
                                             + str(x4) + '\t' 
                                             + str(y4))
                         if linear_subset(x1, y1, x2, y2, x3, y3, x4, y4, epsilon=0.05, zeta=0.05) == True:
-                            l = cart_distance((x1, y1), (x2, y2)) - internal_width
+                            l = cart_distance((x1, y1), (x2, y2)) - interior_wall_width
                             # l = cart_distance((x3, y3), (x4, y4))
                             if room == obs_room:
                                 # print('cart_distance', ':', l)
