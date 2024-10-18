@@ -2613,6 +2613,7 @@ def XL_2_dict_new(xl_file_path):
                             , 'underfloor heating?'
                             , 'age band'
                             , 'perimeter'
+                            , 'perimeter_s'
                             , 'area (m2)'
                             , 'U-value calculation required?'
                             , 'calculated U-value'
@@ -3208,8 +3209,6 @@ def get_stats_data(project_id, headers = {
                         , 'co-e012f945-a074-4fe3-a2bb-4a0b39faa497'
                         , 'co-3a9736be-9e03-4352-bb80-2b54b448cdfb'
                         , 'co-c2fdb8da-54a7-48d3-bf80-5baab9761967'
-                        , 'co-3a9736be-9e03-4352-bb80-2b54b448cdfb'
-                        , 'co-c2fdb8da-54a7-48d3-bf80-5baab9761967'
                         ]
         
         
@@ -3226,12 +3225,14 @@ def get_stats_data(project_id, headers = {
             storey_height_dict[floor["uid"]]['value']['area'] = floor["area"]
             storey_height_dict[floor["uid"]]['value']['height'] = floor["height"]
             storey_height_dict[floor["uid"]]['value']['name'] = floor["name"]
+            storey_height_dict[floor["uid"]]['value']['perimeter'] = floor["perimeter"]
             for room in floor["rooms"]:
                 storey_height_dict[room["uid"]] = {}
                 storey_height_dict[room["uid"]]['value'] = {}
                 storey_height_dict[room["uid"]]['value']['area'] = room["area"]
                 storey_height_dict[room["uid"]]['value']['height'] = room["height"]
                 storey_height_dict[room["uid"]]['value']['name'] = room["name"]
+                storey_height_dict[room["uid"]]['value']['perimeter'] = room["perimeter"]
                 storey_height_dict[room["uid"]]['value']['volume'] = round(float(room["area"]) * float(room["height"]), 2)
                 if room["uid"] in floor_type_dict.keys():
                     if 'value' not in floor_type_dict[room["uid"]].keys():
@@ -3948,6 +3949,9 @@ def JSON_2_dict(project_id, headers = {
         print(output)
    
     return output
+
+# Attic Hatch - Draught Stripped			'co-34ef07d5-b741-4db6-a3a5-3ebb8e6ef5a4'
+# Attic Hatch - Draught Stripped			'co-3a9736be-9e03-4352-bb80-2b54b448cdfb'
 
 
 def initialize_count_dict(xl_ref_dict):
@@ -5663,8 +5667,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         
         # print('json_dict["floor_type_dict"]', ':')
         # pprint.pprint(json_dict['floor_type_dict'])
-        # print('nwa_dict', ':')
-        # pprint.pprint(nwa_dict)
+        print('nwa_dict', ':')
+        pprint.pprint(nwa_dict)
         
         for room_uid in json_dict["floor_type_dict"]:
             ff = json_dict["floor_type_dict"][room_uid]['value']['floor_name']
@@ -5673,9 +5677,20 @@ def BER(root, output = '', email = '', forms_data = {}):
             
             for floor in nwa_dict:
                 for room in nwa_dict[floor]:
+                    party_wall_length = 0
                     if room_uid in room:
                         if 'ext_perim' in nwa_dict[floor][room].keys():
-                            json_dict["floor_type_dict"][room_uid]['value']['perimeter'] = round(nwa_dict[floor][room]['ext_perim'], 2)
+                            for wall in nwa_dict[floor][room]:
+                                if not isinstance(nwa_dict[floor][room][wall], dict):
+                                    continue
+                                print(wall)
+                                if 'loadBearingWall' in nwa_dict[floor][room][wall].keys():
+                                    party_wall_length += nwa_dict[floor][room][wall]['l']
+                            perimeter = round(nwa_dict[floor][room]['ext_perim'], 2)
+                            json_dict["floor_type_dict"][room_uid]['value']['perimeter'] = perimeter
+                            perimeter_s = json_dict['storey_height_dict'][room_uid]['value']['perimeter'] - party_wall_length
+                            json_dict["floor_type_dict"][room_uid]['value']['perimeter_s'] = round(perimeter_s, 2)
+                            print('perimeter', ':', perimeter, 'perimeter_s', ':', perimeter_s)
         
         
         
@@ -6005,6 +6020,8 @@ def BER(root, output = '', email = '', forms_data = {}):
         # print(len(json_dict['storey_height_dict']['floors']))
         fn = 0
         for e in json_dict['storey_height_dict']['floors']:
+            if 'floor_type' not in json_dict['storey_height_dict']['floors'][e]['value'].keys():
+                continue
             ft = json_dict['storey_height_dict']['floors'][e]['value']['floor_type']
             if ft in ['-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8']:
                 fn += 1
@@ -7377,7 +7394,7 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2, inter
                 type_ex = exploded_wall_dict[floor][expl_wall]['type']
                 if type_ex != 'exterior':
                     continue
-                print('checking exploded wall', ':', expl_wall)
+                # print('checking exploded wall', ':', expl_wall)
                 exploded_wall_dict[floor][expl_wall]['x1'] = round(exploded_wall_dict[floor][expl_wall]['x1'], r_to)
                 exploded_wall_dict[floor][expl_wall]['y1'] = round(exploded_wall_dict[floor][expl_wall]['y1'], r_to)
                 x1 = round(exploded_wall_dict[floor][expl_wall]['x1'], r_to)
@@ -7393,6 +7410,9 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2, inter
                 exploded_wall_dict[floor][expl_wall]['b'] = b
                 point_list.append(b)
                 # print(a, '\t', b)
+                
+                l = cart_distance((x1, y1), (x2, y2))
+                print('checking exploded wall', ':', expl_wall, 'length: ', l)
                 
                 wall_no = -1
                 for room in nwa_dict[floor]:
@@ -7442,16 +7462,16 @@ def wall_plot(exploded_wall_dict, nwa_dict={}, obs_floor = '11', r_to = 2, inter
                         if linear_subset(x1, y1, x2, y2, x3, y3, x4, y4, epsilon=0.05, zeta=0.05) == True:
                             l = cart_distance((x1, y1), (x2, y2)) - interior_wall_width
                             # l = cart_distance((x3, y3), (x4, y4))
-                            if room == obs_room:
+                            # if room == obs_room:
                                 # print('cart_distance', ':', l)
-                                string = string + '\t' + str(l)
+                            string = string + '\t' + str(l)
                             nwa_dict[floor][room][wall]['ext_perim'] = l
                             nwa_dict[floor][room]['ext_perim'] += l
                         else:
                             string = string.replace('is colinear', 'is NOT colinear')
                             
                         # if room == obs_room:
-                        # print(string)
+                        print(string)
                     
                     # if room == obs_room:
                         # print("nwa_dict[" + str(floor) + "][" + room + "]['ext_perim']", ':')
