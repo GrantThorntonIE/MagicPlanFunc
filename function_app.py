@@ -5339,7 +5339,8 @@ def distributor_function(form, root = ''):
         project_name = root.get('name')
         if project_name[-1] == ' ':
             project_name = project_name[:-1]
-        
+        if project_name[-1] == ' ':
+            project_name = project_name[:-1]        
         
         
         val_dict = {}
