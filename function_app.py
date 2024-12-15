@@ -349,10 +349,12 @@ def XML_2_dict(root, t = "floor"):
         
         id = root.get('id')
         plan_name = root.get('name')
+        
         if plan_name[-1] == ' ':
             plan_name = plan_name[:-1]
-        if plan_name[-1] == ' ':
-            plan_name = plan_name[:-1]
+        if plan_name[0] == ' ':
+            plan_name = plan_name[1:]
+        
         print('id', ':', id)
         print('plan_name', ':', plan_name)
         xml_val_dict['Application ID'] = plan_name
@@ -723,7 +725,7 @@ def get_project_files(id, plan_name, headers = {
             
     try:
         output = []
-        generate_locally = True
+        generate_locally = False
         if (socket.gethostname()) == "PC1VXW6X":
             generate_locally = False
         # azure_upload(json_data)
@@ -5339,8 +5341,9 @@ def distributor_function(form, root = ''):
         project_name = root.get('name')
         if project_name[-1] == ' ':
             project_name = project_name[:-1]
-        if project_name[-1] == ' ':
-            project_name = project_name[:-1]        
+        if project_name[0] == ' ':
+            project_name = project_name[1:]
+        
         
         
         val_dict = {}
@@ -5688,12 +5691,13 @@ def BER(root, output = '', email = '', forms_data = {}):
                                     continue
                                 print(wall)
                                 if 'loadBearingWall' in nwa_dict[floor][room][wall].keys():
-                                    party_wall_length += nwa_dict[floor][room][wall]['l']
+                                    if nwa_dict[floor][room][wall]['loadBearingWall'] == '1':
+                                        party_wall_length += nwa_dict[floor][room][wall]['l']
                             perimeter = round(nwa_dict[floor][room]['ext_perim'], 2)
                             json_dict["floor_type_dict"][room_uid]['value']['perimeter'] = perimeter
                             perimeter_s = json_dict['storey_height_dict'][room_uid]['value']['perimeter'] - party_wall_length
                             json_dict["floor_type_dict"][room_uid]['value']['perimeter_s'] = round(perimeter_s, 2)
-                            print('perimeter', ':', perimeter, 'perimeter_s', ':', perimeter_s)
+                            print('perimeter', ':', perimeter, 'perimeter_s', ':', perimeter_s, 'party_wall_length', ':', party_wall_length)
         
         
         
