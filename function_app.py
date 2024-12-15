@@ -351,6 +351,8 @@ def XML_2_dict(root, t = "floor"):
         plan_name = root.get('name')
         if plan_name[-1] == ' ':
             plan_name = plan_name[:-1]
+        if plan_name[-1] == ' ':
+            plan_name = plan_name[:-1]
         print('id', ':', id)
         print('plan_name', ':', plan_name)
         xml_val_dict['Application ID'] = plan_name
